@@ -10,7 +10,7 @@
 #      MySQL/MariaDB server is present yet).
 #   2. Uses your existing MySQL user 'app_user' (asks for its password;
 #      the installer never creates or changes users) to create the
-#      'utender' database.
+#      database (DB_NAME, default utender_app).
 #   3. Writes backend/.env with generated secrets (kept if it already exists).
 #   4. Creates the Python virtualenv, installs dependencies, runs migrations.
 #   5. Builds the frontend and installs two systemd services: the API
@@ -24,6 +24,8 @@
 #
 # Optional environment variables:
 #   DB_USER=app_user         MySQL user to connect as (default: app_user)
+#   DB_NAME=utender_app      database name (default: utender_app; kept separate
+#                            from any existing 'utender' database)
 #   DB_PASSWORD=...          MySQL password, to skip the prompt
 #   PUBLIC_IP=1.2.3.4        skip auto-detection of the server's public IP
 #   PUBLIC_HTTP_PORT=8080    port for the web app   (default: first free from 8080)
@@ -79,6 +81,7 @@ ok "Address $public_ip, web app on $http_port, API on $api_port"
 env_file="$repo_root/backend/.env"
 step "Database"
 db_user="${DB_USER:-app_user}"
+db_name="${DB_NAME:-utender_app}"
 db_password=""
 if [ -f "$env_file" ] && grep -q '^DATABASE_URL=' "$env_file"; then
     ok "backend/.env already exists -- using its database settings."
@@ -95,10 +98,10 @@ else
     export MYSQL_PWD="$db_password"
     mysql -h127.0.0.1 -P3306 -u"$db_user" -e "SELECT 1" >/dev/null 2>&1 \
         || fail "Could not log in as MySQL user '${db_user}' with that password."
-    mysql -h127.0.0.1 -P3306 -u"$db_user" -e "CREATE DATABASE IF NOT EXISTS utender CHARACTER SET utf8mb4;" \
-        || fail "User '${db_user}' cannot create the 'utender' database. Create it and grant access, then re-run."
+    mysql -h127.0.0.1 -P3306 -u"$db_user" -e "CREATE DATABASE IF NOT EXISTS \`${db_name}\` CHARACTER SET utf8mb4;" \
+        || fail "User '${db_user}' cannot create the '${db_name}' database. Create it and grant access, then re-run."
     unset MYSQL_PWD
-    ok "Connected as '${db_user}'; database 'utender' is ready."
+    ok "Connected as '${db_user}'; database '${db_name}' is ready."
 fi
 
 # ---------------------------------------------------------------- .env
@@ -111,7 +114,7 @@ else
     # URL-encode the password so characters like @ or / can't break DATABASE_URL.
     db_url_password="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote_plus(sys.argv[1]))' "$db_password")"
     sed -i \
-        -e "s|^DATABASE_URL=.*|DATABASE_URL=mysql+pymysql://${db_user}:${db_url_password}@127.0.0.1:3306/utender|" \
+        -e "s|^DATABASE_URL=.*|DATABASE_URL=mysql+pymysql://${db_user}:${db_url_password}@127.0.0.1:3306/${db_name}|" \
         -e "s|^JWT_SECRET=.*|JWT_SECRET=$(new_secret)|" \
         -e "s|^STORAGE_SIGNING_SECRET=.*|STORAGE_SIGNING_SECRET=$(new_secret)|" \
         -e "s|^CRON_SECRET=.*|CRON_SECRET=$(new_secret)|" \
