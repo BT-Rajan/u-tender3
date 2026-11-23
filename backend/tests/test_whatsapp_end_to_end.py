@@ -52,11 +52,11 @@ def test_new_owner_registers_on_whatsapp_then_sees_the_owner_dashboard(monkeypat
     _deliver(client, monkeypatch, sender, text_message("wamid.E2E1", WA_ID, "hi"))
     flow = sender.flows()[0]
     assert flow["flow_id"] == "flow-registration"
-    assert flow["screen"] == "ROLE"
+    assert flow["screen"] == "WELCOME"
     token = flow["flow_token"]
 
     reply, _ = flow_request(client, public_pem, token=token, action="INIT")
-    assert reply == {"screen": "ROLE", "data": {}}
+    assert reply == {"screen": "WELCOME", "data": {}}
     flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "en"})
     reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="OWNER_DETAILS", data={"full_name": "Layla Al-Sabah"})
     assert reply["screen"] == "SUCCESS"

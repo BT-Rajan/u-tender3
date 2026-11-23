@@ -20,7 +20,7 @@ from app.services.whatsapp_flows import (
 FLOW_DIR = Path(__file__).resolve().parents[1] / "whatsapp_flows"
 FLOWS = ("registration", "owner_dashboard", "contractor_dashboard")
 
-REGISTRATION_SCREENS = {"ROLE", "OWNER_DETAILS", "CONTRACTOR_DETAILS", "SUCCESS", "NOT_COMPLETED", "EXPIRED"}
+REGISTRATION_SCREENS = {"WELCOME", "ROLE", "OWNER_DETAILS", "CONTRACTOR_DETAILS", "SUCCESS", "NOT_COMPLETED", "EXPIRED"}
 DASHBOARD_SCREENS = {"MENU", "DOCUMENTS", "LINKS_SENT", "COMING_SOON", "EXPIRED"}
 OWNER_TENDER_SCREENS = {"CREATE_TENDER", "REVIEW", "MY_TENDERS", "TENDER_DETAILS", "AMEND", "OFFERS", "DONE"}
 CONTRACTOR_TENDER_SCREENS = {
@@ -101,6 +101,22 @@ def test_every_data_exchange_footer_names_fields_the_form_actually_has(name):
 
 def test_registration_flow_has_exactly_the_screens_the_backend_uses():
     assert set(_screens(_load("registration"))) == REGISTRATION_SCREENS
+
+
+def test_welcome_screen_shows_the_logo_and_the_tagline_and_navigates_to_role_without_the_backend():
+    import base64
+
+    welcome = _screens(_load("registration"))["WELCOME"]
+    components = list(_components(welcome))
+    image = next(c for c in components if c.get("type") == "Image")
+    png = base64.b64decode(image["src"])
+    assert png.startswith(b"\x89PNG\r\n\x1a\n")
+    assert image["width"] == image["height"] == 192
+    texts = [c.get("text") for c in components if c.get("type") in ("TextHeading", "TextBody")]
+    assert sorted(texts) == sorted(["Welcome to U-Tender", "Your gateway to discovering opportunities and managing tenders."])
+    footer = next(c for c in components if c.get("type") == "Footer")
+    assert footer["label"] == "Get Started"
+    assert footer["on-click-action"] == {"name": "navigate", "next": {"type": "screen", "name": "ROLE"}, "payload": {}}
 
 
 def test_registration_data_fields_match_what_the_endpoint_sends():

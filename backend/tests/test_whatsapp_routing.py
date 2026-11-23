@@ -51,7 +51,7 @@ def test_a_new_number_is_sent_the_registration_flow(monkeypatch, db):
     assert len(queued) == 1
     row = queued[0]
     assert row.kind == "flow"
-    assert row.params_json["screen"] == "ROLE"
+    assert row.params_json["screen"] == "WELCOME"
     assert row.params_json["flow_id"] == "flow-registration"
     assert row.params_json["flow_token"]
     session = _sessions(db)[0]
@@ -160,7 +160,7 @@ def test_an_expired_unfinished_registration_starts_again_at_the_role_screen(monk
 
     _deliver(db, text_message("wamid.EXP2", WA_ID, "hi"))
 
-    assert _sessions(db)[-1].screen == "ROLE"
+    assert _sessions(db)[-1].screen == "WELCOME"
     assert _sessions(db)[-1].state_json is None
 
 
