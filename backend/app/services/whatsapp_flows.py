@@ -18,6 +18,7 @@ from app.services.registration import (
     register_owner,
 )
 from app.services.upload_links import issue_upload_link
+from app.services.whatsapp_contractor_flows import contractor_menu_choice, handle_contractor_screen
 from app.services.whatsapp_owner_flows import handle_owner_screen, owner_menu_choice
 from app.services.whatsapp_identity import find_active_flow_session
 
@@ -37,7 +38,7 @@ REGISTRATION_SCREEN_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 OWNER_MENU_CHOICES = ("create_tender", "my_tenders", "received_offers", "my_documents")
-CONTRACTOR_MENU_CHOICES = ("browse_projects", "my_offers", "my_documents", "my_awards")
+CONTRACTOR_MENU_CHOICES = ("browse_projects", "search_projects", "my_offers", "my_documents", "my_awards")
 
 # Phase 2 ships the menus as navigation shells. The journeys behind each choice
 # arrive in Phases 4 and 5, so each choice currently lands on a "coming soon"
@@ -193,6 +194,10 @@ def _dashboard_reply(db: Session, session: WhatsAppFlowSession, payload: dict[st
         owner_reply = handle_owner_screen(db, user, screen or "", data, now=now)
         if owner_reply is not None:
             return owner_reply
+    if not is_owner and screen != "MENU":
+        contractor_reply = handle_contractor_screen(db, identity, user, screen or "", data, now=now)
+        if contractor_reply is not None:
+            return contractor_reply
     if screen != "MENU":
         return None
 
@@ -206,6 +211,10 @@ def _dashboard_reply(db: Session, session: WhatsAppFlowSession, payload: dict[st
         owner_reply = owner_menu_choice(db, user, str(choice), now=now)
         if owner_reply is not None:
             return owner_reply
+    else:
+        contractor_reply = contractor_menu_choice(db, identity, user, str(choice), now=now)
+        if contractor_reply is not None:
+            return contractor_reply
     return {"screen": "COMING_SOON", "data": {"message": "This section is coming soon."}}
 
 

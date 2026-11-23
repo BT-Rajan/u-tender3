@@ -16,7 +16,7 @@ from app.models.user import User
 from app.schemas.amendment import ProjectAmendmentOut, ProjectAmendmentRequest
 from app.schemas.award import AwardRecordOut
 from app.schemas.project import DrawingOut, ProjectCreate, ProjectDetailOut
-from app.services import tender_service
+from app.services import contractor_service, tender_service
 from app.services.drawings import upload_drawings_for_project
 from app.services.email import notify_contractor_tender_amended
 from app.services.notify import notify
@@ -37,21 +37,8 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 # drawings) stays available on verification alone; that split is what lets
 # an unpaid contractor browse before paying instead of a hard app lockout.
 def _can_view_project(user: User, project: Project, db: Session) -> bool:
-    if user.role == UserRole.admin or project.owner_id == user.id:
-        return True
-    if user.role != UserRole.contractor:
-        return False
-    # Draft is the only status a contractor never sees — every other state,
-    # including the newer under_evaluation/no_award/canceled/expired, stays
-    # visible so a contractor who bid can still see what happened to their
-    # bid after bidding itself has ended. An admin-suspended project is
-    # blocked the same way, even for a contractor who already bid on it —
-    # suspension is a moderation action meant to pull the whole project out
-    # of sight until an admin reactivates it.
-    if project.status == ProjectStatus.draft or project.is_suspended:
-        return False
-    profile = db.get(ContractorProfile, user.id)
-    return bool(profile and profile.is_verified_active)
+    # Delegates to the shared contractor service, so the web and WhatsApp use one visibility rule.
+    return contractor_service.can_view_project(db, user, project)
 
 
 @router.post("", response_model=ProjectDetailOut, status_code=201)

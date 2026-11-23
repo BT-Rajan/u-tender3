@@ -6,11 +6,61 @@
       "MENU",
       "DOCUMENTS",
       "COMING_SOON",
-      "EXPIRED"
+      "EXPIRED",
+      "SEARCH",
+      "PROJECT_LIST",
+      "MY_OFFERS",
+      "AWARDS"
     ],
     "DOCUMENTS": [
       "LINKS_SENT",
       "DOCUMENTS"
+    ],
+    "SEARCH": [
+      "PROJECT_LIST",
+      "SEARCH",
+      "MENU"
+    ],
+    "PROJECT_LIST": [
+      "PROJECT_DETAILS",
+      "PROJECT_LIST",
+      "MENU"
+    ],
+    "PROJECT_DETAILS": [
+      "PROJECT_DETAILS",
+      "SUBMIT_OFFER",
+      "OFFER_HISTORY",
+      "DONE",
+      "PROJECT_LIST",
+      "MENU"
+    ],
+    "SUBMIT_OFFER": [
+      "REVIEW_OFFER",
+      "SUBMIT_OFFER",
+      "PROJECT_LIST",
+      "MENU"
+    ],
+    "REVIEW_OFFER": [
+      "DONE",
+      "SUBMIT_OFFER",
+      "REVIEW_OFFER",
+      "PROJECT_LIST",
+      "MENU"
+    ],
+    "MY_OFFERS": [
+      "OFFER_DETAILS",
+      "MY_OFFERS",
+      "PROJECT_LIST",
+      "MENU"
+    ],
+    "OFFER_DETAILS": [
+      "OFFER_DETAILS",
+      "SUBMIT_OFFER",
+      "OFFER_HISTORY",
+      "DONE",
+      "PROJECT_LIST",
+      "MENU",
+      "MY_OFFERS"
     ]
   },
   "screens": [
@@ -56,6 +106,10 @@
               {
                 "id": "browse_projects",
                 "title": "Browse projects"
+              },
+              {
+                "id": "search_projects",
+                "title": "Search and filter"
               },
               {
                 "id": "my_offers",
@@ -203,6 +257,678 @@
               "name": "complete",
               "payload": {
                 "status": "expired"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEARCH",
+      "title": "Search projects",
+      "terminal": false,
+      "data": {
+        "search": {
+          "type": "string",
+          "__example__": ""
+        },
+        "trade": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sort": {
+          "type": "string",
+          "__example__": ""
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Search title, address or description",
+            "name": "search",
+            "input-type": "text",
+            "required": false,
+            "max-chars": 100
+          },
+          {
+            "type": "Dropdown",
+            "label": "Trade",
+            "name": "trade",
+            "required": false,
+            "data-source": [
+              {
+                "id": "Any",
+                "title": "Any trade"
+              },
+              {
+                "id": "General contracting",
+                "title": "General contracting"
+              },
+              {
+                "id": "Electrical",
+                "title": "Electrical"
+              },
+              {
+                "id": "Plumbing",
+                "title": "Plumbing"
+              },
+              {
+                "id": "HVAC",
+                "title": "HVAC"
+              },
+              {
+                "id": "Civil works",
+                "title": "Civil works"
+              },
+              {
+                "id": "Finishing",
+                "title": "Finishing"
+              },
+              {
+                "id": "Fire safety",
+                "title": "Fire safety"
+              },
+              {
+                "id": "Landscaping",
+                "title": "Landscaping"
+              },
+              {
+                "id": "Other",
+                "title": "Other"
+              }
+            ]
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Sort by",
+            "name": "sort",
+            "required": true,
+            "data-source": [
+              {
+                "id": "deadline",
+                "title": "Closing soonest"
+              },
+              {
+                "id": "newest",
+                "title": "Newest first"
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Show projects",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "search": "${form.search}",
+                "trade": "${form.trade}",
+                "sort": "${form.sort}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "PROJECT_LIST",
+      "title": "Projects",
+      "terminal": false,
+      "data": {
+        "heading": {
+          "type": "string",
+          "__example__": "Open projects"
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "empty_message": {
+          "type": "string",
+          "__example__": ""
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.heading}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.empty_message}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Choose a project",
+            "name": "project_id",
+            "required": true,
+            "data-source": "${data.projects}"
+          },
+          {
+            "type": "Footer",
+            "label": "Open",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "project_id": "${form.project_id}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "PROJECT_DETAILS",
+      "title": "Project",
+      "terminal": false,
+      "data": {
+        "project_id": {
+          "type": "string",
+          "__example__": "id"
+        },
+        "title": {
+          "type": "string",
+          "__example__": "Villa renovation"
+        },
+        "details": {
+          "type": "string",
+          "__example__": "Status: Open"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.details}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "What next?",
+            "name": "action",
+            "required": true,
+            "data-source": "${data.actions}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continue",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "project_id": "${data.project_id}",
+                "action": "${form.action}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUBMIT_OFFER",
+      "title": "Your offer",
+      "terminal": false,
+      "data": {
+        "project_id": {
+          "type": "string",
+          "__example__": ""
+        },
+        "title": {
+          "type": "string",
+          "__example__": ""
+        },
+        "amount": {
+          "type": "string",
+          "__example__": ""
+        },
+        "timeline": {
+          "type": "string",
+          "__example__": ""
+        },
+        "message": {
+          "type": "string",
+          "__example__": ""
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Your total amount",
+            "name": "amount",
+            "input-type": "number",
+            "required": true,
+            "init-value": "${data.amount}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Timeline (for example 6 months)",
+            "name": "timeline",
+            "input-type": "text",
+            "required": false,
+            "max-chars": 200,
+            "init-value": "${data.timeline}"
+          },
+          {
+            "type": "TextArea",
+            "label": "Message to the owner",
+            "name": "message",
+            "required": false,
+            "max-length": 1000,
+            "init-value": "${data.message}"
+          },
+          {
+            "type": "Footer",
+            "label": "Review",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "project_id": "${data.project_id}",
+                "amount": "${form.amount}",
+                "timeline": "${form.timeline}",
+                "message": "${form.message}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "REVIEW_OFFER",
+      "title": "Review your offer",
+      "terminal": false,
+      "data": {
+        "project_id": {
+          "type": "string",
+          "__example__": ""
+        },
+        "amount": {
+          "type": "string",
+          "__example__": ""
+        },
+        "timeline": {
+          "type": "string",
+          "__example__": ""
+        },
+        "message": {
+          "type": "string",
+          "__example__": ""
+        },
+        "summary": {
+          "type": "string",
+          "__example__": ""
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.summary}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Next",
+            "name": "decision",
+            "required": true,
+            "data-source": [
+              {
+                "id": "submit",
+                "title": "Submit my offer"
+              },
+              {
+                "id": "edit",
+                "title": "Change it"
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Continue",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "project_id": "${data.project_id}",
+                "amount": "${data.amount}",
+                "timeline": "${data.timeline}",
+                "message": "${data.message}",
+                "decision": "${form.decision}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "MY_OFFERS",
+      "title": "My offers",
+      "terminal": false,
+      "data": {
+        "heading": {
+          "type": "string",
+          "__example__": "My offers"
+        },
+        "offers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "empty_message": {
+          "type": "string",
+          "__example__": ""
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.heading}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.empty_message}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Choose an offer",
+            "name": "project_id",
+            "required": true,
+            "data-source": "${data.offers}"
+          },
+          {
+            "type": "Footer",
+            "label": "Open",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "project_id": "${form.project_id}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "OFFER_DETAILS",
+      "title": "Your offer",
+      "terminal": false,
+      "data": {
+        "project_id": {
+          "type": "string",
+          "__example__": "id"
+        },
+        "title": {
+          "type": "string",
+          "__example__": "Villa renovation"
+        },
+        "details": {
+          "type": "string",
+          "__example__": "Your amount: 12,500.00"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "confirm": {
+          "type": "string",
+          "__example__": ""
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.details}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Action",
+            "name": "action",
+            "required": true,
+            "data-source": "${data.actions}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Confirm (only to withdraw)",
+            "name": "confirm",
+            "required": false,
+            "data-source": [
+              {
+                "id": "yes",
+                "title": "Yes, withdraw it"
+              },
+              {
+                "id": "no",
+                "title": "No"
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Continue",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "project_id": "${data.project_id}",
+                "action": "${form.action}",
+                "confirm": "${form.confirm}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "OFFER_HISTORY",
+      "title": "Revision history",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "body": {
+          "type": "string",
+          "__example__": "Revision 1: 12,500.00"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Your revisions"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.body}"
+          },
+          {
+            "type": "Footer",
+            "label": "Close",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "status": "done"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "AWARDS",
+      "title": "My awards",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "body": {
+          "type": "string",
+          "__example__": "Villa renovation: 12,500.00"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "My awards"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.body}"
+          },
+          {
+            "type": "Footer",
+            "label": "Close",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "status": "done"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "DONE",
+      "title": "Done",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Your offer is submitted."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "Footer",
+            "label": "Done",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "status": "done"
               }
             }
           }
