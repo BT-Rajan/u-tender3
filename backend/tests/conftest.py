@@ -67,6 +67,19 @@ def isolated_backend(tmp_path):
     engine.dispose()
 
 
+@pytest.fixture(autouse=True)
+def reset_whatsapp_hooks():
+    """Handler registries are process-wide, so each test starts and ends with none registered."""
+    from app.routers.whatsapp import clear_flow_handlers
+    from app.services.whatsapp_events import clear_inbound_handlers
+
+    clear_inbound_handlers()
+    clear_flow_handlers()
+    yield
+    clear_inbound_handlers()
+    clear_flow_handlers()
+
+
 @pytest.fixture
 def client():
     """A single anonymous TestClient. Most tests create their own

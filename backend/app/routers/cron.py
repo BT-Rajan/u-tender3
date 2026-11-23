@@ -11,9 +11,16 @@ from app.models.project import Project
 from app.models.user import User
 from app.services.email import notify_owner_deadline_approaching
 from app.services.notify import notify
+from app.services.whatsapp_client import WhatsAppCloudClient
+from app.services.whatsapp_outbox import dispatch_due
 
 router = APIRouter(tags=["cron"])
 settings = get_settings()
+
+
+def build_whatsapp_sender() -> WhatsAppCloudClient:
+    """Indirection so tests can substitute a sender without touching the network."""
+    return WhatsAppCloudClient.from_settings(settings)
 
 
 # Intended to be hit by an external scheduler (plain cron, a GitHub Actions
@@ -52,3 +59,26 @@ def deadline_reminders(authorization: str | None = Header(default=None), db: Ses
     db.commit()
 
     return {"checked": len(projects), "sent": sent}
+
+
+# Run every minute by the same external scheduler. Sends due WhatsApp outbox
+# rows and retries transient failures with backoff. Does nothing while
+# WhatsApp is disabled, so the rows wait until it is switched on.
+@router.get("/cron/whatsapp-outbox")
+def whatsapp_outbox(authorization: str | None = Header(default=None), db: Session = Depends(get_db)):
+    if not settings.cron_secret or authorization != f"Bearer {settings.cron_secret}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not settings.whatsapp_enabled:
+        return {"skipped": True}
+
+    sender = build_whatsapp_sender()
+    try:
+        stats = dispatch_due(
+            db,
+            sender,
+            now=datetime.utcnow(),
+            max_attempts=settings.whatsapp_outbox_max_attempts,
+        )
+    finally:
+        sender.close()
+    return {"skipped": False, **stats}

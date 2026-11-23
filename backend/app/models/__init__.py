@@ -14,8 +14,13 @@ from app.models.project_amendment import ProjectAmendment
 from app.models.review import Review
 from app.models.revoked_token import RevokedToken
 from app.models.user import User
+from app.models.whatsapp import WhatsAppFlowSession, WhatsAppIdentity, WhatsAppMessageEvent, WhatsAppOutbox
 
 __all__ = [
+    "WhatsAppIdentity",
+    "WhatsAppMessageEvent",
+    "WhatsAppFlowSession",
+    "WhatsAppOutbox",
     "User",
     "AuthToken",
     "ContractorProfile",

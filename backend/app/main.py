@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.router import router as auth_router
-from app.config import get_settings
+from app.config import get_settings, validate_runtime_settings
 from app.error_handlers import register_error_handlers
 from app.middleware import MaxBodySizeMiddleware
 from app.routers.admin import router as admin_router
@@ -16,8 +16,10 @@ from app.routers.offers import router as offers_router
 from app.routers.owner import router as owner_router
 from app.routers.projects import router as projects_router
 from app.routers.public import router as public_router
+from app.routers.whatsapp import router as whatsapp_router
 
 settings = get_settings()
+validate_runtime_settings(settings)
 
 app = FastAPI(title="U-Tender API")
 
@@ -45,6 +47,7 @@ app.include_router(billing_router)
 app.include_router(cron_router)
 app.include_router(files_router)
 app.include_router(notifications_router)
+app.include_router(whatsapp_router)
 
 
 @app.get("/health")

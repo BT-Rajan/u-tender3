@@ -50,6 +50,64 @@ class Settings(BaseSettings):
     # 50MB) to accommodate zipped folders of drawings.
     max_upload_mb: int = 50
 
+    # "development" | "production". In production the app refuses to start
+    # with any default secret (see validate_runtime_settings).
+    app_env: str = "development"
+
+    # WhatsApp Cloud API. U-Tender uses its own Meta app, separate from
+    # Cogzi. Every value below is a secret or an identifier that belongs in
+    # the deployment's secret store, never in the database.
+    whatsapp_enabled: bool = False
+    whatsapp_app_secret: str | None = None  # signs webhooks and Flow requests
+    whatsapp_verify_token: str | None = None  # GET subscription handshake
+    whatsapp_access_token: str | None = None
+    whatsapp_phone_number_id: str | None = None
+    whatsapp_api_version: str = "v21.0"
+    whatsapp_api_url: str = "https://graph.facebook.com"
+    whatsapp_flow_private_key: str | None = None  # PEM, RSA >= 2048 bits; never leaves U-Tender
+    whatsapp_outbox_max_attempts: int = 8
+    whatsapp_message_retention_days: int = 30
+
+
+DEFAULT_SECRET_VALUES = ("change-me-in-production",)
+
+
+class UnsafeConfigurationError(RuntimeError):
+    """Raised at startup when production is configured with an unsafe value."""
+
+
+def validate_runtime_settings(settings: Settings) -> None:
+    """Fail fast rather than run production on a known or missing secret.
+
+    Development keeps the permissive defaults so local runs and the test
+    suite work without extra setup.
+    """
+    if settings.app_env != "production":
+        return
+
+    unsafe: list[str] = []
+    for name in ("jwt_secret", "storage_signing_secret"):
+        if getattr(settings, name) in DEFAULT_SECRET_VALUES:
+            unsafe.append(name)
+    if not settings.cron_secret:
+        unsafe.append("cron_secret")
+
+    if settings.whatsapp_enabled:
+        for name in (
+            "whatsapp_app_secret",
+            "whatsapp_verify_token",
+            "whatsapp_access_token",
+            "whatsapp_phone_number_id",
+            "whatsapp_flow_private_key",
+        ):
+            if not getattr(settings, name):
+                unsafe.append(name)
+
+    if unsafe:
+        raise UnsafeConfigurationError(
+            "Refusing to start in production with unset or default secrets: " + ", ".join(sorted(unsafe))
+        )
+
 
 @lru_cache
 def get_settings() -> Settings:
