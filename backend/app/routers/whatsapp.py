@@ -98,6 +98,32 @@ async def receive_webhook(request: Request, db: Session = Depends(get_db)) -> di
     return {"received": True}
 
 
+@router.post("/whatsapp/bridge/cogzi")
+async def receive_cogzi_bridge(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Messages for a number Cogzi still owns, forwarded by Cogzi's outgoing webhook (see whatsapp_bridge)."""
+    from app.services.whatsapp_bridge import envelope_for_trigger, verify_bridge_signature
+
+    settings = get_settings()
+    if not settings.whatsapp_enabled or not settings.whatsapp_bridge_secret:
+        raise HTTPException(status_code=404, detail="Not found")
+    raw_body = await request.body()
+    if not verify_bridge_signature(raw_body, request.headers.get("X-Hub-Signature-256"), settings):
+        raise HTTPException(status_code=403, detail="Invalid signature")
+    try:
+        event = json.loads(raw_body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Malformed JSON") from exc
+    if not isinstance(event, dict):
+        raise HTTPException(status_code=400, detail="Malformed payload")
+
+    envelope = envelope_for_trigger(event, settings)
+    if envelope is None:
+        return {"received": True, "started": False}
+    record_events(db, envelope, now=datetime.utcnow())
+    await run_in_threadpool(dispatch_outbox_now, db)
+    return {"received": True, "started": True}
+
+
 def dispatch_outbox_now(db: Session) -> None:
     settings = get_settings()
     if not settings.whatsapp_enabled:
