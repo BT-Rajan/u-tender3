@@ -24,18 +24,32 @@ branch_labels = None
 depends_on = None
 
 
+INDEX = "ix_whatsapp_identities_user_id"
+STAGING_INDEX = "tmp_whatsapp_identities_user_id"
+
+
+def _replace_user_id_index(*, unique: bool) -> None:
+    """Swap the user_id index for one with the wanted uniqueness.
+
+    MySQL refuses to drop an index that a foreign key relies on. A second index on
+    the same column is created first, so the foreign key always has one to use.
+    """
+    op.create_index(STAGING_INDEX, "whatsapp_identities", ["user_id"])
+    op.drop_index(INDEX, table_name="whatsapp_identities")
+    op.create_index(INDEX, "whatsapp_identities", ["user_id"], unique=unique)
+    op.drop_index(STAGING_INDEX, table_name="whatsapp_identities")
+
+
 def upgrade() -> None:
     with op.batch_alter_table("users") as batch:
         batch.alter_column("email", existing_type=sa.String(255), nullable=True)
         batch.alter_column("password_hash", existing_type=sa.String(255), nullable=True)
 
-    op.drop_index("ix_whatsapp_identities_user_id", table_name="whatsapp_identities")
-    op.create_index("ix_whatsapp_identities_user_id", "whatsapp_identities", ["user_id"], unique=True)
+    _replace_user_id_index(unique=True)
 
 
 def downgrade() -> None:
-    op.drop_index("ix_whatsapp_identities_user_id", table_name="whatsapp_identities")
-    op.create_index("ix_whatsapp_identities_user_id", "whatsapp_identities", ["user_id"])
+    _replace_user_id_index(unique=False)
 
     with op.batch_alter_table("users") as batch:
         batch.alter_column("password_hash", existing_type=sa.String(255), nullable=False)
