@@ -321,6 +321,9 @@ export interface Dictionary {
       revisedSuffix: string;
       approve: string;
       closeToAwardHint: string;
+      contractorReply: string;
+      noReply: string;
+      revisionHistory: string;
       rateContractor: string;
       theContractor: string;
       submittedOn: string;
@@ -862,6 +865,9 @@ export const en: Dictionary = {
       revisedSuffix: "revised x",
       approve: "Approve",
       closeToAwardHint: "Close bidding to award",
+      contractorReply: "Contractor's reply",
+      noReply: "No reply message.",
+      revisionHistory: "Revision history",
       rateContractor: "Rate",
       theContractor: "the contractor",
       submittedOn: "Submitted",
@@ -1408,6 +1414,9 @@ export const ar: Dictionary = {
       revisedSuffix: "مُعدَّل ×",
       approve: "قبول",
       closeToAwardHint: "أغلق تقديم العروض للترسية",
+      contractorReply: "رد المقاول",
+      noReply: "لا توجد رسالة رد.",
+      revisionHistory: "سجل المراجعات",
       rateContractor: "قيّم",
       theContractor: "المقاول",
       submittedOn: "تاريخ التقديم",

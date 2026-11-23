@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError, API_URL } from "@/api/client";
-import type { Drawing, Offer, ProjectDetail } from "@/api/types";
+import type { Drawing, Offer, OfferRevision, ProjectDetail } from "@/api/types";
 import { timeRemaining, stars } from "@/lib/format";
 import { RatingInput } from "@/components/RatingInput";
 import { ErrorBanner } from "@/components/ErrorBanner";
@@ -92,6 +92,35 @@ function statusBadgeClasses(status: string) {
   }
 }
 
+function OfferDetails({ projectId, offer, t }: { projectId: string; offer: Offer; t: (key: string) => string }) {
+  const { data: history, isLoading } = useQuery({
+    queryKey: ["owner-offer-history", projectId, offer.id],
+    queryFn: () => apiFetch<OfferRevision[]>(`/owner/projects/${projectId}/offers/${offer.id}/history`),
+  });
+  return (
+    <div className="text-sm">
+      <div className="font-display font-semibold text-navy text-[13px] mb-1">{t("owner.projectDetail.contractorReply")}</div>
+      <p className="whitespace-pre-wrap text-navy mb-4">{offer.message || t("owner.projectDetail.noReply")}</p>
+      <div className="font-mono text-[10px] uppercase tracking-wide text-steel mb-2">{t("owner.projectDetail.revisionHistory")}</div>
+      {isLoading ? (
+        <p className="text-steel">…</p>
+      ) : (
+        <ul className="space-y-2">
+          {history?.map((h) => (
+            <li key={h.id} className="border-l-2 border-border pl-3">
+              <div className="font-mono text-xs text-navy">
+                #{h.revision_number} · ${Number(h.amount).toLocaleString()} · {h.timeline_estimate || "—"} ·{" "}
+                {new Date(h.recorded_at).toLocaleString()}
+              </div>
+              {h.message && <p className="whitespace-pre-wrap text-steel text-[13px]">{h.message}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function OwnerProjectDetailPage() {
   const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
@@ -100,6 +129,7 @@ export function OwnerProjectDetailPage() {
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [openOfferId, setOpenOfferId] = useState<string | null>(null);
   const drawingsFormRef = useRef<HTMLFormElement>(null);
 
   const { data: project } = useQuery({
@@ -348,7 +378,11 @@ export function OwnerProjectDetailPage() {
               </thead>
               <tbody>
                 {offers.map((o) => (
-                  <tr key={o.id} className="border-b border-border">
+                  <Fragment key={o.id}>
+                  <tr
+                    onClick={() => setOpenOfferId((cur) => (cur === o.id ? null : o.id))}
+                    className="border-b border-border cursor-pointer hover:bg-navy/5"
+                  >
                     <td className="py-3 px-2.5">
                       <div className="font-display font-semibold text-[13.5px]">
                         {o.contractor_company_name ?? t("owner.projectDetail.contractorCol")}
@@ -382,7 +416,10 @@ export function OwnerProjectDetailPage() {
                       ) : project.status === "closed" || project.status === "under_evaluation" ? (
                         <button
                           type="button"
-                          onClick={() => approveMutation.mutate(o.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            approveMutation.mutate(o.id);
+                          }}
                           disabled={approveMutation.isPending}
                           className="bg-navy hover:bg-navy-deep disabled:opacity-60 text-white text-xs font-semibold rounded px-3 py-1.5"
                         >
@@ -393,6 +430,14 @@ export function OwnerProjectDetailPage() {
                       )}
                     </td>
                   </tr>
+                  {openOfferId === o.id && (
+                    <tr className="border-b border-border bg-navy/5">
+                      <td colSpan={5} className="px-4 py-4">
+                        <OfferDetails projectId={project.id} offer={o} t={t} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
               </table>
