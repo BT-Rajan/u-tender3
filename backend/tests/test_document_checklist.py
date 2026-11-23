@@ -57,7 +57,7 @@ def _dashboard_token(client, monkeypatch, db, user) -> str:
     """Open the owner dashboard exactly as a customer would, and return the token it was sent with."""
     sender = RecordingSender()
     monkeypatch.setattr(whatsapp_router, "build_whatsapp_sender", lambda: sender)
-    raw = json.dumps(message_envelope(text_message(f"wamid.OPEN{user.id[:6]}", WA_ID, "menu"))).encode()
+    raw = json.dumps(message_envelope(text_message(f"wamid.OPEN{user.id[:6]}", WA_ID, "utender"))).encode()
     client.post("/whatsapp/webhook", content=raw, headers={"X-Hub-Signature-256": sign(raw), "Content-Type": "application/json"})
     return sender.flows()[0]["flow_token"]
 
@@ -271,7 +271,7 @@ def test_a_contractor_only_sees_contractor_requirements(client, monkeypatch, db)
     _, public_pem = enable_whatsapp(monkeypatch)
     sender = RecordingSender()
     monkeypatch.setattr(whatsapp_router, "build_whatsapp_sender", lambda: sender)
-    raw = json.dumps(message_envelope(text_message("wamid.CONCHK", WA_ID, "menu"))).encode()
+    raw = json.dumps(message_envelope(text_message("wamid.CONCHK", WA_ID, "utender"))).encode()
     client.post("/whatsapp/webhook", content=raw, headers={"X-Hub-Signature-256": sign(raw), "Content-Type": "application/json"})
     token = sender.flows()[0]["flow_token"]
 

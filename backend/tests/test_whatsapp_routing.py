@@ -45,7 +45,7 @@ def _account(db, role: UserRole, wa_id: str = WA_ID, full_name: str = "Layla Al-
 def test_a_new_number_is_sent_the_registration_flow(monkeypatch, db):
     enable_whatsapp(monkeypatch)
 
-    _deliver(db, text_message("wamid.NEW1", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.NEW1", WA_ID, "utender"))
 
     queued = _outbox(db)
     assert len(queued) == 1
@@ -63,7 +63,7 @@ def test_the_flow_token_in_the_outbox_matches_only_the_stored_hash(monkeypatch, 
     from app.services.whatsapp_identity import hash_flow_token
 
     enable_whatsapp(monkeypatch)
-    _deliver(db, text_message("wamid.NEW2", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.NEW2", WA_ID, "utender"))
 
     token = _outbox(db)[0].params_json["flow_token"]
     assert _sessions(db)[0].flow_token_hash == hash_flow_token(token)
@@ -71,7 +71,7 @@ def test_the_flow_token_in_the_outbox_matches_only_the_stored_hash(monkeypatch, 
 
 def test_a_new_number_creates_one_identity_with_no_account(monkeypatch, db):
     enable_whatsapp(monkeypatch)
-    _deliver(db, text_message("wamid.NEW3", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.NEW3", WA_ID, "utender"))
 
     identity = db.scalar(select(WhatsAppIdentity).where(WhatsAppIdentity.wa_id == WA_ID))
     assert identity.user_id is None
@@ -82,7 +82,7 @@ def test_an_owner_gets_the_owner_dashboard(monkeypatch, db):
     enable_whatsapp(monkeypatch)
     _account(db, UserRole.owner)
 
-    _deliver(db, text_message("wamid.OWN1", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.OWN1", WA_ID, "utender"))
 
     row = _outbox(db)[0]
     assert row.kind == "flow"
@@ -95,7 +95,7 @@ def test_a_contractor_gets_the_contractor_dashboard(monkeypatch, db):
     enable_whatsapp(monkeypatch)
     _account(db, UserRole.contractor)
 
-    _deliver(db, text_message("wamid.CON1", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.CON1", WA_ID, "utender"))
 
     row = _outbox(db)[0]
     assert row.params_json["flow_id"] == "flow-contractor"
@@ -106,7 +106,7 @@ def test_an_admin_is_pointed_to_the_web_dashboard_in_text(monkeypatch, db):
     enable_whatsapp(monkeypatch)
     _account(db, UserRole.admin)
 
-    _deliver(db, text_message("wamid.ADM1", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.ADM1", WA_ID, "utender"))
 
     row = _outbox(db)[0]
     assert row.kind == "text"
@@ -116,7 +116,7 @@ def test_an_admin_is_pointed_to_the_web_dashboard_in_text(monkeypatch, db):
 
 def test_an_unfinished_registration_resumes_on_the_same_screen_with_its_answers(monkeypatch, db):
     enable_whatsapp(monkeypatch)
-    _deliver(db, text_message("wamid.RES1", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.RES1", WA_ID, "utender"))
     first = _sessions(db)[0]
     first.screen = "OWNER_DETAILS"
     first.state_json = {"role": "owner", "language": "ar"}
@@ -124,7 +124,7 @@ def test_an_unfinished_registration_resumes_on_the_same_screen_with_its_answers(
 
     later = get_or_create_identity(db, WA_ID, now=NOW)  # same identity, still no account
     assert later.user_id is None
-    _deliver(db, text_message("wamid.RES2", WA_ID, "are you there"))
+    _deliver(db, text_message("wamid.RES2", WA_ID, "utender"))
 
     db.refresh(first)
     newest = _sessions(db)[-1]
@@ -139,9 +139,9 @@ def test_resuming_sends_a_fresh_token_so_the_old_one_stops_working(monkeypatch, 
     from app.services.whatsapp_identity import hash_flow_token
 
     enable_whatsapp(monkeypatch)
-    _deliver(db, text_message("wamid.RES3", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.RES3", WA_ID, "utender"))
     old_token = _outbox(db)[0].params_json["flow_token"]
-    _deliver(db, text_message("wamid.RES4", WA_ID, "hi again"))
+    _deliver(db, text_message("wamid.RES4", WA_ID, "utender"))
 
     new_token = next(row.params_json["flow_token"] for row in _outbox(db) if row.params_json.get("flow_token") != old_token)
     assert new_token != old_token
@@ -151,14 +151,14 @@ def test_resuming_sends_a_fresh_token_so_the_old_one_stops_working(monkeypatch, 
 
 def test_an_expired_unfinished_registration_starts_again_at_the_role_screen(monkeypatch, db):
     enable_whatsapp(monkeypatch)
-    _deliver(db, text_message("wamid.EXP1", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.EXP1", WA_ID, "utender"))
     stale = _sessions(db)[0]
     stale.screen = "CONTRACTOR_DETAILS"
     stale.state_json = {"role": "contractor", "language": "en"}
     stale.expires_at = datetime.utcnow() - timedelta(minutes=1)
     db.commit()
 
-    _deliver(db, text_message("wamid.EXP2", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.EXP2", WA_ID, "utender"))
 
     assert _sessions(db)[-1].screen == "ROLE"
     assert _sessions(db)[-1].state_json is None
@@ -183,7 +183,7 @@ def test_without_a_configured_flow_id_the_number_gets_a_text_instead(monkeypatch
     from app.config import get_settings
 
     monkeypatch.setattr(get_settings(), "whatsapp_flow_id_registration", None)
-    _deliver(db, text_message("wamid.NOFLOW", WA_ID, "hi"))
+    _deliver(db, text_message("wamid.NOFLOW", WA_ID, "utender"))
 
     row = _outbox(db)[0]
     assert row.kind == "text"
@@ -192,9 +192,50 @@ def test_without_a_configured_flow_id_the_number_gets_a_text_instead(monkeypatch
 
 def test_a_repeated_delivery_of_the_same_message_queues_nothing_more(monkeypatch, db):
     enable_whatsapp(monkeypatch)
-    message = text_message("wamid.DUP9", WA_ID, "hi")
+    message = text_message("wamid.DUP9", WA_ID, "utender")
     _deliver(db, message)
     _deliver(db, message)
 
     assert len(_outbox(db)) == 1
     assert len(_sessions(db)) == 1
+
+
+def test_any_other_text_gets_the_hint_and_no_flow(monkeypatch, db):
+    enable_whatsapp(monkeypatch)
+
+    _deliver(db, text_message("wamid.HINT1", WA_ID, "hi"))
+
+    queued = _outbox(db)
+    assert len(queued) == 1
+    assert queued[0].kind == "text"
+    assert "utender" in queued[0].params_json["body"]
+    assert _sessions(db) == []
+
+
+def test_a_non_keyword_message_creates_no_identity(monkeypatch, db):
+    enable_whatsapp(monkeypatch)
+
+    _deliver(db, text_message("wamid.HINT2", WA_ID, "hello there"))
+
+    assert db.scalar(select(WhatsAppIdentity).where(WhatsAppIdentity.wa_id == WA_ID)) is None
+
+
+def test_the_keyword_ignores_case_and_surrounding_spaces(monkeypatch, db):
+    enable_whatsapp(monkeypatch)
+
+    _deliver(db, text_message("wamid.KEY1", WA_ID, "  UTender  "))
+
+    queued = _outbox(db)
+    assert len(queued) == 1
+    assert queued[0].kind == "flow"
+    assert queued[0].params_json["screen"] == "ROLE"
+
+
+def test_the_keyword_inside_a_longer_message_does_not_trigger(monkeypatch, db):
+    enable_whatsapp(monkeypatch)
+
+    _deliver(db, text_message("wamid.KEY2", WA_ID, "utender please"))
+
+    queued = _outbox(db)
+    assert len(queued) == 1
+    assert queued[0].kind == "text"
