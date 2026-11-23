@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     # Business Manager before they can be sent outside the 24-hour window.
     whatsapp_template_document_approved: str = "document_approved"
     whatsapp_template_document_rejected: str = "document_rejected"
+    # Send a template only once Meta reports it approved. A template with no status on record is held, never sent blind.
+    whatsapp_require_approved_templates: bool = True
 
     # Owners type deadlines in this zone. The database stores UTC.
     tender_timezone: str = "Asia/Kuwait"

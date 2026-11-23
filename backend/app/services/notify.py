@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.enums import Language, NotificationType
 from app.models.notification import Notification
 from app.models.user import User
+from app.services.whatsapp_notifications import enqueue_notification
 
 # Rendered server-side, once, in the recipient's language AT THE TIME OF
 # CREATION (spec §2.10) — never re-translated on read, so a later language
@@ -112,6 +113,30 @@ _TEMPLATES: dict[NotificationType, dict[Language, tuple[str, str]]] = {
         Language.en: ("Your offer on {project_title} was reactivated", "A site admin reactivated your offer."),
         Language.ar: ("تمت إعادة تفعيل عرضك على {project_title}", "قام مسؤول الموقع بإعادة تفعيل عرضك."),
     },
+    NotificationType.verification_rejected: {
+        Language.en: ("Verification needs changes", "Your contractor verification needs changes. Open U-Tender to see what to fix."),
+        Language.ar: ("التحقق يحتاج إلى تعديل", "يحتاج التحقق من حساب المقاول إلى تعديلات. افتح يوتندر لمعرفة ما يجب إصلاحه."),
+    },
+    NotificationType.owner_verification_rejected: {
+        Language.en: ("Verification needs changes", "Your owner verification needs changes. Open U-Tender to see what to fix."),
+        Language.ar: ("التحقق يحتاج إلى تعديل", "يحتاج التحقق من حساب المالك إلى تعديلات. افتح يوتندر لمعرفة ما يجب إصلاحه."),
+    },
+    NotificationType.tender_published: {
+        Language.en: ("New tender: {project_title}", "A new tender in your trade is open. Bids close {closing_text}."),
+        Language.ar: ("مناقصة جديدة: {project_title}", "مناقصة جديدة في مجالك مفتوحة. تغلق العروض {closing_text}."),
+    },
+    NotificationType.bid_revised: {
+        Language.en: ("Offer revised on {project_title}", "{contractor_name} revised its offer on {project_title}."),
+        Language.ar: ("تم تعديل عرض على {project_title}", "عدّل {contractor_name} عرضه على {project_title}."),
+    },
+    NotificationType.payment_activated: {
+        Language.en: ("Subscription active", "Your subscription is active. Marketplace access is on."),
+        Language.ar: ("الاشتراك فعّال", "اشتراكك فعّال. الوصول إلى السوق مفعّل."),
+    },
+    NotificationType.payment_failed: {
+        Language.en: ("Payment failed", "A subscription payment failed. Update your payment method to keep bidding."),
+        Language.ar: ("فشل الدفع", "فشلت عملية دفع الاشتراك. حدّث طريقة الدفع لمواصلة تقديم العروض."),
+    },
 }
 
 
@@ -147,4 +172,6 @@ def notify(db: Session, user: User, notification_type: NotificationType, link: s
     db.add(row)
     db.commit()
     db.refresh(row)
+    # The same event goes out on WhatsApp, deduplicated on this notice's id.
+    enqueue_notification(db, user, row, kwargs, now=datetime.utcnow())
     return row

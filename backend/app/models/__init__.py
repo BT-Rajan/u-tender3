@@ -15,9 +15,10 @@ from app.models.review import Review
 from app.models.revoked_token import RevokedToken
 from app.models.document_upload import DocumentUploadLink, DocumentVersion
 from app.models.user import User
-from app.models.whatsapp import WhatsAppFlowSession, WhatsAppIdentity, WhatsAppMessageEvent, WhatsAppOutbox
+from app.models.whatsapp import WhatsAppFlowSession, WhatsAppIdentity, WhatsAppMessageEvent, WhatsAppOutbox, WhatsAppTemplateStatus
 
 __all__ = [
+    "WhatsAppTemplateStatus",
     "DocumentUploadLink",
     "DocumentVersion",
     "WhatsAppIdentity",

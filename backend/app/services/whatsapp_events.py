@@ -9,12 +9,19 @@ from typing import Any
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from sqlalchemy import select
+
 from app.models.whatsapp import (
     EVENT_STATUS_FAILED,
     EVENT_STATUS_PROCESSED,
     EVENT_STATUS_RECEIVED,
+    OUTBOX_FAILED,
+    OUTBOX_SENT,
     WhatsAppMessageEvent,
+    WhatsAppOutbox,
+    WhatsAppTemplateStatus,
 )
+from app.services.whatsapp_outbox import _clear_secrets
 from app.services.whatsapp_client import mask_recipient
 
 logger = logging.getLogger("utender.whatsapp")
@@ -132,12 +139,64 @@ def _insert_once(db: Session, parsed: ParsedEvent, now: datetime) -> WhatsAppMes
     return row
 
 
+TEMPLATE_FIELD = "message_template_status_update"
+
+
+def apply_template_updates(db: Session, body: dict[str, Any]) -> int:
+    """Record Meta's review state for each template named in the webhook. Idempotent: the same update twice leaves one row.
+
+    Returns how many template states were recorded.
+    """
+    count = 0
+    for entry in body.get("entry") or []:
+        for change in entry.get("changes") or []:
+            if change.get("field") != TEMPLATE_FIELD:
+                continue
+            value = change.get("value") or {}
+            name = str(value.get("message_template_name") or "")
+            language = str(value.get("message_template_language") or "")
+            event = str(value.get("event") or "")
+            if not name or not language or not event:
+                continue
+            row = db.scalar(
+                select(WhatsAppTemplateStatus).where(
+                    WhatsAppTemplateStatus.name == name, WhatsAppTemplateStatus.language == language
+                )
+            )
+            if row is None:
+                db.add(WhatsAppTemplateStatus(name=name, language=language, status=event))
+            else:
+                row.status = event
+            count += 1
+    if count:
+        db.commit()
+    return count
+
+
+def apply_delivery_failure(db: Session, parsed: ParsedEvent) -> bool:
+    """A message we accepted was later reported failed. Mark its outbox row failed and drop its credentials.
+
+    Only a row that was sent is changed. A row still pending is left for the dispatcher, and a row
+    already in a final state is not touched.
+    """
+    if not parsed.provider_message_id:
+        return False
+    row = db.scalar(select(WhatsAppOutbox).where(WhatsAppOutbox.provider_message_id == parsed.provider_message_id))
+    if row is None or row.status != OUTBOX_SENT:
+        return False
+    row.status = OUTBOX_FAILED
+    row.last_error_code = parsed.error_code or "delivery_failed"
+    _clear_secrets(row)
+    return True
+
+
 def record_events(db: Session, body: dict[str, Any], *, now: datetime) -> IntakeResult:
     """Store each event once and run inbound handlers for the new messages.
 
     Duplicate deliveries are detected by the unique event_key. Re-running the
     same webhook adds no rows and calls no handler a second time.
     """
+    apply_template_updates(db, body)
     result = IntakeResult()
     for parsed in parse_webhook(body):
         row = _insert_once(db, parsed, now)
@@ -162,6 +221,8 @@ def record_events(db: Session, body: dict[str, Any], *, now: datetime) -> Intake
         else:
             row.status = EVENT_STATUS_PROCESSED
             row.processed_at = now
+            if parsed.event_type == "status_failed":
+                apply_delivery_failure(db, parsed)
 
         result.new.append(row)
         logger.info(

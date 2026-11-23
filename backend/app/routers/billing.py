@@ -9,8 +9,9 @@ from app.config import get_settings
 from app.db import get_db
 from app.deps import get_contractor_profile, require_approved_contractor
 from app.models.contractor import ContractorProfile
-from app.models.enums import SubscriptionStatus
+from app.models.enums import NotificationType, SubscriptionStatus
 from app.models.user import User
+from app.services.notify import notify
 from app.services.stripe_service import map_stripe_status
 
 router = APIRouter(tags=["billing"])
@@ -63,6 +64,29 @@ def create_billing_portal_session(user: User = Depends(require_approved_contract
 
 # Webhooks arrive with no user session — authenticated by the signature
 # check below, not by auth cookies.
+ACTIVE_STATES = (SubscriptionStatus.active, SubscriptionStatus.trialing)
+FAILED_STATES = (SubscriptionStatus.past_due, SubscriptionStatus.failed)
+
+
+def _notify_payment_change(db: Session, cp: ContractorProfile, previous: SubscriptionStatus | None) -> None:
+    """Tell the contractor when their subscription becomes active or starts failing.
+
+    Only a change counts. Stripe repeats events, and a repeat of the current state must not notify again.
+    """
+    current = cp.subscription_status
+    activated = current in ACTIVE_STATES and previous not in ACTIVE_STATES
+    failed = current in FAILED_STATES and previous not in FAILED_STATES
+    if not (activated or failed):
+        return
+    user = db.get(User, cp.user_id)
+    if user is None:
+        return
+    if activated:
+        notify(db, user, NotificationType.payment_activated, link="/contractor/dashboard")
+    if failed:
+        notify(db, user, NotificationType.payment_failed, link="/contractor/subscribe")
+
+
 @router.post("/billing/webhook")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     body = await request.body()
@@ -86,11 +110,13 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                 subscription = stripe.Subscription.retrieve(data["subscription"])
                 cp = db.get(ContractorProfile, contractor_id)
                 if cp:
+                    previous_status = cp.subscription_status
                     cp.stripe_customer_id = data["customer"]
                     cp.stripe_subscription_id = subscription.id
                     cp.subscription_status = SubscriptionStatus(map_stripe_status(subscription.status))
                     cp.subscription_current_period_end = datetime.utcfromtimestamp(subscription.current_period_end)
                     db.commit()
+                    _notify_payment_change(db, cp, previous_status)
 
         # Covers plan changes, renewals, payment failures, and
         # cancellations — Stripe sends this on essentially every status
@@ -108,9 +134,11 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                     .first()
                 )
             if cp:
+                previous_status = cp.subscription_status
                 cp.subscription_status = SubscriptionStatus(map_stripe_status(data["status"]))
                 cp.subscription_current_period_end = datetime.utcfromtimestamp(data["current_period_end"])
                 db.commit()
+                _notify_payment_change(db, cp, previous_status)
         # Unhandled event types are expected — Stripe sends many more than
         # we act on. No-op is correct here.
     except Exception:

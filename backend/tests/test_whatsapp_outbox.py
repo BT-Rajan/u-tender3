@@ -16,6 +16,14 @@ from app.services.whatsapp_outbox import (
 )
 
 NOW = datetime(2026, 11, 23, 12, 0, 0)
+
+
+@pytest.fixture(autouse=True)
+def _no_template_gate(monkeypatch):
+    """These tests cover the retry and send mechanics. The approval gate has its own tests in test_whatsapp_notifications.py."""
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "whatsapp_require_approved_templates", False)
 RECIPIENT = "96512345678"
 
 
@@ -102,7 +110,7 @@ def test_a_rolled_back_enqueue_never_reaches_the_sender(db):
     stats = dispatch_due(db, sender, now=NOW, max_attempts=3)
 
     assert sender.calls == []
-    assert stats == {"sent": 0, "retry": 0, "failed": 0, "dead": 0}
+    assert stats == {"sent": 0, "retry": 0, "failed": 0, "dead": 0, "held": 0}
 
 
 def test_dispatch_sends_a_due_row_and_records_the_message_id(db):
@@ -223,7 +231,7 @@ def test_one_failing_row_does_not_stop_the_others(db):
     sender = FakeSender([_permanent(), "wamid.B", "wamid.C"])
     stats = dispatch_due(db, sender, now=NOW, max_attempts=3)
 
-    assert stats == {"sent": 2, "retry": 0, "failed": 1, "dead": 0}
+    assert stats == {"sent": 2, "retry": 0, "failed": 1, "dead": 0, "held": 0}
     assert _row(db, "b").status == OUTBOX_SENT
     assert _row(db, "c").status == OUTBOX_SENT
 

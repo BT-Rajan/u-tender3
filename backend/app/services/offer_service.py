@@ -19,6 +19,7 @@ from app.models.user import User
 from app.services.email import notify_owner_new_offer
 from app.services.notify import notify
 from app.services.tender_service import TenderError
+from app.services.whatsapp_notifications import amount_label
 
 
 def snapshot_revision(db: Session, offer: Offer) -> None:
@@ -63,6 +64,7 @@ def submit_offer(
         .with_for_update()
         .first()
     )
+    was_revision = offer is not None
     if offer:
         snapshot_revision(db, offer)
         offer.amount = amount
@@ -91,6 +93,9 @@ def submit_offer(
     owner = db.get(User, project.owner_id)
     if owner:
         notify_owner_new_offer(owner.email, project.title, project_id, profile.company_name, float(amount), sealed=sealed)
+        # A revision is its own event, so the owner can tell it from a first bid. Sealed tenders never name the bidder or show the amount.
+        # One in-app type for both, so repeat bids dedupe on the same unread notice. The WhatsApp wording
+        # is chosen from is_revision.
         notify(
             db,
             owner,
@@ -98,6 +103,8 @@ def submit_offer(
             link=f"/owner/projects/{project_id}",
             project_title=project.title,
             contractor_name="A contractor" if sealed else profile.company_name,
+            amount_label=amount_label(float(amount), sealed),
+            is_revision=was_revision,
         )
     return offer
 

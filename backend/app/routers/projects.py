@@ -20,6 +20,7 @@ from app.services import contractor_service, tender_service
 from app.services.drawings import upload_drawings_for_project
 from app.services.email import notify_contractor_tender_amended
 from app.services.notify import notify
+from app.services.whatsapp_notifications import fan_out_new_tender
 from app.services.storage import drawing_url_expiry_seconds, get_storage
 from app.services.tender_lifecycle import sync_expired_projects
 from app.services.tender_service import TenderError, TenderFields
@@ -84,6 +85,8 @@ async def create_project(
     db.add(project)
     db.commit()
     db.refresh(project)
+    if status_value == ProjectStatus.open:
+        fan_out_new_tender(db, project, now=datetime.utcnow(), notify=notify)
 
     real_files = [f for f in drawings if f.filename]
     if real_files:

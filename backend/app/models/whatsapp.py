@@ -120,3 +120,23 @@ class WhatsAppOutbox(Base):
     provider_message_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class WhatsAppTemplateStatus(Base):
+    """Meta's review state for one template in one language, as reported by the template-status webhook.
+
+    The outbox sends a template only when its row says APPROVED. A template with no row is held, so a
+    message can never go out ahead of Meta's review.
+    """
+
+    __tablename__ = "whatsapp_template_status"
+    __table_args__ = (UniqueConstraint("name", "language", name="uq_whatsapp_template_name_language"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    language: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)  # as Meta sends it: APPROVED, PENDING, REJECTED, ...
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+TEMPLATE_APPROVED = "APPROVED"

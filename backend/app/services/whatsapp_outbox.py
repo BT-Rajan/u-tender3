@@ -5,12 +5,15 @@ from typing import Any, Protocol
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.models.whatsapp import (
     OUTBOX_DEAD,
     OUTBOX_FAILED,
     OUTBOX_PENDING,
     OUTBOX_SENT,
+    TEMPLATE_APPROVED,
     WhatsAppOutbox,
+    WhatsAppTemplateStatus,
 )
 from app.services.whatsapp_client import WhatsAppSendError, mask_recipient
 
@@ -25,6 +28,7 @@ KINDS = (KIND_TEMPLATE, KIND_TEXT, KIND_FLOW, KIND_CTA_URL)
 # Params that are bearer credentials (a Flow session token or an upload link). They're removed once the row is finished.
 _SECRET_PARAMS = ("flow_token", "url")
 
+HOLD_SECONDS = 15 * 60  # how long a template waiting on Meta's review is parked before the next check
 BASE_BACKOFF_SECONDS = 30
 MAX_BACKOFF_SECONDS = 60 * 60
 DEFAULT_BATCH_SIZE = 50
@@ -104,6 +108,15 @@ def enqueue(
     return row
 
 
+def template_is_approved(db: Session, name: str, language: str) -> bool:
+    status = db.scalar(
+        select(WhatsAppTemplateStatus.status).where(
+            WhatsAppTemplateStatus.name == name, WhatsAppTemplateStatus.language == language
+        )
+    )
+    return status == TEMPLATE_APPROVED
+
+
 def _send_row(sender: MessageSender, row: WhatsAppOutbox) -> str:
     params = row.params_json or {}
     if row.kind == KIND_TEMPLATE:
@@ -175,8 +188,17 @@ def dispatch_due(
         .limit(batch_size)
     ).all()
 
-    stats = {"sent": 0, "retry": 0, "failed": 0, "dead": 0}
+    stats = {"sent": 0, "retry": 0, "failed": 0, "dead": 0, "held": 0}
+    require_approval = get_settings().whatsapp_require_approved_templates
     for row in due:
+        if row.kind == KIND_TEMPLATE and require_approval:
+            language = str((row.params_json or {}).get("language", "en"))
+            if not template_is_approved(db, row.template_name or "", language):
+                # Not counted as an attempt: Meta hasn't rejected anything, the template just isn't approved yet.
+                row.next_attempt_at = now + timedelta(seconds=HOLD_SECONDS)
+                db.commit()
+                stats["held"] += 1
+                continue
         row.attempts += 1
         try:
             message_id = _send_row(sender, row)

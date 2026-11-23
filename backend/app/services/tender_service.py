@@ -24,6 +24,7 @@ from app.models.user import User
 from app.services.audit import log_action
 from app.services.email import notify_contractor_tender_amended
 from app.services.notify import notify
+from app.services.whatsapp_notifications import fan_out_new_tender
 from app.services.tender_lifecycle import is_sealed_and_open, sync_expired_projects
 
 TITLE_MAX = 255
@@ -149,6 +150,7 @@ def publish(db: Session, owner: User, project: Project, now: datetime) -> Projec
     project.status = ProjectStatus.open
     db.commit()
     db.refresh(project)
+    fan_out_new_tender(db, project, now=now, notify=notify)
     return project
 
 

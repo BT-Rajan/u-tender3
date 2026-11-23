@@ -290,6 +290,9 @@ def reject_application(contractor_id: str, admin: User = Depends(require_admin),
         previous_value=previous,
         new_value=VerificationStatus.changes_requested.value,
     )
+    contractor_user = db.get(User, contractor_id)
+    if contractor_user:
+        notify(db, contractor_user, NotificationType.verification_rejected, link="/contractor/status")
     return cp
 
 
@@ -861,6 +864,8 @@ def reject_owner_application(owner_id: str, admin: User = Depends(require_admin)
         new_value=VerificationStatus.changes_requested.value,
     )
     user = db.get(User, owner_id)
+    if user:
+        notify(db, user, NotificationType.owner_verification_rejected, link="/owner/status")
     return OwnerProfileOut(**_owner_fields(op, user))
 
 

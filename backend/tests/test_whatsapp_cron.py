@@ -63,7 +63,7 @@ def test_outbox_cron_sends_due_rows_and_reports_the_counts(monkeypatch, client, 
     response = client.get(URL, headers={"Authorization": f"Bearer {CRON_SECRET}"})
 
     assert response.status_code == 200
-    assert response.json() == {"skipped": False, "sent": 1, "retry": 0, "failed": 0, "dead": 0}
+    assert response.json() == {"skipped": False, "sent": 1, "retry": 0, "failed": 0, "dead": 0, "held": 0}
     assert db.scalar(select(WhatsAppOutbox).where(WhatsAppOutbox.dedupe_key == "due")).status == OUTBOX_SENT
 
 
