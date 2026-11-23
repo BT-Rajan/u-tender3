@@ -13,8 +13,8 @@
 #      database (DB_NAME, default utender_app).
 #   3. Writes backend/.env with generated secrets (kept if it already exists).
 #   4. Creates the Python virtualenv, installs dependencies, runs migrations.
-#   5. Builds the frontend and installs two systemd services: the API
-#      (uvicorn) and the web app (static files via `serve`).
+#   5. Builds the frontend and runs both under pm2: "utender" (the API,
+#      uvicorn) and "utender-web" (the static build, via `serve`).
 #   6. Creates a demo dataset: 3 owners and 3 contractors, all approved and
 #      active, plus one open project per owner. Credentials are written to
 #      backend/demo-accounts.txt (readable by root only).
@@ -42,7 +42,6 @@ fail() { echo; echo -e "\033[31mERROR: $*\033[0m"; exit 1; }
 
 [ "$(id -u)" -eq 0 ] || fail "Run as root: sudo ./install.sh"
 command -v apt-get >/dev/null 2>&1 || fail "This installer needs a Debian/Ubuntu server (apt-get)."
-command -v systemctl >/dev/null 2>&1 || fail "This installer needs systemd."
 
 # ---------------------------------------------------------------- packages
 step "Installing system packages"
@@ -152,33 +151,23 @@ cd "$repo_root/backend"
 .venv/bin/alembic upgrade head
 ok "Dependencies installed, migrations applied."
 
-step "Backend service (systemd)"
-cat > /etc/systemd/system/utender-backend.service <<SERVICEEOF
-[Unit]
-Description=U-Tender API (FastAPI/uvicorn)
-After=network.target mariadb.service mysql.service
-
-[Service]
-Type=simple
-WorkingDirectory=${repo_root}/backend
-EnvironmentFile=${repo_root}/backend/.env
-ExecStart=${repo_root}/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port ${api_port}
-Restart=on-failure
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-SERVICEEOF
-systemctl daemon-reload
-systemctl enable --quiet utender-backend
-systemctl restart utender-backend
+step "Backend service (pm2, name: utender)"
+if ! command -v pm2 >/dev/null 2>&1; then
+    npm install -g --silent pm2
+fi
+pm2 delete utender >/dev/null 2>&1 || true
+(
+    cd "${repo_root}/backend"
+    pm2 start "${repo_root}/backend/.venv/bin/uvicorn" --name utender --interpreter none \
+        -- app.main:app --host 0.0.0.0 --port "${api_port}"
+)
 
 ready=false
 for _ in $(seq 1 40); do
     if curl -fsS --max-time 2 "http://127.0.0.1:${api_port}/docs" >/dev/null 2>&1; then ready=true; break; fi
     sleep 2
 done
-[ "$ready" = true ] || fail "The API did not start. Check: journalctl -u utender-backend -n 80 --no-pager"
+[ "$ready" = true ] || fail "The API did not start. Check: pm2 logs utender --lines 80"
 ok "API is up on port ${api_port}."
 
 # ---------------------------------------------------------------- demo data
@@ -226,24 +215,12 @@ if ! command -v serve >/dev/null 2>&1; then
 fi
 serve_bin="$(command -v serve)"
 
-cat > /etc/systemd/system/utender-frontend.service <<SERVICEEOF
-[Unit]
-Description=U-Tender web app (static build)
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=${repo_root}/frontend
-ExecStart=${serve_bin} -s dist -l ${http_port}
-Restart=on-failure
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-SERVICEEOF
-systemctl daemon-reload
-systemctl enable --quiet utender-frontend
-systemctl restart utender-frontend
+pm2 delete utender-web >/dev/null 2>&1 || true
+pm2 start "${serve_bin}" --name utender-web --interpreter none \
+    --cwd "${repo_root}/frontend" -- -s dist -l "${http_port}"
+pm2 save >/dev/null
+# Start both apps again after a reboot.
+pm2 startup systemd -u root --hp /root >/dev/null 2>&1 || warn "Could not register pm2 at boot; run: pm2 startup"
 ok "Web app is running on port ${http_port}."
 
 echo
@@ -253,7 +230,8 @@ echo "  API:     http://${public_ip}:${api_port}/docs"
 echo "  Demo logins and the admin password: ${repo_root}/backend/demo-accounts.txt"
 echo
 echo "Useful commands:"
-echo "  journalctl -u utender-backend -f     # API logs"
-echo "  systemctl restart utender-backend    # restart API"
-echo "  systemctl restart utender-frontend   # restart web app"
+echo "  pm2 status                           # show utender and utender-web"
+echo "  pm2 logs utender                     # API logs"
+echo "  pm2 restart utender                  # restart API"
+echo "  pm2 restart utender-web              # restart web app"
 echo "  sudo ./install.sh                    # re-run after git pull to rebuild and restart"
