@@ -260,7 +260,7 @@ def test_unhandled_data_exchange_gets_an_encrypted_fallback_with_the_screen(monk
 def test_a_registered_flow_handler_supplies_the_reply(monkeypatch, client):
     _, public_pem = enable_whatsapp(monkeypatch)
     register_flow_handler(
-        lambda payload: {"screen": "NEXT", "data": {"from": payload["screen"]}} if payload.get("action") == "data_exchange" else None
+        lambda db, payload: {"screen": "NEXT", "data": {"from": payload["screen"]}} if payload.get("action") == "data_exchange" else None
     )
     body, aes_key, iv = encode_request({"action": "data_exchange", "screen": "START", "data": {}}, public_pem)
 
@@ -271,7 +271,7 @@ def test_a_registered_flow_handler_supplies_the_reply(monkeypatch, client):
 
 def test_flow_handlers_are_not_consulted_for_ping(monkeypatch, client):
     _, public_pem = enable_whatsapp(monkeypatch)
-    register_flow_handler(lambda payload: {"data": {"status": "wrong"}})
+    register_flow_handler(lambda db, payload: {"data": {"status": "wrong"}})
     body, aes_key, iv = encode_request({"action": "ping"}, public_pem)
 
     assert decode_response(_flow_post(client, body).text, aes_key, iv) == {"data": {"status": "active"}}

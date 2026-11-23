@@ -15,8 +15,12 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Nullable since Phase 2: WhatsApp-only accounts have neither an email nor a
+    # password. Web accounts always have both, enforced at signup. A NULL
+    # password_hash means password login is unavailable, never a blank password.
+    # MySQL's UNIQUE index allows many NULL emails.
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole, native_enum=True), nullable=False, default=UserRole.owner)
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)

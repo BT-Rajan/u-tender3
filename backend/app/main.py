@@ -17,9 +17,11 @@ from app.routers.owner import router as owner_router
 from app.routers.projects import router as projects_router
 from app.routers.public import router as public_router
 from app.routers.whatsapp import router as whatsapp_router
+from app.services.whatsapp_routing import install_whatsapp_handlers
 
 settings = get_settings()
 validate_runtime_settings(settings)
+install_whatsapp_handlers()
 
 app = FastAPI(title="U-Tender API")
 

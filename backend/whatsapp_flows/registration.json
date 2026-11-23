@@ -1,0 +1,245 @@
+{
+  "version": "7.0",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "ROLE": ["OWNER_DETAILS", "CONTRACTOR_DETAILS"],
+    "OWNER_DETAILS": ["SUCCESS", "NOT_COMPLETED", "OWNER_DETAILS"],
+    "CONTRACTOR_DETAILS": ["SUCCESS", "NOT_COMPLETED", "CONTRACTOR_DETAILS"]
+  },
+  "screens": [
+    {
+      "id": "ROLE",
+      "title": "Create your account",
+      "terminal": false,
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "Choose how you will use U-Tender. Your role can't be changed later without support."
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "I am a",
+            "name": "role",
+            "required": true,
+            "data-source": [
+              { "id": "owner", "title": "Building owner" },
+              { "id": "contractor", "title": "Contractor" }
+            ]
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Preferred language",
+            "name": "language",
+            "required": true,
+            "data-source": [
+              { "id": "en", "title": "English" },
+              { "id": "ar", "title": "العربية" }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Continue",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "role": "${form.role}",
+                "language": "${form.language}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "OWNER_DETAILS",
+      "title": "Your details",
+      "terminal": false,
+      "data": {
+        "full_name": { "type": "string", "__example__": "Layla Al-Sabah" },
+        "error_message": { "type": "string", "__example__": "Enter your full name." }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Full name",
+            "name": "full_name",
+            "input-type": "text",
+            "required": true,
+            "min-chars": 2,
+            "max-chars": 120,
+            "init-value": "${data.full_name}"
+          },
+          {
+            "type": "Footer",
+            "label": "Create account",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "full_name": "${form.full_name}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CONTRACTOR_DETAILS",
+      "title": "Your company",
+      "terminal": false,
+      "data": {
+        "contact_name": { "type": "string", "__example__": "Omar Haddad" },
+        "company_name": { "type": "string", "__example__": "Haddad Builders" },
+        "primary_trade": { "type": "string", "__example__": "Electrical" },
+        "error_message": { "type": "string", "__example__": "Check the highlighted fields." }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Contact name",
+            "name": "contact_name",
+            "input-type": "text",
+            "required": true,
+            "min-chars": 2,
+            "max-chars": 120,
+            "init-value": "${data.contact_name}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Company name",
+            "name": "company_name",
+            "input-type": "text",
+            "required": true,
+            "min-chars": 2,
+            "max-chars": 255,
+            "init-value": "${data.company_name}"
+          },
+          {
+            "type": "Dropdown",
+            "label": "Primary trade",
+            "name": "primary_trade",
+            "required": true,
+            "init-value": "${data.primary_trade}",
+            "data-source": [
+              { "id": "General contracting", "title": "General contracting" },
+              { "id": "Electrical", "title": "Electrical" },
+              { "id": "Plumbing", "title": "Plumbing" },
+              { "id": "HVAC", "title": "HVAC" },
+              { "id": "Civil works", "title": "Civil works" },
+              { "id": "Finishing", "title": "Finishing" },
+              { "id": "Fire safety", "title": "Fire safety" },
+              { "id": "Landscaping", "title": "Landscaping" },
+              { "id": "Other", "title": "Other" }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Create account",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "contact_name": "${form.contact_name}",
+                "company_name": "${form.company_name}",
+                "primary_trade": "${form.primary_trade}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "All set",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "message": { "type": "string", "__example__": "Your account is ready." }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "Footer",
+            "label": "Done",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "status": "registered"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "NOT_COMPLETED",
+      "title": "Account not created",
+      "terminal": true,
+      "success": false,
+      "data": {
+        "message": { "type": "string", "__example__": "This number is already linked to an account." }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "Footer",
+            "label": "Close",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "status": "not_completed"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "EXPIRED",
+      "title": "Form expired",
+      "terminal": true,
+      "success": false,
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "This form has expired. Send any message to U-Tender to start again."
+          },
+          {
+            "type": "Footer",
+            "label": "Close",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "status": "expired"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -121,7 +121,10 @@ def signup(payload: SignupRequest, response: Response, db: Session = Depends(get
 def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
     email = payload.email.strip().lower()
     user = db.query(User).filter(User.email == email).first()
-    if not user or not verify_password(payload.password, user.password_hash):
+    # A WhatsApp-only account has no password_hash. It gets the same generic
+    # 401 as a wrong password, so this endpoint can't be used to tell apart
+    # account types.
+    if not user or not user.password_hash or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
 
     _set_auth_cookies(response, user.id)
@@ -214,7 +217,7 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
 def change_password(
     payload: ChangePasswordRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
-    if not verify_password(payload.current_password, user.password_hash):
+    if not user.password_hash or not verify_password(payload.current_password, user.password_hash):
         raise HTTPException(status_code=400, detail="Current password is incorrect.")
     user.password_hash = hash_password(payload.new_password)
     db.commit()

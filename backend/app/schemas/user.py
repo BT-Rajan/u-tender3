@@ -9,7 +9,7 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    email: str
+    email: str | None  # None for WhatsApp-only accounts
     role: UserRole
     full_name: str | None
     phone: str | None

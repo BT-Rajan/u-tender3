@@ -32,8 +32,10 @@ class WhatsAppIdentity(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     wa_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     phone_e164: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    # Unique: one WhatsApp number maps to one user, and one user has one number.
+    # This is the database-level guard behind "prevent duplicate accounts".
     user_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, unique=True, index=True
     )
     role: Mapped[str | None] = mapped_column(String(16), nullable=True)  # "owner" | "contractor" once chosen
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

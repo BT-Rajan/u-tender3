@@ -53,6 +53,9 @@ def enable_whatsapp(monkeypatch, **overrides: Any) -> tuple[str, str]:
         "whatsapp_flow_private_key": private_pem,
         "cron_secret": CRON_SECRET,
         "whatsapp_outbox_max_attempts": 3,
+        "whatsapp_flow_id_registration": "flow-registration",
+        "whatsapp_flow_id_owner_dashboard": "flow-owner",
+        "whatsapp_flow_id_contractor_dashboard": "flow-contractor",
     }
     values.update(overrides)
     settings = get_settings()
@@ -102,3 +105,49 @@ def decode_response(encrypted_text: str, aes_key: bytes, iv: bytes) -> dict[str,
     flipped = bytes(byte ^ 0xFF for byte in iv)
     plaintext = AESGCM(aes_key).decrypt(flipped, base64.b64decode(encrypted_text), None)
     return json.loads(plaintext)
+
+
+class RecordingSender:
+    """Stands in for the Cloud API client. Records every message instead of sending it."""
+
+    def __init__(self) -> None:
+        self.sent: list[dict[str, Any]] = []
+
+    def send_text(self, to_wa_id: str, body: str) -> str:
+        self.sent.append({"kind": "text", "to": to_wa_id, "body": body})
+        return f"wamid.TEXT{len(self.sent)}"
+
+    def send_template(self, to_wa_id: str, template_name: str, language_code: str, components=None) -> str:
+        self.sent.append({"kind": "template", "to": to_wa_id, "template": template_name})
+        return f"wamid.TPL{len(self.sent)}"
+
+    def send_flow(self, to_wa_id: str, *, flow_id: str, flow_token: str, screen: str, body: str, cta: str, header=None) -> str:
+        self.sent.append(
+            {"kind": "flow", "to": to_wa_id, "flow_id": flow_id, "flow_token": flow_token, "screen": screen, "body": body, "cta": cta}
+        )
+        return f"wamid.FLOW{len(self.sent)}"
+
+    def close(self) -> None:
+        pass
+
+    def flows(self) -> list[dict[str, Any]]:
+        return [message for message in self.sent if message["kind"] == "flow"]
+
+
+def flow_request(client, public_pem: str, *, token: str, action: str, screen: str | None = None, data: dict | None = None):
+    """Send one encrypted Flow request as Meta would and return (decoded_reply, status_code)."""
+    payload: dict[str, Any] = {"version": "3.0", "action": action, "flow_token": token}
+    if screen is not None:
+        payload["screen"] = screen
+    if data is not None:
+        payload["data"] = data
+    body, aes_key, iv = encode_request(payload, public_pem)
+    raw = json.dumps(body).encode()
+    response = client.post(
+        "/whatsapp/flows",
+        content=raw,
+        headers={"Content-Type": "application/json", "X-Hub-Signature-256": sign(raw)},
+    )
+    if response.status_code != 200:
+        return None, response.status_code
+    return decode_response(response.text, aes_key, iv), response.status_code

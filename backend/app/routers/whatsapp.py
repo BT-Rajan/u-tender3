@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse, Response
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.config import get_settings
 from app.db import get_db
@@ -17,7 +18,9 @@ from app.services.flow_crypto import (
     encrypt_response,
     load_private_key,
 )
+from app.services.whatsapp_client import WhatsAppCloudClient, WhatsAppSendError
 from app.services.whatsapp_events import record_events
+from app.services.whatsapp_outbox import dispatch_due
 from app.services.whatsapp_signature import verify_signature
 
 router = APIRouter(tags=["whatsapp"])
@@ -30,9 +33,9 @@ FLOW_BAD_SIGNATURE_STATUS = 432
 FLOW_CANNOT_DECRYPT_STATUS = 421
 
 # Flow handlers answer the actions that carry real screen logic (INIT, BACK,
-# data_exchange). Phase 2 registers the registration and dashboard handlers
-# here. A handler returns a reply dict, or None to pass to the next one.
-FlowHandler = Callable[[dict[str, Any]], dict[str, Any] | None]
+# data_exchange). A handler gets the DB session and the decrypted payload, and
+# returns a reply dict, or None to pass to the next one.
+FlowHandler = Callable[[Session, dict[str, Any]], dict[str, Any] | None]
 _flow_handlers: list[FlowHandler] = []
 
 
@@ -88,10 +91,36 @@ async def receive_webhook(request: Request, db: Session = Depends(get_db)) -> di
         raise HTTPException(status_code=400, detail="Malformed payload")
 
     record_events(db, body, now=datetime.utcnow())
+    # Send what the inbound handlers just queued now, not on the next cron tick.
+    # The send is blocking I/O, so it runs in a threadpool. A failure is logged
+    # and left in the outbox, where the cron retries it.
+    await run_in_threadpool(dispatch_outbox_now, db)
     return {"received": True}
 
 
-def _flow_reply(payload: dict[str, Any]) -> dict[str, Any]:
+def dispatch_outbox_now(db: Session) -> None:
+    settings = get_settings()
+    if not settings.whatsapp_enabled:
+        return
+    try:
+        sender = build_whatsapp_sender()
+    except WhatsAppSendError:
+        logger.error("WhatsApp outbox not dispatched: the sender is not configured")
+        return
+    try:
+        dispatch_due(db, sender, now=datetime.utcnow(), max_attempts=settings.whatsapp_outbox_max_attempts)
+    except Exception:  # noqa: BLE001 - the webhook must still acknowledge Meta
+        logger.exception("WhatsApp outbox dispatch failed; the cron will retry")
+    finally:
+        sender.close()
+
+
+def build_whatsapp_sender() -> WhatsAppCloudClient:
+    """Indirection so tests can substitute a sender without touching the network."""
+    return WhatsAppCloudClient.from_settings(get_settings())
+
+
+def _flow_reply(db: Session, payload: dict[str, Any]) -> dict[str, Any]:
     action = payload.get("action")
 
     if action == "ping":
@@ -100,7 +129,7 @@ def _flow_reply(payload: dict[str, Any]) -> dict[str, Any]:
         return {"data": {"acknowledged": True}}
 
     for handler in list(_flow_handlers):
-        handled = handler(payload)
+        handled = handler(db, payload)
         if handled is not None:
             return handled
 
@@ -112,7 +141,7 @@ def _flow_reply(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 @router.post("/whatsapp/flows")
-async def flow_data_endpoint(request: Request) -> Response:
+async def flow_data_endpoint(request: Request, db: Session = Depends(get_db)) -> Response:
     """The data endpoint every Flow calls. Requests are signed, then encrypted for U-Tender's Flow key."""
     _whatsapp_enabled_or_404()
     settings = get_settings()
@@ -134,6 +163,6 @@ async def flow_data_endpoint(request: Request) -> Response:
     except (FlowCryptoError, ValueError):
         return PlainTextResponse("Cannot decrypt", status_code=FLOW_CANNOT_DECRYPT_STATUS)
 
-    reply = _flow_reply(decrypted.payload)
+    reply = _flow_reply(db, decrypted.payload)
     encrypted = encrypt_response(reply, decrypted.aes_key, decrypted.iv)
     return Response(content=encrypted, media_type="text/plain")

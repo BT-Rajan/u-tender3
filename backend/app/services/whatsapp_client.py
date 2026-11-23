@@ -87,6 +87,43 @@ class WhatsAppCloudClient:
             template["components"] = components
         return self._send(to_wa_id, {"type": "template", "template": template})
 
+    def send_flow(
+        self,
+        to_wa_id: str,
+        *,
+        flow_id: str,
+        flow_token: str,
+        screen: str,
+        body: str,
+        cta: str,
+        header: str | None = None,
+    ) -> str:
+        """Send an interactive Flow message that opens on `screen`.
+
+        The flow_token is what ties later data-endpoint requests back to a
+        U-Tender session, since Meta doesn't send the sender's number with them.
+        Flow messages are only allowed inside the 24-hour window, which a
+        customer opens by messaging us first.
+        """
+        interactive: dict[str, Any] = {
+            "type": "flow",
+            "body": {"text": body},
+            "action": {
+                "name": "flow",
+                "parameters": {
+                    "flow_message_version": "3",
+                    "flow_token": flow_token,
+                    "flow_id": flow_id,
+                    "flow_cta": cta,
+                    "flow_action": "navigate",
+                    "flow_action_payload": {"screen": screen},
+                },
+            },
+        }
+        if header:
+            interactive["header"] = {"type": "text", "text": header}
+        return self._send(to_wa_id, {"type": "interactive", "interactive": interactive})
+
     def _send(self, to_wa_id: str, body: dict[str, Any]) -> str:
         payload = {"messaging_product": "whatsapp", "recipient_type": "individual", "to": to_wa_id, **body}
         try:

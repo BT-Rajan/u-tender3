@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     whatsapp_flow_private_key: str | None = None  # PEM, RSA >= 2048 bits; never leaves U-Tender
     whatsapp_outbox_max_attempts: int = 8
     whatsapp_message_retention_days: int = 30
+    # Flow IDs issued by Meta when Cogzi publishes the Flows in
+    # backend/whatsapp_flows/. Until these are set, the bot falls back to text.
+    whatsapp_flow_id_registration: str | None = None
+    whatsapp_flow_id_owner_dashboard: str | None = None
+    whatsapp_flow_id_contractor_dashboard: str | None = None
 
 
 DEFAULT_SECRET_VALUES = ("change-me-in-production",)

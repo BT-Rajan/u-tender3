@@ -18,6 +18,8 @@ logger = logging.getLogger("utender.whatsapp")
 
 KIND_TEMPLATE = "template"
 KIND_TEXT = "text"
+KIND_FLOW = "flow"
+KINDS = (KIND_TEMPLATE, KIND_TEXT, KIND_FLOW)
 
 BASE_BACKOFF_SECONDS = 30
 MAX_BACKOFF_SECONDS = 60 * 60
@@ -33,6 +35,18 @@ class MessageSender(Protocol):
         template_name: str,
         language_code: str,
         components: list[dict[str, Any]] | None = None,
+    ) -> str: ...
+
+    def send_flow(
+        self,
+        to_wa_id: str,
+        *,
+        flow_id: str,
+        flow_token: str,
+        screen: str,
+        body: str,
+        cta: str,
+        header: str | None = None,
     ) -> str: ...
 
 
@@ -56,10 +70,12 @@ def enqueue(
     The caller commits. Nothing is sent until the dispatcher runs after that
     commit, so a rolled-back business change never produces a message.
     """
-    if kind not in (KIND_TEMPLATE, KIND_TEXT):
+    if kind not in KINDS:
         raise ValueError(f"Unknown outbox kind: {kind}")
     if kind == KIND_TEMPLATE and not template_name:
         raise ValueError("A template message needs a template_name.")
+    if kind == KIND_FLOW and not (params and params.get("flow_id") and params.get("flow_token")):
+        raise ValueError("A flow message needs a flow_id and flow_token.")
 
     existing = db.scalar(select(WhatsAppOutbox).where(WhatsAppOutbox.dedupe_key == dedupe_key))
     if existing is not None:
@@ -89,7 +105,23 @@ def _send_row(sender: MessageSender, row: WhatsAppOutbox) -> str:
             params.get("language", "en"),
             params.get("components"),
         )
+    if row.kind == KIND_FLOW:
+        return sender.send_flow(
+            row.recipient_wa_id,
+            flow_id=str(params.get("flow_id", "")),
+            flow_token=str(params.get("flow_token", "")),
+            screen=str(params.get("screen", "")),
+            body=str(params.get("body", "")),
+            cta=str(params.get("cta", "Open")),
+            header=params.get("header"),
+        )
     return sender.send_text(row.recipient_wa_id, str(params.get("body", "")))
+
+
+def _clear_secrets(row: WhatsAppOutbox) -> None:
+    """Drop the stored Flow token once the row is finished. It's a bearer credential, so it isn't kept after the send."""
+    if row.params_json and "flow_token" in row.params_json:
+        row.params_json = {key: value for key, value in row.params_json.items() if key != "flow_token"}
 
 
 def dispatch_due(
@@ -133,6 +165,8 @@ def dispatch_due(
                 row.status = OUTBOX_FAILED
                 stats["failed"] += 1
                 logger.warning("WhatsApp outbox row %s failed permanently (%s)", row.id, row.last_error_code)
+            if row.status != OUTBOX_PENDING:
+                _clear_secrets(row)
             db.commit()
             continue
 
@@ -140,6 +174,7 @@ def dispatch_due(
         row.provider_message_id = message_id
         row.sent_at = now
         row.last_error_code = None
+        _clear_secrets(row)
         db.commit()
         stats["sent"] += 1
         logger.info("WhatsApp outbox row %s sent to %s", row.id, mask_recipient(row.recipient_wa_id))

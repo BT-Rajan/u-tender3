@@ -9,7 +9,12 @@ logger = logging.getLogger("email")
 # Every send is wrapped so a Resend/network failure never breaks the
 # calling flow (a bid still gets submitted even if the notification email
 # fails) — it's logged instead. Ported from src/lib/email.ts.
-def _send(to: str, subject: str, html: str) -> None:
+def _send(to: str | None, subject: str, html: str) -> None:
+    # WhatsApp-only accounts have no email address. Their notifications go
+    # through the WhatsApp outbox instead, so a missing address is skipped
+    # silently rather than sent to "None".
+    if not to:
+        return
     if not settings.resend_api_key:
         logger.warning("RESEND_API_KEY not set — skipping email to %s: %s", to, subject)
         return

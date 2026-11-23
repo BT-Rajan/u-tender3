@@ -11,7 +11,7 @@ from app.models.enums import UserRole
 # the contractor already has a row for, so re-running this (e.g. a retry)
 # never duplicates one — mirrors ensureDocumentRows in the original
 # src/app/contractor/verify/actions.ts.
-def ensure_document_rows(db: Session, contractor_id: str) -> None:
+def ensure_document_rows(db: Session, contractor_id: str, *, commit: bool = True) -> None:
     requirement_ids = set(
         db.scalars(
             select(DocumentRequirement.id).where(
@@ -31,13 +31,14 @@ def ensure_document_rows(db: Session, contractor_id: str) -> None:
     missing_ids = requirement_ids - existing_ids
     for requirement_id in missing_ids:
         db.add(ContractorDocument(contractor_id=contractor_id, requirement_id=requirement_id))
-    db.commit()
+    if commit:
+        db.commit()
 
 
 # Same idea as ensure_document_rows, for the owner-side checklist
 # (civil ID, land ownership proof, or whatever else an admin adds under
 # Admin -> Document requirements scoped to "owner").
-def ensure_owner_document_rows(db: Session, owner_id: str) -> None:
+def ensure_owner_document_rows(db: Session, owner_id: str, *, commit: bool = True) -> None:
     requirement_ids = set(
         db.scalars(
             select(DocumentRequirement.id).where(
@@ -55,4 +56,5 @@ def ensure_owner_document_rows(db: Session, owner_id: str) -> None:
     missing_ids = requirement_ids - existing_ids
     for requirement_id in missing_ids:
         db.add(OwnerDocument(owner_id=owner_id, requirement_id=requirement_id))
-    db.commit()
+    if commit:
+        db.commit()
