@@ -1,0 +1,10 @@
+# Secrets are supplied at runtime via env_file in docker-compose.yml,
+# never baked into the image.
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+storage/
+demo-accounts.txt

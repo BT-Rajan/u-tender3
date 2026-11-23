@@ -1,4 +1,7 @@
+import typing
 from functools import lru_cache
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -88,6 +91,18 @@ class Settings(BaseSettings):
     # one-time code sent in a separate WhatsApp message.
     upload_link_ttl_minutes: int = 20
     upload_link_max_wrong_codes: int = 5
+
+    # An env line left blank (e.g. "S3_ENDPOINT_URL=" copied from .env.example)
+    # must mean "not set". Otherwise an optional value arrives as "" and
+    # libraries such as boto3 try to use it and fail.
+    @field_validator("*", mode="before")
+    @classmethod
+    def _blank_optional_is_unset(cls, value, info):
+        if isinstance(value, str) and not value.strip():
+            field = cls.model_fields.get(info.field_name)
+            if field is not None and type(None) in typing.get_args(field.annotation):
+                return None
+        return value
 
 
 DEFAULT_SECRET_VALUES = ("change-me-in-production",)

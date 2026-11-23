@@ -5,6 +5,7 @@ import { apiFetch } from "@/api/client";
 import type { AdminOffer } from "@/api/types";
 import { QueryError } from "@/components/QueryError";
 import { useI18n } from "@/i18n/I18nContext";
+import { formatDate } from "@/lib/format";
 
 const STATUS_BADGE: Record<string, string> = {
   submitted: "bg-blue-tint text-blue",
@@ -40,7 +41,7 @@ function groupByProject(offers: AdminOffer[]): ProjectGroup[] {
 }
 
 export function AdminOffersPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const {
     data: offers,
@@ -140,7 +141,7 @@ export function AdminOffersPage() {
                                 )}
                               </div>
                             </td>
-                            <td className="py-2.5 px-2.5 font-mono text-[11px] text-steel-light">{new Date(o.created_at).toLocaleDateString()}</td>
+                            <td className="py-2.5 px-2.5 font-mono text-[11px] text-steel-light">{formatDate(o.created_at, language)}</td>
                           </tr>
                         ))}
                       </tbody>

@@ -4,6 +4,8 @@ import { apiFetch, ApiError } from "@/api/client";
 import type { ContractorProfile, DocumentStatus } from "@/api/types";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { QueryError } from "@/components/QueryError";
+import { formatDate, type DisplayLanguage } from "@/lib/format";
+import { useI18n } from "@/i18n/I18nContext";
 
 interface QueueDocument {
   id: string;
@@ -23,12 +25,12 @@ function isStale(d: QueueDocument): boolean {
   return new Date(d.requirement_effective_from) > new Date(d.submitted_at);
 }
 
-function expiryLabel(d: QueueDocument): { text: string; tone: "expired" | "soon" | "ok" } | null {
+function expiryLabel(d: QueueDocument, language: DisplayLanguage): { text: string; tone: "expired" | "soon" | "ok" } | null {
   if (d.status !== "approved" || !d.expires_on) return null;
   const days = Math.floor((new Date(d.expires_on).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (days < 0) return { text: "Expired", tone: "expired" };
   if (days <= 30) return { text: `Expires in ${days}d`, tone: "soon" };
-  return { text: `Expires ${new Date(d.expires_on).toLocaleDateString()}`, tone: "ok" };
+  return { text: `Expires ${formatDate(d.expires_on, language)}`, tone: "ok" };
 }
 
 interface QueueEntry {
@@ -50,6 +52,7 @@ function statusBadge(status: string) {
 }
 
 export function AdminReviewPage() {
+  const { language } = useI18n();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +131,7 @@ export function AdminReviewPage() {
                 <div className="font-display font-semibold text-sm">{entry.contractor.company_name}</div>
                 <div className="font-mono text-[10.5px] text-steel mt-1">
                   {entry.contractor.primary_trade || "Trade not set"} · Submitted{" "}
-                  {new Date(entry.contractor.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  {formatDate(entry.contractor.created_at, language)}
                 </div>
               </button>
             ))}
@@ -169,13 +172,13 @@ export function AdminReviewPage() {
                           ⚠ requirement changed since this was approved — consider re-review
                         </div>
                       )}
-                      {expiryLabel(d) && (
+                      {expiryLabel(d, language) && (
                         <div
                           className={`font-mono text-[10px] mt-1 ${
-                            expiryLabel(d)!.tone === "expired" ? "text-red" : expiryLabel(d)!.tone === "soon" ? "text-amber-dark" : "text-steel-light"
+                            expiryLabel(d, language)!.tone === "expired" ? "text-red" : expiryLabel(d, language)!.tone === "soon" ? "text-amber-dark" : "text-steel-light"
                           }`}
                         >
-                          {expiryLabel(d)!.text}
+                          {expiryLabel(d, language)!.text}
                         </div>
                       )}
                     </div>
@@ -190,19 +193,21 @@ export function AdminReviewPage() {
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
+                            disabled={decisionMutation.isPending}
                             onClick={() =>
                               decisionMutation.mutate({ contractorId: selected.contractor.user_id, requirementId: d.requirement_id, decision: "approved" })
                             }
-                            className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded px-3 py-1.5"
+                            className="border border-navy text-navy hover:bg-navy hover:text-white disabled:opacity-50 text-xs font-semibold rounded px-3 py-1.5"
                           >
                             Approve
                           </button>
                           <button
                             type="button"
+                            disabled={decisionMutation.isPending}
                             onClick={() =>
                               decisionMutation.mutate({ contractorId: selected.contractor.user_id, requirementId: d.requirement_id, decision: "rejected" })
                             }
-                            className="bg-red-tint text-red text-xs font-semibold rounded px-3 py-1.5"
+                            className="bg-red-tint text-red disabled:opacity-50 text-xs font-semibold rounded px-3 py-1.5"
                           >
                             Reject
                           </button>
@@ -220,7 +225,7 @@ export function AdminReviewPage() {
                 <button
                   type="button"
                   onClick={() => approveMutation.mutate(selected.contractor.user_id)}
-                  disabled={!readyToApprove}
+                  disabled={!readyToApprove || approveMutation.isPending || rejectMutation.isPending}
                   className="bg-navy hover:bg-navy-deep disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded px-4 py-2"
                 >
                   Approve contractor
@@ -228,13 +233,14 @@ export function AdminReviewPage() {
                 <button
                   type="button"
                   onClick={() => rejectMutation.mutate(selected.contractor.user_id)}
-                  className="bg-red-tint text-red text-sm font-semibold rounded px-4 py-2"
+                  disabled={approveMutation.isPending || rejectMutation.isPending}
+                  className="bg-red-tint text-red disabled:opacity-50 text-sm font-semibold rounded px-4 py-2"
                 >
                   Reject application
                 </button>
               </div>
               {!readyToApprove && (
-                <p className="text-[11px] text-steel-light -mt-2 pb-4">
+                <p className="text-[11px] text-steel-light pt-2 pb-4">
                   All required documents must be approved before this contractor can be approved.
                 </p>
               )}

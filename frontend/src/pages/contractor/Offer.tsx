@@ -16,7 +16,7 @@ interface AwardRecord {
 }
 
 function AwardOutcome({ projectId }: { projectId: string }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { data: award } = useQuery({
     queryKey: ["award", projectId],
     queryFn: () => apiFetch<AwardRecord>(`/projects/${projectId}/award`),
@@ -33,7 +33,7 @@ function AwardOutcome({ projectId }: { projectId: string }) {
 }
 
 export function ContractorOfferPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -120,11 +120,11 @@ export function ContractorOfferPage() {
         <div>
           <div className="font-display font-semibold text-base">{project.title}</div>
           <div className="font-mono text-[11.5px] text-white/70 mt-0.5">
-            {project.address} · {t("contractor.offer.deadlineLabel")} {formatDeadline(project.bid_deadline)}
+            {project.address} · {t("contractor.offer.deadlineLabel")} {formatDeadline(project.bid_deadline, language)}
           </div>
         </div>
         <span className="font-mono text-[10px] uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/15">
-          {biddingClosed ? t("contractor.offer.closed") : timeRemaining(project.bid_deadline)}
+          {biddingClosed ? t("contractor.offer.closed") : timeRemaining(project.bid_deadline, language)}
         </span>
       </div>
 

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
+import { formatDateTime } from "@/lib/format";
+import { useI18n } from "@/i18n/I18nContext";
 
 interface NotificationItem {
   id: string;
@@ -14,6 +16,7 @@ interface NotificationItem {
 }
 
 export function NotificationBell() {
+  const { language } = useI18n();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -97,7 +100,7 @@ export function NotificationBell() {
                       <div className="font-display font-semibold text-[12.5px] text-navy">{n.title}</div>
                       <div className="text-[11.5px] text-steel mt-0.5">{n.body}</div>
                       <div className="font-mono text-[9.5px] text-steel-light mt-1">
-                        {new Date(n.created_at).toLocaleString()}
+                        {formatDateTime(n.created_at, language)}
                       </div>
                     </button>
                   </li>

@@ -3,10 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError } from "@/api/client";
 import type { AuditLogEntry, ContractorProfile, PaymentOverrideRecord } from "@/api/types";
-import { stars } from "@/lib/format";
+import { formatDate, formatDateTime, stars } from "@/lib/format";
 import { DeleteContractorForm } from "@/components/DeleteContractorForm";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { PageLoading } from "@/components/PageLoading";
+import { useI18n } from "@/i18n/I18nContext";
 
 const STATUS_OPTIONS = ["incomplete", "pending_review", "changes_requested", "approved"] as const;
 
@@ -31,6 +32,7 @@ const MARKETPLACE_STATUS_BADGE: Record<string, string> = {
 };
 
 function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: string; contractor: ContractorProfile }) {
+  const { language } = useI18n();
   const queryClient = useQueryClient();
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +83,7 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
       <p className="text-[11.5px] text-steel-light mb-3">
         Subscription: {contractor.subscription_status || "none"}
         {contractor.subscription_current_period_end &&
-          ` · renews ${new Date(contractor.subscription_current_period_end).toLocaleDateString()}`}
+          ` · renews ${formatDate(contractor.subscription_current_period_end, language)}`}
       </p>
 
       <ErrorBanner message={error} />
@@ -122,10 +124,10 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
           <ul className="space-y-2">
             {overrides.map((o) => (
               <li key={o.id} className="text-[11.5px] text-steel">
-                <span className="font-mono text-[10px] text-steel-light">{new Date(o.created_at).toLocaleString()}</span>
+                <span className="font-mono text-[10px] text-steel-light">{formatDateTime(o.created_at, language)}</span>
                 {" — "}
                 {o.reason}
-                {o.revoked_at && <span className="text-red"> (revoked {new Date(o.revoked_at).toLocaleString()})</span>}
+                {o.revoked_at && <span className="text-red"> (revoked {formatDateTime(o.revoked_at, language)})</span>}
               </li>
             ))}
           </ul>
@@ -136,6 +138,7 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
 }
 
 function ActivityLogPanel({ contractorId }: { contractorId: string }) {
+  const { language } = useI18n();
   const { data: entries } = useQuery({
     queryKey: ["admin-audit-log", contractorId],
     queryFn: () => apiFetch<AuditLogEntry[]>(`/admin/contractors/${contractorId}/audit-log`),
@@ -149,7 +152,7 @@ function ActivityLogPanel({ contractorId }: { contractorId: string }) {
       <ul className="space-y-2 max-h-64 overflow-y-auto">
         {entries.map((e) => (
           <li key={e.id} className="text-[11.5px] text-steel border-b border-border pb-2 last:border-0">
-            <div className="font-mono text-[10px] text-steel-light">{new Date(e.created_at).toLocaleString()}</div>
+            <div className="font-mono text-[10px] text-steel-light">{formatDateTime(e.created_at, language)}</div>
             <div>
               <span className="font-semibold text-navy">{e.action}</span>
               {e.previous_value !== null && e.new_value !== null && (

@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError, API_URL } from "@/api/client";
 import type { Drawing, Offer, OfferRevision, ProjectDetail } from "@/api/types";
-import { timeRemaining, stars } from "@/lib/format";
+import { formatDate, formatDateTime, stars, timeRemaining } from "@/lib/format";
 import { RatingInput } from "@/components/RatingInput";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { PageLoading } from "@/components/PageLoading";
@@ -93,6 +93,7 @@ function statusBadgeClasses(status: string) {
 }
 
 function OfferDetails({ projectId, offer, t }: { projectId: string; offer: Offer; t: (key: string) => string }) {
+  const { language } = useI18n();
   const { data: history, isLoading } = useQuery({
     queryKey: ["owner-offer-history", projectId, offer.id],
     queryFn: () => apiFetch<OfferRevision[]>(`/owner/projects/${projectId}/offers/${offer.id}/history`),
@@ -110,7 +111,7 @@ function OfferDetails({ projectId, offer, t }: { projectId: string; offer: Offer
             <li key={h.id} className="border-l-2 border-border pl-3">
               <div className="font-mono text-xs text-navy">
                 #{h.revision_number} · ${Number(h.amount).toLocaleString()} · {h.timeline_estimate || "—"} ·{" "}
-                {new Date(h.recorded_at).toLocaleString()}
+                {formatDateTime(h.recorded_at, language)}
               </div>
               {h.message && <p className="whitespace-pre-wrap text-steel text-[13px]">{h.message}</p>}
             </li>
@@ -122,7 +123,7 @@ function OfferDetails({ projectId, offer, t }: { projectId: string; offer: Offer
 }
 
 export function OwnerProjectDetailPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [rating, setRating] = useState(0);
@@ -336,7 +337,7 @@ export function OwnerProjectDetailPage() {
               deadlinePassed ? "bg-red-tint text-red border-red" : "bg-blue-tint text-blue border-blue"
             }`}
           >
-            ⏱ {timeRemaining(project.bid_deadline)} — {new Date(project.bid_deadline).toLocaleString()}
+            ⏱ {timeRemaining(project.bid_deadline, language)} — {formatDateTime(project.bid_deadline, language)}
           </div>
           {project.description && (
             <div className="mt-4 text-sm text-steel">
@@ -457,7 +458,7 @@ export function OwnerProjectDetailPage() {
               <span className="text-amber text-lg tracking-tight">{stars(existingReview.rating)}</span>
               {existingReview.comment && <p className="text-sm text-steel mt-2">{existingReview.comment}</p>}
               <p className="font-mono text-[10.5px] text-steel-light mt-2">
-                {t("owner.projectDetail.submittedOn")} {new Date(existingReview.created_at).toLocaleDateString()}
+                {t("owner.projectDetail.submittedOn")} {formatDate(existingReview.created_at, language)}
               </p>
             </div>
           ) : (
