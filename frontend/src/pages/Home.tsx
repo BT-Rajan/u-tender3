@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/I18nContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { WhatsAppCard } from "@/components/WhatsAppCard";
 import { apiFetch } from "@/api/client";
 
 interface PublicStats {
@@ -83,6 +84,10 @@ export function HomePage() {
             {t("home.login")}
           </Link>
         </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto">
+        <WhatsAppCard />
       </div>
 
       {stats && (

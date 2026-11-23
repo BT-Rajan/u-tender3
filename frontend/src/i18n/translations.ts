@@ -1,5 +1,6 @@
 export interface Dictionary {
   common: { loading: string; save: string; cancel: string; back: string };
+  whatsapp: { title: string; body: string; cta: string };
   errors: { notFoundTitle: string; notFoundBody: string; goHome: string; crashTitle: string; crashBody: string; reload: string };
   brand: { tagline: string };
   home: { login: string; signup: string };
@@ -520,6 +521,11 @@ export interface Dictionary {
 }
 
 export const en: Dictionary = {
+  whatsapp: {
+    title: "Use U-Tender on WhatsApp",
+    body: "Open a chat and send the word utender. We'll reply with your account options.",
+    cta: "Open WhatsApp",
+  },
   errors: {
     notFoundTitle: "Page not found",
     notFoundBody: "The page you're looking for doesn't exist or has moved.",
@@ -1077,6 +1083,11 @@ export const en: Dictionary = {
 };
 
 export const ar: Dictionary = {
+  whatsapp: {
+    title: "استخدم يو-تندر عبر واتساب",
+    body: "افتح محادثة وأرسل كلمة utender. سنرد عليك بخيارات حسابك.",
+    cta: "فتح واتساب",
+  },
   errors: {
     notFoundTitle: "الصفحة غير موجودة",
     notFoundBody: "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
