@@ -11,6 +11,7 @@ are sent by document_service.enqueue_review_decision, which has its own dedupe, 
 import logging
 from collections.abc import Callable
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import select
@@ -21,6 +22,7 @@ from app.models.notification import Notification
 from app.models.user import User
 from app.models.whatsapp import WhatsAppIdentity
 from app.services import whatsapp_outbox
+from app.services.money import format_amount
 from app.services.whatsapp_templates import TemplateError, components_for
 
 logger = logging.getLogger("utender.whatsapp")
@@ -65,7 +67,7 @@ def amount_label(amount: float | None, sealed: bool) -> str:
     """What the owner may see of a bid. A sealed tender hides the amount until it closes."""
     if sealed or amount is None:
         return "hidden until the tender closes"
-    return f"{amount:,.2f}"
+    return format_amount(Decimal(str(amount)), grouped=True)
 
 
 def _identity_wa_id(db: Session, user_id: str) -> str | None:

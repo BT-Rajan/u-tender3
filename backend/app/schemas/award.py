@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
+from app.services.money import MoneyAmount
+
 
 class AwardRecordOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -11,7 +13,7 @@ class AwardRecordOut(BaseModel):
     project_id: str
     offer_id: str
     contractor_id: str
-    amount: Decimal
+    amount: MoneyAmount
     project_revision: int
     offer_revision: int
     awarded_by: str

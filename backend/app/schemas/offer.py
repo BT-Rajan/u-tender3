@@ -4,10 +4,11 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import OfferStatus
+from app.services.money import MoneyAmount
 
 
 class OfferCreate(BaseModel):
-    amount: Decimal
+    amount: MoneyAmount
     timeline_estimate: str | None = None
     message: str | None = None
 
@@ -23,7 +24,7 @@ class OfferOut(BaseModel):
     # D-001) — see the `sealed` flag. A contractor's own bid, and any bid
     # once the tender is no longer open, is always shown in full.
     contractor_id: str | None
-    amount: Decimal | None
+    amount: MoneyAmount | None
     timeline_estimate: str | None
     message: str | None
     status: OfferStatus
@@ -43,7 +44,7 @@ class OfferRevisionOut(BaseModel):
     id: str
     offer_id: str
     revision_number: int
-    amount: Decimal
+    amount: MoneyAmount
     timeline_estimate: str | None
     message: str | None
     status: OfferStatus

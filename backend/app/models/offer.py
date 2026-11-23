@@ -20,7 +20,7 @@ class Offer(Base):
     contractor_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("contractor_profiles.user_id", ondelete="CASCADE"), nullable=False, index=True
     )
-    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(15, 3), nullable=False)
     timeline_estimate: Mapped[str | None] = mapped_column(String(255), nullable=True)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[OfferStatus] = mapped_column(
@@ -52,7 +52,7 @@ class OfferRevision(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     offer_id: Mapped[str] = mapped_column(String(36), ForeignKey("offers.id", ondelete="CASCADE"), nullable=False, index=True)
     revision_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(15, 3), nullable=False)
     timeline_estimate: Mapped[str | None] = mapped_column(String(255), nullable=True)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[OfferStatus] = mapped_column(Enum(OfferStatus, native_enum=True), nullable=False)

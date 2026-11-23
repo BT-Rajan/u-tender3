@@ -1,6 +1,8 @@
 import logging
+from decimal import Decimal
 
 from app.config import get_settings
+from app.services.money import format_amount
 
 settings = get_settings()
 logger = logging.getLogger("email")
@@ -38,7 +40,7 @@ def notify_owner_new_offer(
         f"<p>You received a new sealed offer on <strong>{project_title}</strong>. "
         f"Bidder identity and amount stay hidden until you close bidding.</p>"
         if sealed
-        else f"<p><strong>{contractor_name}</strong> submitted an offer of ${amount:,.2f} on <strong>{project_title}</strong>.</p>"
+        else f"<p><strong>{contractor_name}</strong> submitted an offer of ${format_amount(Decimal(str(amount)), grouped=True)} on <strong>{project_title}</strong>.</p>"
     )
     _send(
         owner_email,

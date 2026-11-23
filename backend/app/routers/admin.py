@@ -34,6 +34,7 @@ from app.schemas.document import (
 from app.schemas.owner import OwnerProfileOut
 from app.services.audit import log_action
 from app.services.document_service import enqueue_review_decision
+from app.services.money import format_amount
 from app.services.notify import notify
 from app.services.storage import get_storage
 
@@ -964,7 +965,7 @@ def list_all_offers(db: Session = Depends(get_db)):
             "tender_type": p.tender_type,
             "contractor_id": o.contractor_id,
             "contractor_company_name": cp.company_name if cp else None,
-            "amount": str(o.amount) if o.amount is not None else None,
+            "amount": format_amount(o.amount),
             "timeline_estimate": o.timeline_estimate,
             "status": o.status,
             "revision": o.revision,
@@ -1009,7 +1010,7 @@ def _offer_admin_fields(o: Offer, p: Project | None, cp: ContractorProfile | Non
         "tender_type": p.tender_type if p else None,
         "contractor_id": o.contractor_id,
         "contractor_company_name": cp.company_name if cp else None,
-        "amount": str(o.amount) if o.amount is not None else None,
+        "amount": format_amount(o.amount),
         "timeline_estimate": o.timeline_estimate,
         "message": o.message,
         "status": o.status,
