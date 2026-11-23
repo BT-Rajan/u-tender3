@@ -127,11 +127,21 @@ class RecordingSender:
         )
         return f"wamid.FLOW{len(self.sent)}"
 
+    def send_cta_url(self, to_wa_id: str, *, body: str, display_text: str, url: str) -> str:
+        self.sent.append({"kind": "cta_url", "to": to_wa_id, "body": body, "display_text": display_text, "url": url})
+        return f"wamid.CTA{len(self.sent)}"
+
     def close(self) -> None:
         pass
 
     def flows(self) -> list[dict[str, Any]]:
         return [message for message in self.sent if message["kind"] == "flow"]
+
+    def links(self) -> list[dict[str, Any]]:
+        return [message for message in self.sent if message["kind"] == "cta_url"]
+
+    def texts(self) -> list[dict[str, Any]]:
+        return [message for message in self.sent if message["kind"] == "text"]
 
 
 def flow_request(client, public_pem: str, *, token: str, action: str, screen: str | None = None, data: dict | None = None):

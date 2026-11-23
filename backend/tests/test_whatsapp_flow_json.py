@@ -21,7 +21,7 @@ FLOW_DIR = Path(__file__).resolve().parents[1] / "whatsapp_flows"
 FLOWS = ("registration", "owner_dashboard", "contractor_dashboard")
 
 REGISTRATION_SCREENS = {"ROLE", "OWNER_DETAILS", "CONTRACTOR_DETAILS", "SUCCESS", "NOT_COMPLETED", "EXPIRED"}
-DASHBOARD_SCREENS = {"MENU", "COMING_SOON", "EXPIRED"}
+DASHBOARD_SCREENS = {"MENU", "DOCUMENTS", "LINKS_SENT", "COMING_SOON", "EXPIRED"}
 
 
 def _load(name: str) -> dict:

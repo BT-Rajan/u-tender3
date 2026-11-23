@@ -124,6 +124,20 @@ class WhatsAppCloudClient:
             interactive["header"] = {"type": "text", "text": header}
         return self._send(to_wa_id, {"type": "interactive", "interactive": interactive})
 
+    def send_cta_url(self, to_wa_id: str, *, body: str, display_text: str, url: str) -> str:
+        """An interactive message with one button that opens `url`. Used for document upload links."""
+        return self._send(
+            to_wa_id,
+            {
+                "type": "interactive",
+                "interactive": {
+                    "type": "cta_url",
+                    "body": {"text": body},
+                    "action": {"name": "cta_url", "parameters": {"display_text": display_text, "url": url}},
+                },
+            },
+        )
+
     def _send(self, to_wa_id: str, body: dict[str, Any]) -> str:
         payload = {"messaging_product": "whatsapp", "recipient_type": "individual", "to": to_wa_id, **body}
         try:

@@ -10,6 +10,7 @@ from app.routers.billing import router as billing_router
 from app.routers.clarifications import router as clarifications_router
 from app.routers.contractor import router as contractor_router
 from app.routers.cron import router as cron_router
+from app.routers.document_uploads import router as document_uploads_router
 from app.routers.files import router as files_router
 from app.routers.notifications import router as notifications_router
 from app.routers.offers import router as offers_router
@@ -50,6 +51,7 @@ app.include_router(cron_router)
 app.include_router(files_router)
 app.include_router(notifications_router)
 app.include_router(whatsapp_router)
+app.include_router(document_uploads_router)
 
 
 @app.get("/health")

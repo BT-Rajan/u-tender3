@@ -119,7 +119,7 @@ def test_owner_blocked_from_posting_until_approved_then_unblocked():
     for req in reqs:
         r = owner_client.post(
             f"/owner/documents/{req['id']}/upload",
-            files={"file": ("doc.pdf", b"fake pdf bytes", "application/pdf")},
+            files={"file": ("doc.pdf", b"%PDF-1.4 fake pdf bytes", "application/pdf")},
         )
         assert r.status_code == 200, r.text
         assert r.json()["status"] == "pending"
@@ -186,7 +186,7 @@ def test_admin_document_rejection_reopens_owner_for_changes():
     )
     reqs = owner_client.get("/owner/requirements").json()
     for req in reqs:
-        owner_client.post(f"/owner/documents/{req['id']}/upload", files={"file": ("doc.pdf", b"x", "application/pdf")})
+        owner_client.post(f"/owner/documents/{req['id']}/upload", files={"file": ("doc.pdf", b"%PDF-1.4 x", "application/pdf")})
     owner_client.post("/owner/submit-for-review")
 
     from app.models.owner import OwnerProfile

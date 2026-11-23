@@ -15,8 +15,8 @@ from app.models.user import User
 from app.schemas.contractor import ContractorProfileOut, MyBidOut, SubmitForReview
 from app.schemas.document import ContractorDocumentOut, DocumentRequirementOut
 from app.schemas.project import ProjectOut
-from app.services.file_security import ALLOWED_DOCUMENT_EXTENSIONS, assert_allowed_extension, sanitize_path_segment
-from app.services.storage import get_storage
+from app.services.document_files import DocumentValidationError
+from app.services.document_service import accept_document
 from app.services.tender_lifecycle import sync_expired_projects
 
 router = APIRouter(prefix="/contractor", tags=["contractor"])
@@ -176,22 +176,20 @@ async def upload_document(
     if not doc:
         raise HTTPException(status_code=404, detail="Document requirement not found for this contractor.")
 
-    assert_allowed_extension(file.filename, ALLOWED_DOCUMENT_EXTENSIONS)
     content = await file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="No file provided.")
-
-    safe_name = sanitize_path_segment(file.filename)
-    path = f"{user.id}/{requirement_id}/{int(datetime.utcnow().timestamp() * 1000)}-{safe_name}"
-    get_storage().save("contractor-documents", path, content, file.content_type or "application/octet-stream")
-
-    doc.file_path = path
-    doc.status = DocumentStatus.pending
-    doc.submitted_at = datetime.utcnow()
-    doc.admin_note = None  # clear any prior rejection note on re-upload
-    doc.expires_on = None  # a fresh submission needs a fresh review before any expiry applies
-    db.commit()
-    db.refresh(doc)
+    try:
+        doc = accept_document(
+            db,
+            kind="contractor",
+            user_id=user.id,
+            requirement_id=requirement_id,
+            filename=file.filename,
+            content=content,
+            channel="web",
+            now=datetime.utcnow(),
+        )
+    except DocumentValidationError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
     requirement = db.get(DocumentRequirement, requirement_id)
     return ContractorDocumentOut(

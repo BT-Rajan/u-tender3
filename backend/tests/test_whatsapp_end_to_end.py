@@ -78,7 +78,9 @@ def test_new_owner_registers_on_whatsapp_then_sees_the_owner_dashboard(monkeypat
     assert "Documents are incomplete" in reply["data"]["status"]
 
     reply, _ = flow_request(client, public_pem, token=menu_token, action="data_exchange", screen="MENU", data={"choice": "my_documents"})
-    assert reply["screen"] == "COMING_SOON"
+    assert reply["screen"] == "DOCUMENTS"
+    # This owner has no requirements configured, so the checklist says so explicitly.
+    assert reply["data"]["checklist"] == "No documents are required for your account."
 
 
 def test_new_contractor_registers_then_sees_the_contractor_dashboard(monkeypatch, client, db):

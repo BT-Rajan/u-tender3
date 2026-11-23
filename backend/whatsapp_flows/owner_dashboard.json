@@ -2,7 +2,16 @@
   "version": "7.0",
   "data_api_version": "3.0",
   "routing_model": {
-    "MENU": ["MENU", "COMING_SOON", "EXPIRED"]
+    "MENU": [
+      "MENU",
+      "DOCUMENTS",
+      "COMING_SOON",
+      "EXPIRED"
+    ],
+    "DOCUMENTS": [
+      "LINKS_SENT",
+      "DOCUMENTS"
+    ]
   },
   "screens": [
     {
@@ -10,26 +19,56 @@
       "title": "U-Tender",
       "terminal": false,
       "data": {
-        "greeting": { "type": "string", "__example__": "Hello Layla" },
-        "status": { "type": "string", "__example__": "Your account is verified and active." },
-        "error_message": { "type": "string", "__example__": "Choose one option." }
+        "greeting": {
+          "type": "string",
+          "__example__": "Hello Layla"
+        },
+        "status": {
+          "type": "string",
+          "__example__": "Your account is verified and active."
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": "Choose one option."
+        }
       },
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
-          { "type": "TextHeading", "text": "${data.greeting}" },
-          { "type": "TextBody", "text": "${data.status}" },
-          { "type": "TextBody", "text": "${data.error_message}" },
+          {
+            "type": "TextHeading",
+            "text": "${data.greeting}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.status}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
           {
             "type": "RadioButtonsGroup",
             "label": "What would you like to do?",
             "name": "choice",
             "required": true,
             "data-source": [
-              { "id": "create_tender", "title": "Create a tender" },
-              { "id": "my_tenders", "title": "My tenders" },
-              { "id": "received_offers", "title": "Received offers" },
-              { "id": "my_documents", "title": "My documents" }
+              {
+                "id": "create_tender",
+                "title": "Create a tender"
+              },
+              {
+                "id": "my_tenders",
+                "title": "My tenders"
+              },
+              {
+                "id": "received_offers",
+                "title": "Received offers"
+              },
+              {
+                "id": "my_documents",
+                "title": "My documents"
+              }
             ]
           },
           {
@@ -46,23 +85,100 @@
       }
     },
     {
-      "id": "COMING_SOON",
-      "title": "Coming soon",
-      "terminal": true,
-      "success": true,
+      "id": "DOCUMENTS",
+      "title": "My documents",
+      "terminal": false,
       "data": {
-        "message": { "type": "string", "__example__": "This section is coming soon." }
+        "checklist": {
+          "type": "string",
+          "__example__": "Civil ID: Upload needed"
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": "Try again."
+        }
       },
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
-          { "type": "TextBody", "text": "${data.message}" },
+          {
+            "type": "TextBody",
+            "text": "${data.checklist}"
+          },
+          {
+            "type": "TextBody",
+            "text": "We will send a secure upload link for each document that needs a file. Each link works once."
+          },
+          {
+            "type": "Footer",
+            "label": "Send upload links",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "intent": "send_links"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "LINKS_SENT",
+      "title": "Upload links sent",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "We sent 2 upload links to this chat."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
           {
             "type": "Footer",
             "label": "Close",
             "on-click-action": {
               "name": "complete",
-              "payload": { "status": "closed" }
+              "payload": {
+                "status": "links_sent"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "COMING_SOON",
+      "title": "Coming soon",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "This section is coming soon."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "Footer",
+            "label": "Close",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "status": "closed"
+              }
             }
           }
         ]
@@ -76,13 +192,18 @@
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
-          { "type": "TextBody", "text": "This dashboard has expired. Send any message to U-Tender to open it again." },
+          {
+            "type": "TextBody",
+            "text": "This dashboard has expired. Send any message to U-Tender to open it again."
+          },
           {
             "type": "Footer",
             "label": "Close",
             "on-click-action": {
               "name": "complete",
-              "payload": { "status": "expired" }
+              "payload": {
+                "status": "expired"
+              }
             }
           }
         ]

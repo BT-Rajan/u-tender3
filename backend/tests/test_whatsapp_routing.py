@@ -22,11 +22,11 @@ def _deliver(db, *messages):
 
 
 def _outbox(db):
-    return db.scalars(select(WhatsAppOutbox).order_by(WhatsAppOutbox.created_at, WhatsAppOutbox.dedupe_key)).all()
+    return db.scalars(select(WhatsAppOutbox).order_by(WhatsAppOutbox.next_attempt_at)).all()
 
 
 def _sessions(db):
-    return db.scalars(select(WhatsAppFlowSession).order_by(WhatsAppFlowSession.created_at)).all()
+    return db.scalars(select(WhatsAppFlowSession).order_by(WhatsAppFlowSession.expires_at)).all()
 
 
 def _account(db, role: UserRole, wa_id: str = WA_ID, full_name: str = "Layla Al-Sabah") -> User:
@@ -143,7 +143,7 @@ def test_resuming_sends_a_fresh_token_so_the_old_one_stops_working(monkeypatch, 
     old_token = _outbox(db)[0].params_json["flow_token"]
     _deliver(db, text_message("wamid.RES4", WA_ID, "hi again"))
 
-    new_token = _outbox(db)[-1].params_json["flow_token"]
+    new_token = next(row.params_json["flow_token"] for row in _outbox(db) if row.params_json.get("flow_token") != old_token)
     assert new_token != old_token
     old_session = db.scalar(select(WhatsAppFlowSession).where(WhatsAppFlowSession.flow_token_hash == hash_flow_token(old_token)))
     assert old_session.completed_at is not None

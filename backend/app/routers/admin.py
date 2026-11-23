@@ -33,6 +33,7 @@ from app.schemas.document import (
 )
 from app.schemas.owner import OwnerProfileOut
 from app.services.audit import log_action
+from app.services.document_service import enqueue_review_decision
 from app.services.notify import notify
 from app.services.storage import get_storage
 
@@ -194,6 +195,16 @@ def review_document(payload: ReviewDocumentDecision, admin: User = Depends(requi
             NotificationType.document_approved if payload.decision == DocumentStatus.approved else NotificationType.document_rejected
         )
         notify(db, contractor_user, notification_type, link="/contractor/status", requirement_name=requirement.name)
+        enqueue_review_decision(
+            db,
+            user=contractor_user,
+            document_id=doc.id,
+            requirement_name=requirement.name,
+            decision=payload.decision,
+            decided_at=doc.reviewed_at,
+            now=datetime.utcnow(),
+        )
+        db.commit()
 
     db.refresh(doc)
     return doc
@@ -785,6 +796,16 @@ def review_owner_document(
             else NotificationType.owner_document_rejected
         )
         notify(db, owner_user, notification_type, link="/owner/status", requirement_name=requirement.name)
+        enqueue_review_decision(
+            db,
+            user=owner_user,
+            document_id=doc.id,
+            requirement_name=requirement.name,
+            decision=payload.decision,
+            decided_at=doc.reviewed_at,
+            now=datetime.utcnow(),
+        )
+        db.commit()
 
     db.refresh(doc)
     return doc

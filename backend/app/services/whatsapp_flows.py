@@ -3,18 +3,25 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.models.contractor import ContractorProfile
+from app.models.enums import DocumentStatus, UserRole
 from app.models.owner import OwnerProfile
-from app.models.enums import UserRole
 from app.models.user import User
 from app.models.whatsapp import WhatsAppFlowSession, WhatsAppIdentity
+from app.services import whatsapp_outbox
+from app.services.document_service import checklist_for
 from app.services.registration import (
     TRADE_OPTIONS,
     RegistrationError,
     register_contractor,
     register_owner,
 )
+from app.services.upload_links import issue_upload_link
 from app.services.whatsapp_identity import find_active_flow_session
+
+# One request sends at most this many links, so a single tap can't flood a chat.
+MAX_LINKS_PER_REQUEST = 6
 
 FLOW_REGISTRATION = "registration"
 FLOW_OWNER_DASHBOARD = "owner_dashboard"
@@ -62,7 +69,7 @@ def handle_flow_request(db: Session, payload: dict[str, Any], *, now: datetime) 
     if session.flow_name == FLOW_REGISTRATION:
         return _registration_reply(db, session, payload, now=now)
     if session.flow_name in (FLOW_OWNER_DASHBOARD, FLOW_CONTRACTOR_DASHBOARD):
-        return _dashboard_reply(db, session, payload)
+        return _dashboard_reply(db, session, payload, now=now)
     return None
 
 
@@ -159,10 +166,10 @@ def _registration_failure(screen: str, error: RegistrationError) -> dict[str, An
     return {"screen": "NOT_COMPLETED", "data": {"message": error.message}}
 
 
-def _dashboard_reply(db: Session, session: WhatsAppFlowSession, payload: dict[str, Any]) -> dict[str, Any] | None:
+def _dashboard_reply(db: Session, session: WhatsAppFlowSession, payload: dict[str, Any], *, now: datetime) -> dict[str, Any] | None:
     identity = db.get(WhatsAppIdentity, session.identity_id)
     user = db.get(User, identity.user_id) if identity and identity.user_id else None
-    if user is None:
+    if user is None or identity is None:
         return _expired_reply()
 
     is_owner = session.flow_name == FLOW_OWNER_DASHBOARD
@@ -171,16 +178,92 @@ def _dashboard_reply(db: Session, session: WhatsAppFlowSession, payload: dict[st
         return _expired_reply()
 
     action = payload.get("action")
-    if action in ("INIT", "BACK"):
+    screen = payload.get("screen")
+    data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+
+    if action in ("INIT", "BACK") and screen != "DOCUMENTS":
         return {"screen": "MENU", "data": _menu_data(db, user, is_owner)}
-    if action != "data_exchange" or payload.get("screen") != "MENU":
+    if action != "data_exchange":
         return None
 
-    data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+    if screen == "DOCUMENTS":
+        return _documents_action(db, identity, user, data, now=now)
+    if screen != "MENU":
+        return None
+
     choices = OWNER_MENU_CHOICES if is_owner else CONTRACTOR_MENU_CHOICES
-    if data.get("choice") not in choices:
+    choice = data.get("choice")
+    if choice not in choices:
         return {"screen": "MENU", "data": {**_menu_data(db, user, is_owner), "error_message": "Choose one option."}}
+    if choice == "my_documents":
+        return {"screen": "DOCUMENTS", "data": {"checklist": _checklist_text(db, user)}}
     return {"screen": "COMING_SOON", "data": {"message": "This section is coming soon."}}
+
+
+# Plain markers rather than emoji, so the text reads the same on every phone.
+_CHECKLIST_LABEL = {
+    DocumentStatus.not_submitted: "Upload needed",
+    DocumentStatus.pending: "Under review",
+    DocumentStatus.approved: "Approved",
+    DocumentStatus.rejected: "Rejected - please upload again",
+}
+
+
+def _checklist_text(db: Session, user: User) -> str:
+    items = checklist_for(db, user)
+    if not items:
+        return "No documents are required for your account."
+    lines = []
+    for item in items:
+        line = f"{item.name}: {_CHECKLIST_LABEL[item.status]}"
+        if item.status == DocumentStatus.rejected and item.admin_note:
+            line += f" ({item.admin_note[:160]})"
+        lines.append(line)
+    return "\n".join(lines)[:3500]
+
+
+def _documents_action(
+    db: Session, identity: WhatsAppIdentity, user: User, data: dict[str, Any], *, now: datetime
+) -> dict[str, Any]:
+    """Queue an upload link and a separate one-time code for every requirement that still needs a file."""
+    if data.get("intent") != "send_links":
+        return {"screen": "DOCUMENTS", "data": {"checklist": _checklist_text(db, user)}}
+
+    needing = [item for item in checklist_for(db, user) if item.needs_upload][:MAX_LINKS_PER_REQUEST]
+    if not needing:
+        return {"screen": "LINKS_SENT", "data": {"message": "Nothing needs uploading right now. Your documents are approved or under review."}}
+
+    settings = get_settings()
+    for item in needing:
+        issued = issue_upload_link(db, user_id=user.id, requirement_id=item.requirement_id, now=now)
+        whatsapp_outbox.enqueue(
+            db,
+            dedupe_key=f"upload-link:{issued.link_id}",
+            recipient_wa_id=identity.wa_id,
+            kind=whatsapp_outbox.KIND_CTA_URL,
+            now=now,
+            params={
+                "body": f"Upload your {item.name}. Open the link, then enter the code from our next message. The link works once and expires in {settings.upload_link_ttl_minutes} minutes.",
+                "display_text": "Upload",
+                "url": f"{settings.api_url.rstrip('/')}/upload/{issued.token}",
+            },
+        )
+        whatsapp_outbox.enqueue(
+            db,
+            dedupe_key=f"upload-code:{issued.link_id}",
+            recipient_wa_id=identity.wa_id,
+            kind=whatsapp_outbox.KIND_TEXT,
+            now=now,
+            params={
+                "body": f"Your code for {item.name} is {issued.code}. It works once and expires in {settings.upload_link_ttl_minutes} minutes. Do not share it.",
+                "sensitive": True,
+            },
+        )
+    db.commit()
+    return {
+        "screen": "LINKS_SENT",
+        "data": {"message": f"We sent {len(needing)} upload link(s) to this chat. Each works once."},
+    }
 
 
 def _menu_data(db: Session, user: User, is_owner: bool) -> dict[str, str]:

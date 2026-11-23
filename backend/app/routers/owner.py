@@ -21,9 +21,9 @@ from app.schemas.project import ProjectOut
 from app.schemas.review import ReviewCreate, ReviewOut
 from app.services.audit import log_action
 from app.services.email import notify_contractor_offer_decision
-from app.services.file_security import ALLOWED_DOCUMENT_EXTENSIONS, assert_allowed_extension, sanitize_path_segment
+from app.services.document_files import DocumentValidationError
+from app.services.document_service import accept_document
 from app.services.notify import notify
-from app.services.storage import get_storage
 from app.services.tender_lifecycle import is_sealed_and_open, sync_expired_projects
 
 router = APIRouter(prefix="/owner", tags=["owner"])
@@ -436,22 +436,20 @@ async def upload_owner_document(
     if not doc:
         raise HTTPException(status_code=404, detail="Document requirement not found for this owner.")
 
-    assert_allowed_extension(file.filename, ALLOWED_DOCUMENT_EXTENSIONS)
     content = await file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="No file provided.")
-
-    safe_name = sanitize_path_segment(file.filename)
-    path = f"{user.id}/{requirement_id}/{int(datetime.utcnow().timestamp() * 1000)}-{safe_name}"
-    get_storage().save("owner-documents", path, content, file.content_type or "application/octet-stream")
-
-    doc.file_path = path
-    doc.status = DocumentStatus.pending
-    doc.submitted_at = datetime.utcnow()
-    doc.admin_note = None
-    doc.expires_on = None
-    db.commit()
-    db.refresh(doc)
+    try:
+        doc = accept_document(
+            db,
+            kind="owner",
+            user_id=user.id,
+            requirement_id=requirement_id,
+            filename=file.filename,
+            content=content,
+            channel="web",
+            now=datetime.utcnow(),
+        )
+    except DocumentValidationError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
     requirement = db.get(DocumentRequirement, requirement_id)
     return OwnerDocumentOut(

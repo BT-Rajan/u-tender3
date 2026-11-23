@@ -72,6 +72,17 @@ class Settings(BaseSettings):
     whatsapp_flow_id_registration: str | None = None
     whatsapp_flow_id_owner_dashboard: str | None = None
     whatsapp_flow_id_contractor_dashboard: str | None = None
+    # Message templates for review decisions. These must be approved in Meta
+    # Business Manager before they can be sent outside the 24-hour window.
+    whatsapp_template_document_approved: str = "document_approved"
+    whatsapp_template_document_rejected: str = "document_rejected"
+
+    # Document upload. One rule set for web and WhatsApp uploads.
+    document_max_mb: int = 10
+    # Upload links are short-lived and single-use. Each one also needs the
+    # one-time code sent in a separate WhatsApp message.
+    upload_link_ttl_minutes: int = 20
+    upload_link_max_wrong_codes: int = 5
 
 
 DEFAULT_SECRET_VALUES = ("change-me-in-production",)

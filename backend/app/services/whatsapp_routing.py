@@ -41,7 +41,7 @@ def _find_resumable_registration(db: Session, identity: WhatsAppIdentity, *, now
             WhatsAppFlowSession.completed_at.is_(None),
             WhatsAppFlowSession.expires_at > now,
         )
-        .order_by(WhatsAppFlowSession.created_at.desc())
+        .order_by(WhatsAppFlowSession.created_at.desc(), WhatsAppFlowSession.expires_at.desc())
     )
 
 

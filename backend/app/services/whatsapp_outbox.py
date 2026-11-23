@@ -19,7 +19,11 @@ logger = logging.getLogger("utender.whatsapp")
 KIND_TEMPLATE = "template"
 KIND_TEXT = "text"
 KIND_FLOW = "flow"
-KINDS = (KIND_TEMPLATE, KIND_TEXT, KIND_FLOW)
+KIND_CTA_URL = "cta_url"
+KINDS = (KIND_TEMPLATE, KIND_TEXT, KIND_FLOW, KIND_CTA_URL)
+
+# Params that are bearer credentials (a Flow session token or an upload link). They're removed once the row is finished.
+_SECRET_PARAMS = ("flow_token", "url")
 
 BASE_BACKOFF_SECONDS = 30
 MAX_BACKOFF_SECONDS = 60 * 60
@@ -49,6 +53,8 @@ class MessageSender(Protocol):
         header: str | None = None,
     ) -> str: ...
 
+    def send_cta_url(self, to_wa_id: str, *, body: str, display_text: str, url: str) -> str: ...
+
 
 def backoff_seconds(attempts: int) -> int:
     """Exponential backoff: 30s, 60s, 120s, ... capped at one hour."""
@@ -76,6 +82,8 @@ def enqueue(
         raise ValueError("A template message needs a template_name.")
     if kind == KIND_FLOW and not (params and params.get("flow_id") and params.get("flow_token")):
         raise ValueError("A flow message needs a flow_id and flow_token.")
+    if kind == KIND_CTA_URL and not (params and params.get("url") and params.get("display_text")):
+        raise ValueError("A cta_url message needs a url and display_text.")
 
     existing = db.scalar(select(WhatsAppOutbox).where(WhatsAppOutbox.dedupe_key == dedupe_key))
     if existing is not None:
@@ -115,13 +123,33 @@ def _send_row(sender: MessageSender, row: WhatsAppOutbox) -> str:
             cta=str(params.get("cta", "Open")),
             header=params.get("header"),
         )
+    if row.kind == KIND_CTA_URL:
+        return sender.send_cta_url(
+            row.recipient_wa_id,
+            body=str(params.get("body", "")),
+            display_text=str(params.get("display_text", "Open")),
+            url=str(params.get("url", "")),
+        )
     return sender.send_text(row.recipient_wa_id, str(params.get("body", "")))
 
 
 def _clear_secrets(row: WhatsAppOutbox) -> None:
-    """Drop the stored Flow token once the row is finished. It's a bearer credential, so it isn't kept after the send."""
-    if row.params_json and "flow_token" in row.params_json:
-        row.params_json = {key: value for key, value in row.params_json.items() if key != "flow_token"}
+    """Drop bearer credentials once the row is finished.
+
+    Flow tokens and upload URLs are removed. A row marked sensitive (a one-time
+    code) also has its body redacted, so the code isn't kept after it has been
+    sent.
+    """
+    params = row.params_json
+    if not params:
+        return
+    needs_clearing = any(key in params for key in _SECRET_PARAMS) or params.get("sensitive")
+    if not needs_clearing:
+        return
+    cleaned = {key: value for key, value in params.items() if key not in _SECRET_PARAMS}
+    if cleaned.get("sensitive"):
+        cleaned["body"] = "[redacted]"
+    row.params_json = cleaned
 
 
 def dispatch_due(

@@ -13,10 +13,13 @@ from app.models.project import Project, ProjectDrawing
 from app.models.project_amendment import ProjectAmendment
 from app.models.review import Review
 from app.models.revoked_token import RevokedToken
+from app.models.document_upload import DocumentUploadLink, DocumentVersion
 from app.models.user import User
 from app.models.whatsapp import WhatsAppFlowSession, WhatsAppIdentity, WhatsAppMessageEvent, WhatsAppOutbox
 
 __all__ = [
+    "DocumentUploadLink",
+    "DocumentVersion",
     "WhatsAppIdentity",
     "WhatsAppMessageEvent",
     "WhatsAppFlowSession",
