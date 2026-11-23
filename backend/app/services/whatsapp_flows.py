@@ -18,6 +18,7 @@ from app.services.registration import (
     register_owner,
 )
 from app.services.upload_links import issue_upload_link
+from app.services.whatsapp_owner_flows import handle_owner_screen, owner_menu_choice
 from app.services.whatsapp_identity import find_active_flow_session
 
 # One request sends at most this many links, so a single tap can't flood a chat.
@@ -188,6 +189,10 @@ def _dashboard_reply(db: Session, session: WhatsAppFlowSession, payload: dict[st
 
     if screen == "DOCUMENTS":
         return _documents_action(db, identity, user, data, now=now)
+    if is_owner and screen != "MENU":
+        owner_reply = handle_owner_screen(db, user, screen or "", data, now=now)
+        if owner_reply is not None:
+            return owner_reply
     if screen != "MENU":
         return None
 
@@ -197,6 +202,10 @@ def _dashboard_reply(db: Session, session: WhatsAppFlowSession, payload: dict[st
         return {"screen": "MENU", "data": {**_menu_data(db, user, is_owner), "error_message": "Choose one option."}}
     if choice == "my_documents":
         return {"screen": "DOCUMENTS", "data": {"checklist": _checklist_text(db, user)}}
+    if is_owner:
+        owner_reply = owner_menu_choice(db, user, str(choice), now=now)
+        if owner_reply is not None:
+            return owner_reply
     return {"screen": "COMING_SOON", "data": {"message": "This section is coming soon."}}
 
 

@@ -37,7 +37,7 @@ class ProjectOut(BaseModel):
     address: str
     description: str | None
     trade: str | None
-    bid_deadline: datetime
+    bid_deadline: datetime | None
     status: ProjectStatus
     tender_type: TenderType
     tender_type_locked: bool

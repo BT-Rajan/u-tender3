@@ -6,11 +6,44 @@
       "MENU",
       "DOCUMENTS",
       "COMING_SOON",
-      "EXPIRED"
+      "EXPIRED",
+      "CREATE_TENDER",
+      "MY_TENDERS"
     ],
     "DOCUMENTS": [
       "LINKS_SENT",
       "DOCUMENTS"
+    ],
+    "CREATE_TENDER": [
+      "REVIEW",
+      "CREATE_TENDER",
+      "MENU"
+    ],
+    "REVIEW": [
+      "DONE",
+      "CREATE_TENDER",
+      "REVIEW",
+      "MENU",
+      "MY_TENDERS"
+    ],
+    "MY_TENDERS": [
+      "TENDER_DETAILS",
+      "MY_TENDERS",
+      "MENU"
+    ],
+    "TENDER_DETAILS": [
+      "TENDER_DETAILS",
+      "CREATE_TENDER",
+      "AMEND",
+      "DONE",
+      "OFFERS",
+      "MY_TENDERS"
+    ],
+    "AMEND": [
+      "DONE",
+      "AMEND",
+      "MENU",
+      "MY_TENDERS"
     ]
   },
   "screens": [
@@ -203,6 +236,599 @@
               "name": "complete",
               "payload": {
                 "status": "expired"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CREATE_TENDER",
+      "title": "Create tender",
+      "terminal": false,
+      "data": {
+        "tender_id": {
+          "type": "string",
+          "__example__": ""
+        },
+        "title": {
+          "type": "string",
+          "__example__": "Villa renovation"
+        },
+        "address": {
+          "type": "string",
+          "__example__": "Block 3, Salmiya"
+        },
+        "description": {
+          "type": "string",
+          "__example__": "Ground floor works"
+        },
+        "trade": {
+          "type": "string",
+          "__example__": "Civil works"
+        },
+        "bid_deadline": {
+          "type": "string",
+          "__example__": "2026-12-31 14:00"
+        },
+        "tender_type": {
+          "type": "string",
+          "__example__": "owner_visible"
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": "Give the tender a title."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Title",
+            "name": "title",
+            "input-type": "text",
+            "required": true,
+            "max-chars": 255,
+            "init-value": "${data.title}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Address",
+            "name": "address",
+            "input-type": "text",
+            "required": false,
+            "max-chars": 500,
+            "init-value": "${data.address}"
+          },
+          {
+            "type": "TextArea",
+            "label": "Description",
+            "name": "description",
+            "required": false,
+            "max-length": 1000,
+            "init-value": "${data.description}"
+          },
+          {
+            "type": "Dropdown",
+            "label": "Trade",
+            "name": "trade",
+            "required": false,
+            "init-value": "${data.trade}",
+            "data-source": [
+              {
+                "id": "General contracting",
+                "title": "General contracting"
+              },
+              {
+                "id": "Electrical",
+                "title": "Electrical"
+              },
+              {
+                "id": "Plumbing",
+                "title": "Plumbing"
+              },
+              {
+                "id": "HVAC",
+                "title": "HVAC"
+              },
+              {
+                "id": "Civil works",
+                "title": "Civil works"
+              },
+              {
+                "id": "Finishing",
+                "title": "Finishing"
+              },
+              {
+                "id": "Fire safety",
+                "title": "Fire safety"
+              },
+              {
+                "id": "Landscaping",
+                "title": "Landscaping"
+              },
+              {
+                "id": "Other",
+                "title": "Other"
+              }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "label": "Bid deadline (YYYY-MM-DD HH:MM, Kuwait time)",
+            "name": "bid_deadline",
+            "input-type": "text",
+            "required": false,
+            "helper-text": "Optional for a draft. Required to publish.",
+            "init-value": "${data.bid_deadline}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Tender type",
+            "name": "tender_type",
+            "required": true,
+            "init-value": "${data.tender_type}",
+            "data-source": [
+              {
+                "id": "owner_visible",
+                "title": "Owner visible (you see bids as they arrive)"
+              },
+              {
+                "id": "sealed",
+                "title": "Sealed (bids hidden until the tender closes)"
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Review",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "tender_id": "${data.tender_id}",
+                "title": "${form.title}",
+                "address": "${form.address}",
+                "description": "${form.description}",
+                "trade": "${form.trade}",
+                "bid_deadline": "${form.bid_deadline}",
+                "tender_type": "${form.tender_type}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "REVIEW",
+      "title": "Review tender",
+      "terminal": false,
+      "data": {
+        "tender_id": {
+          "type": "string",
+          "__example__": "id"
+        },
+        "summary": {
+          "type": "string",
+          "__example__": "Title: Villa renovation"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.summary}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "What next?",
+            "name": "action",
+            "required": true,
+            "data-source": "${data.actions}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continue",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "tender_id": "${data.tender_id}",
+                "action": "${form.action}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "MY_TENDERS",
+      "title": "My tenders",
+      "terminal": false,
+      "data": {
+        "heading": {
+          "type": "string",
+          "__example__": "Your tenders"
+        },
+        "tenders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "empty_message": {
+          "type": "string",
+          "__example__": ""
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.heading}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.empty_message}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Choose a tender",
+            "name": "tender_id",
+            "required": true,
+            "data-source": "${data.tenders}"
+          },
+          {
+            "type": "Footer",
+            "label": "Open",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "tender_id": "${form.tender_id}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "TENDER_DETAILS",
+      "title": "Tender",
+      "terminal": false,
+      "data": {
+        "tender_id": {
+          "type": "string",
+          "__example__": "id"
+        },
+        "title": {
+          "type": "string",
+          "__example__": "Villa renovation"
+        },
+        "details": {
+          "type": "string",
+          "__example__": "Status: Open for bids"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.details}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Action",
+            "name": "action",
+            "required": true,
+            "data-source": "${data.actions}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "label": "Confirm (only for no award or cancel)",
+            "name": "confirm",
+            "required": false,
+            "data-source": [
+              {
+                "id": "yes",
+                "title": "Yes, I confirm"
+              },
+              {
+                "id": "no",
+                "title": "No"
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Continue",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "tender_id": "${data.tender_id}",
+                "action": "${form.action}",
+                "confirm": "${form.confirm}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "AMEND",
+      "title": "Amend tender",
+      "terminal": false,
+      "data": {
+        "tender_id": {
+          "type": "string",
+          "__example__": ""
+        },
+        "title": {
+          "type": "string",
+          "__example__": ""
+        },
+        "description": {
+          "type": "string",
+          "__example__": ""
+        },
+        "trade": {
+          "type": "string",
+          "__example__": ""
+        },
+        "bid_deadline": {
+          "type": "string",
+          "__example__": ""
+        },
+        "reason": {
+          "type": "string",
+          "__example__": ""
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "Changes are recorded as numbered amendments and bidders with offers are told."
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Title",
+            "name": "title",
+            "input-type": "text",
+            "required": true,
+            "max-chars": 255,
+            "init-value": "${data.title}"
+          },
+          {
+            "type": "TextArea",
+            "label": "Description",
+            "name": "description",
+            "required": false,
+            "max-length": 1000,
+            "init-value": "${data.description}"
+          },
+          {
+            "type": "Dropdown",
+            "label": "Trade",
+            "name": "trade",
+            "required": false,
+            "init-value": "${data.trade}",
+            "data-source": [
+              {
+                "id": "General contracting",
+                "title": "General contracting"
+              },
+              {
+                "id": "Electrical",
+                "title": "Electrical"
+              },
+              {
+                "id": "Plumbing",
+                "title": "Plumbing"
+              },
+              {
+                "id": "HVAC",
+                "title": "HVAC"
+              },
+              {
+                "id": "Civil works",
+                "title": "Civil works"
+              },
+              {
+                "id": "Finishing",
+                "title": "Finishing"
+              },
+              {
+                "id": "Fire safety",
+                "title": "Fire safety"
+              },
+              {
+                "id": "Landscaping",
+                "title": "Landscaping"
+              },
+              {
+                "id": "Other",
+                "title": "Other"
+              }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "label": "Bid deadline (YYYY-MM-DD HH:MM, Kuwait time)",
+            "name": "bid_deadline",
+            "input-type": "text",
+            "required": false,
+            "init-value": "${data.bid_deadline}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Reason for the change",
+            "name": "reason",
+            "input-type": "text",
+            "required": false,
+            "max-chars": 300,
+            "init-value": "${data.reason}"
+          },
+          {
+            "type": "Footer",
+            "label": "Save changes",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "tender_id": "${data.tender_id}",
+                "title": "${form.title}",
+                "description": "${form.description}",
+                "trade": "${form.trade}",
+                "bid_deadline": "${form.bid_deadline}",
+                "reason": "${form.reason}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "OFFERS",
+      "title": "Received offers",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "tender_title": {
+          "type": "string",
+          "__example__": "Villa renovation"
+        },
+        "offers": {
+          "type": "string",
+          "__example__": "2 offers, lowest first."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.tender_title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.offers}"
+          },
+          {
+            "type": "Footer",
+            "label": "Close",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "status": "done"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "DONE",
+      "title": "Done",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Your tender is published."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "Footer",
+            "label": "Done",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "status": "done"
               }
             }
           }

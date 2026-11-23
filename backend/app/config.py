@@ -77,6 +77,9 @@ class Settings(BaseSettings):
     whatsapp_template_document_approved: str = "document_approved"
     whatsapp_template_document_rejected: str = "document_rejected"
 
+    # Owners type deadlines in this zone. The database stores UTC.
+    tender_timezone: str = "Asia/Kuwait"
+
     # Document upload. One rule set for web and WhatsApp uploads.
     document_max_mb: int = 10
     # Upload links are short-lived and single-use. Each one also needs the

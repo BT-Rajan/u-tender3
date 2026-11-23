@@ -23,7 +23,9 @@ from app.services.audit import log_action
 from app.services.email import notify_contractor_offer_decision
 from app.services.document_files import DocumentValidationError
 from app.services.document_service import accept_document
+from app.services import tender_service
 from app.services.notify import notify
+from app.services.tender_service import TenderError
 from app.services.tender_lifecycle import is_sealed_and_open, sync_expired_projects
 
 router = APIRouter(prefix="/owner", tags=["owner"])
@@ -34,6 +36,14 @@ def _get_owned_project(project_id: str, user: User, db: Session) -> Project:
     if not project or project.owner_id != user.id:
         raise HTTPException(status_code=404, detail="Project not found.")
     return project
+
+def _tender_http_error(error: TenderError) -> HTTPException:
+    """The HTTP shape the web has always returned for each rule failure."""
+    if error.code == "not_found":
+        return HTTPException(status_code=404, detail="Project not found.")
+    if error.code == "not_verified":
+        return HTTPException(status_code=403, detail="not_approved")
+    return HTTPException(status_code=400, detail=error.message)
 
 
 @router.get("/projects", response_model=list[ProjectOut])
@@ -226,39 +236,30 @@ def _project_response(project: Project, db: Session) -> ProjectOut:
 
 @router.post("/projects/{project_id}/publish", response_model=ProjectOut)
 def publish_project(project_id: str, user: User = Depends(require_owner), db: Session = Depends(get_db)):
-    project = _get_owned_project(project_id, user, db)
-    if project.status != ProjectStatus.draft:
-        raise HTTPException(status_code=400, detail="Only a draft project can be published.")
-    if project.bid_deadline <= datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Set a bid deadline in the future before publishing.")
-    project.status = ProjectStatus.open
-    db.commit()
-    db.refresh(project)
+    try:
+        project = tender_service.publish(db, user, tender_service.owner_project(db, user, project_id), datetime.utcnow())
+    except TenderError as error:
+        raise _tender_http_error(error)
     return _project_response(project, db)
 
 
 @router.post("/projects/{project_id}/close", response_model=ProjectOut)
 def close_project(project_id: str, user: User = Depends(require_owner), db: Session = Depends(get_db)):
-    """Manually stop accepting bids before the deadline — e.g. the owner is
-    satisfied with what's in hand and wants to move straight to evaluation."""
-    project = _get_owned_project(project_id, user, db)
-    if project.status != ProjectStatus.open:
-        raise HTTPException(status_code=400, detail="Only an open project can be closed.")
-    project.status = ProjectStatus.closed
-    db.commit()
-    db.refresh(project)
+    """Manually stop accepting bids before the deadline, e.g. to move straight to evaluation."""
+    try:
+        project = tender_service.close(db, user, tender_service.owner_project(db, user, project_id))
+    except TenderError as error:
+        raise _tender_http_error(error)
     return _project_response(project, db)
 
 
 @router.post("/projects/{project_id}/start-evaluation", response_model=ProjectOut)
 def start_evaluation(project_id: str, user: User = Depends(require_owner), db: Session = Depends(get_db)):
     sync_expired_projects(db)
-    project = _get_owned_project(project_id, user, db)
-    if project.status != ProjectStatus.closed:
-        raise HTTPException(status_code=400, detail="Only a closed project can enter evaluation.")
-    project.status = ProjectStatus.under_evaluation
-    db.commit()
-    db.refresh(project)
+    try:
+        project = tender_service.start_evaluation(db, user, tender_service.owner_project(db, user, project_id))
+    except TenderError as error:
+        raise _tender_http_error(error)
     return _project_response(project, db)
 
 
@@ -278,33 +279,21 @@ def _notify_bidders(db: Session, project: Project, notification_type: Notificati
 @router.post("/projects/{project_id}/no-award", response_model=ProjectOut)
 def mark_no_award(project_id: str, user: User = Depends(require_owner), db: Session = Depends(get_db)):
     sync_expired_projects(db)
-    project = _get_owned_project(project_id, user, db)
-    if project.status not in (ProjectStatus.closed, ProjectStatus.under_evaluation):
-        raise HTTPException(status_code=400, detail="Only a closed or under-evaluation project can be marked no-award.")
-    previous = project.status.value
-    project.status = ProjectStatus.no_award
-    db.commit()
-    log_action(db, actor_id=user.id, action="project.no_award", target_type="project", target_id=project_id, previous_value=previous, new_value="no_award")
-    _notify_bidders(db, project, NotificationType.tender_no_award)
-    db.refresh(project)
+    try:
+        project = tender_service.mark_no_award(db, user, tender_service.owner_project(db, user, project_id))
+    except TenderError as error:
+        raise _tender_http_error(error)
     return _project_response(project, db)
 
 
 @router.post("/projects/{project_id}/cancel", response_model=ProjectOut)
 def cancel_project(project_id: str, user: User = Depends(require_owner), db: Session = Depends(get_db)):
     sync_expired_projects(db)
-    project = _get_owned_project(project_id, user, db)
-    if project.status not in (ProjectStatus.draft, ProjectStatus.open, ProjectStatus.closed, ProjectStatus.under_evaluation):
-        raise HTTPException(status_code=400, detail="This project can no longer be canceled.")
-    previous = project.status.value
-    project.status = ProjectStatus.canceled
-    db.commit()
-    log_action(db, actor_id=user.id, action="project.cancel", target_type="project", target_id=project_id, previous_value=previous, new_value="canceled")
-    _notify_bidders(db, project, NotificationType.tender_cancelled)
-    db.refresh(project)
+    try:
+        project = tender_service.cancel(db, user, tender_service.owner_project(db, user, project_id))
+    except TenderError as error:
+        raise _tender_http_error(error)
     return _project_response(project, db)
-
-
 @router.get("/projects/{project_id}/review", response_model=ReviewOut | None)
 def get_review(project_id: str, user: User = Depends(require_owner), db: Session = Depends(get_db)):
     project = db.get(Project, project_id)

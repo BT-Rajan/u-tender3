@@ -22,6 +22,7 @@ FLOWS = ("registration", "owner_dashboard", "contractor_dashboard")
 
 REGISTRATION_SCREENS = {"ROLE", "OWNER_DETAILS", "CONTRACTOR_DETAILS", "SUCCESS", "NOT_COMPLETED", "EXPIRED"}
 DASHBOARD_SCREENS = {"MENU", "DOCUMENTS", "LINKS_SENT", "COMING_SOON", "EXPIRED"}
+OWNER_TENDER_SCREENS = {"CREATE_TENDER", "REVIEW", "MY_TENDERS", "TENDER_DETAILS", "AMEND", "OFFERS", "DONE"}
 
 
 def _load(name: str) -> dict:
@@ -129,4 +130,5 @@ def test_dashboard_menus_offer_exactly_the_backend_choices(name, choices):
 
 @pytest.mark.parametrize("name", ["owner_dashboard", "contractor_dashboard"])
 def test_dashboard_flows_have_exactly_the_screens_the_backend_uses(name):
-    assert set(_screens(_load(name))) == DASHBOARD_SCREENS
+    expected = DASHBOARD_SCREENS | (OWNER_TENDER_SCREENS if name == "owner_dashboard" else set())
+    assert set(_screens(_load(name))) == expected

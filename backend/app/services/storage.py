@@ -19,6 +19,9 @@ POST_DEADLINE_BUFFER = 60 * 15  # 15 minutes grace after the deadline
 
 
 def drawing_url_expiry_seconds(bid_deadline) -> int:
+    # A draft has no deadline yet. Its drawings get the default expiry, never a crash.
+    if bid_deadline is None:
+        return settings.signed_url_default_expiry_seconds
     seconds_remaining = int((bid_deadline.timestamp() + POST_DEADLINE_BUFFER) - time.time())
     return min(max(seconds_remaining, ONE_HOUR), NINETY_DAYS)
 
