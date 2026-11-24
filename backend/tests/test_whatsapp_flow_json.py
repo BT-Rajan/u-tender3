@@ -262,3 +262,29 @@ def test_every_deadline_time_is_a_half_hour_slot():
     assert len(times) == 48
     assert times[0] == {"id": "00:00", "title": "00:00"}
     assert times[-1] == {"id": "23:30", "title": "23:30"}
+
+
+def _option_radio(flow_name: str, screen_id: str) -> dict:
+    screen = _screens(_load(flow_name))[screen_id]
+    return next(c for c in screen["layout"]["children"] if c.get("type") == "RadioButtonsGroup" and c.get("name") == "option")
+
+
+def test_owner_tender_actions_are_a_fixed_list_matching_the_backend():
+    """A radio fed from data does not send its choice, so the list is fixed and the backend checks each choice."""
+    from app.services.whatsapp_owner_flows import ACTION_TITLE
+
+    radio = _option_radio("owner_dashboard", "TENDER_DETAILS")
+
+    assert isinstance(radio["data-source"], list)
+    assert {option["id"] for option in radio["data-source"]} == set(ACTION_TITLE)
+
+
+@pytest.mark.parametrize("screen_id, expected", [
+    ("PROJECT_DETAILS", {"submit", "revise", "drawings", "history", "details"}),
+    ("OFFER_DETAILS", {"revise", "withdraw", "history", "details"}),
+])
+def test_contractor_action_lists_are_fixed_and_match_the_backend(screen_id, expected):
+    radio = _option_radio("contractor_dashboard", screen_id)
+
+    assert isinstance(radio["data-source"], list)
+    assert {option["id"] for option in radio["data-source"]} == expected

@@ -495,7 +495,28 @@
             "label": "What next?",
             "name": "option",
             "required": true,
-            "data-source": "${data.actions}"
+            "data-source": [
+              {
+                "id": "submit",
+                "title": "Submit offer"
+              },
+              {
+                "id": "revise",
+                "title": "Revise my offer"
+              },
+              {
+                "id": "drawings",
+                "title": "Get drawings"
+              },
+              {
+                "id": "history",
+                "title": "My revision history"
+              },
+              {
+                "id": "details",
+                "title": "Refresh"
+              }
+            ]
           },
           {
             "type": "Footer",
@@ -806,7 +827,24 @@
             "label": "Action",
             "name": "option",
             "required": true,
-            "data-source": "${data.actions}"
+            "data-source": [
+              {
+                "id": "revise",
+                "title": "Revise my offer"
+              },
+              {
+                "id": "withdraw",
+                "title": "Withdraw my offer"
+              },
+              {
+                "id": "history",
+                "title": "My revision history"
+              },
+              {
+                "id": "details",
+                "title": "Refresh"
+              }
+            ]
           },
           {
             "type": "RadioButtonsGroup",

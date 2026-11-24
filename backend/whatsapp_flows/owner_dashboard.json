@@ -766,7 +766,40 @@
             "label": "Action",
             "name": "option",
             "required": true,
-            "data-source": "${data.actions}"
+            "data-source": [
+              {
+                "id": "details",
+                "title": "View details"
+              },
+              {
+                "id": "edit",
+                "title": "Edit"
+              },
+              {
+                "id": "publish",
+                "title": "Publish"
+              },
+              {
+                "id": "close",
+                "title": "Close for bids"
+              },
+              {
+                "id": "start_evaluation",
+                "title": "Start evaluation"
+              },
+              {
+                "id": "no_award",
+                "title": "Mark as no award"
+              },
+              {
+                "id": "cancel",
+                "title": "Cancel tender"
+              },
+              {
+                "id": "offers",
+                "title": "View offers"
+              }
+            ]
           },
           {
             "type": "RadioButtonsGroup",
