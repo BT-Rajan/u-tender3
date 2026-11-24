@@ -135,6 +135,9 @@ def _fields_from_form(data: dict[str, Any]) -> TenderFields:
     )
 
 
+TENDER_GONE_MESSAGE = "That tender is no longer available."
+
+
 def _error(screen: str, message: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
     return {"screen": screen, "data": {**(data or {}), "error_message": message}}
 
@@ -212,9 +215,9 @@ def handle_owner_screen(db: Session, owner: User, screen: str, data: dict[str, A
 
 def _tender_error_reply(db: Session, owner: User, screen: str, data: dict[str, Any], error: TenderError, *, now: datetime) -> dict[str, Any]:
     if error.code == "not_verified":
-        return _menu_error(db, owner, error.message)
+        return _message(error.message)
     if error.code == "not_found":
-        return open_my_tenders(db, owner, now=now, heading="That tender is no longer available")
+        return _message(TENDER_GONE_MESSAGE)
     if screen == "CREATE_TENDER":
         return _error("CREATE_TENDER", error.message, {**_blank_create_form(), **{k: v for k, v in data.items() if k in _blank_create_form()}})
     if screen == "REVIEW":
@@ -223,12 +226,12 @@ def _tender_error_reply(db: Session, owner: User, screen: str, data: dict[str, A
         project = db.get(Project, _form(data, "tender_id"))
         if project is not None and project.owner_id == owner.id:
             return _details_screen(db, owner, project, error.message)
-        return open_my_tenders(db, owner, now=now)
+        return _message(TENDER_GONE_MESSAGE)
     if screen == "AMEND":
         project = db.get(Project, _form(data, "tender_id"))
         if project is not None and project.owner_id == owner.id:
             return {"screen": "AMEND", "data": {**_amend_form(project), "error_message": error.message}}
-        return open_my_tenders(db, owner, now=now)
+        return _message(TENDER_GONE_MESSAGE)
     return open_my_tenders(db, owner, now=now)
 
 
@@ -236,7 +239,6 @@ def _review_actions() -> list[dict[str, str]]:
     return [
         {"id": "publish", "title": "Publish now"},
         {"id": "save_draft", "title": "Keep as draft"},
-        {"id": "edit", "title": "Edit"},
     ]
 
 
@@ -283,8 +285,6 @@ def _submit_review(db: Session, owner: User, data: dict[str, Any], *, now: datet
         return _message("Your tender is published. Bidders can now see it and submit offers.")
     if action == "save_draft":
         return _message("Draft saved. You can find it under My tenders.")
-    if action == "edit":
-        return {"screen": "CREATE_TENDER", "data": _fields_for_draft(project)}
     raise TenderError("invalid", "Choose an option.")
 
 

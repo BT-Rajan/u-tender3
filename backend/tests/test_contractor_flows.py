@@ -129,13 +129,13 @@ def test_a_verified_but_unpaid_contractor_can_browse_but_not_bid(setup):
 
     project_id = browse["data"]["projects"][0]["id"]
     details = _send(setup["client"], setup["pem"], token, "PROJECT_LIST", {"project_id": project_id})
-    assert details["screen"] == "MENU"
-    assert "subscription" in details["data"]["error_message"].lower()
+    assert details["screen"] == "DONE"
+    assert "subscription" in details["data"]["message"].lower()
     assert "Villa renovation" not in json.dumps(details)
 
     refused = _send(setup["client"], setup["pem"], token, "PROJECT_DETAILS", {"project_id": project_id, "action": "submit"})
-    assert refused["screen"] == "MENU"
-    assert "subscription" in refused["data"]["error_message"].lower()
+    assert refused["screen"] == "DONE"
+    assert "subscription" in refused["data"]["message"].lower()
     assert db.query(Offer).filter(Offer.contractor_id == unpaid.id).count() == 0
 
 
@@ -147,8 +147,8 @@ def test_a_verified_but_unpaid_contractor_cannot_see_drawings(setup):
 
     reply = _send(setup["client"], setup["pem"], token, "PROJECT_DETAILS", {"project_id": project.id, "action": "drawings"})
 
-    assert reply["screen"] == "MENU"
-    assert "subscription" in reply["data"]["error_message"].lower()
+    assert reply["screen"] == "DONE"
+    assert "subscription" in reply["data"]["message"].lower()
 
 
 def test_an_unverified_contractor_cannot_search(client, monkeypatch, db):
@@ -373,7 +373,7 @@ def test_another_contractors_offer_cannot_be_opened(setup):
 
     reply = _send(setup["client"], setup["pem"], setup["token"], "MY_OFFERS", {"project_id": theirs.id})
 
-    assert reply["screen"] == "PROJECT_LIST"
+    assert reply["screen"] == "DONE"
     dump = json.dumps(reply)
     assert "4444" not in dump and "Rival Two" not in dump
 
@@ -467,8 +467,8 @@ def test_a_suspended_tender_cannot_be_opened_even_by_id(setup):
     db = setup["db"]
     project = _project(db, setup["owner"], suspended=True)
     reply = _send(setup["client"], setup["pem"], setup["token"], "PROJECT_LIST", {"project_id": project.id})
-    assert reply["screen"] == "PROJECT_LIST"
-    assert "no longer available" in reply["data"]["heading"]
+    assert reply["screen"] == "DONE"
+    assert "no longer available" in reply["data"]["message"]
 
 
 def test_a_draft_tender_cannot_be_opened_even_by_id(setup):
@@ -476,7 +476,7 @@ def test_a_draft_tender_cannot_be_opened_even_by_id(setup):
     draft = _project(db, setup["owner"], status=ProjectStatus.draft, deadline=None, title="Secret draft")
     reply = _send(setup["client"], setup["pem"], setup["token"], "PROJECT_LIST", {"project_id": draft.id})
     assert "Secret draft" not in json.dumps(reply)
-    assert "no longer available" in reply["data"]["heading"]
+    assert "no longer available" in reply["data"]["message"]
 
 
 def test_a_suspended_contractor_loses_browsing(client, monkeypatch, db):

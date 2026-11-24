@@ -16,42 +16,32 @@
     ],
     "SEARCH": [
       "PROJECT_LIST",
-      "MENU"
+      "DONE"
     ],
     "PROJECT_LIST": [
       "PROJECT_DETAILS",
-      "MENU"
+      "DONE"
     ],
     "PROJECT_DETAILS": [
       "SUBMIT_OFFER",
       "OFFER_HISTORY",
-      "DONE",
-      "PROJECT_LIST",
-      "MENU"
+      "DONE"
     ],
     "SUBMIT_OFFER": [
       "REVIEW_OFFER",
-      "PROJECT_LIST",
-      "MENU"
+      "DONE"
     ],
     "REVIEW_OFFER": [
-      "DONE",
-      "SUBMIT_OFFER",
-      "PROJECT_LIST",
-      "MENU"
+      "DONE"
     ],
     "MY_OFFERS": [
       "OFFER_DETAILS",
-      "PROJECT_LIST",
-      "MENU"
+      "DONE"
     ],
     "OFFER_DETAILS": [
       "SUBMIT_OFFER",
       "OFFER_HISTORY",
-      "DONE",
-      "PROJECT_LIST",
-      "MENU",
-      "MY_OFFERS"
+      "DONE"
     ]
   },
   "screens": [

@@ -14,29 +14,23 @@
     ],
     "CREATE_TENDER": [
       "REVIEW",
-      "MENU"
+      "DONE"
     ],
     "REVIEW": [
-      "DONE",
-      "CREATE_TENDER",
-      "MENU",
-      "MY_TENDERS"
+      "DONE"
     ],
     "MY_TENDERS": [
       "TENDER_DETAILS",
-      "MENU"
+      "DONE"
     ],
     "TENDER_DETAILS": [
       "CREATE_TENDER",
       "AMEND",
       "DONE",
-      "OFFERS",
-      "MY_TENDERS"
+      "OFFERS"
     ],
     "AMEND": [
-      "DONE",
-      "MENU",
-      "MY_TENDERS"
+      "DONE"
     ]
   },
   "screens": [

@@ -183,3 +183,39 @@ def test_data_examples_are_only_on_top_level_fields(flow_name):
         if missing or nested:
             problems[screen_id] = {"missing": missing, "nested": nested}
     assert problems == {}
+
+
+def _has_cycle(routing: dict[str, list[str]]) -> bool:
+    visiting: set[str] = set()
+    done: set[str] = set()
+
+    def visit(node: str) -> bool:
+        if node in done:
+            return False
+        if node in visiting:
+            return True
+        visiting.add(node)
+        found = any(visit(target) for target in routing.get(node, []))
+        visiting.discard(node)
+        done.add(node)
+        return found
+
+    return any(visit(node) for node in list(routing))
+
+
+@pytest.mark.parametrize("flow_name", ("owner_dashboard", "contractor_dashboard"))
+def test_dashboard_routing_is_forward_only(flow_name):
+    """Meta rejects backward routes (A->B where B->A also exists) and loops, so the routing model must be acyclic."""
+    flow = _load(flow_name)
+    routing = flow["routing_model"]
+    screens = set(_screens(flow))
+
+    reverse_pairs = [
+        (source, target)
+        for source, targets in routing.items()
+        for target in targets
+        if source in routing.get(target, [])
+    ]
+    assert reverse_pairs == []
+    assert not _has_cycle(routing)
+    assert all(source in screens and target in screens for source, targets in routing.items() for target in targets)

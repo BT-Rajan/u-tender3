@@ -401,31 +401,30 @@ def handle_contractor_screen(
 
 
 def _contractor_error(db: Session, user: User, screen: str, data: dict[str, Any], error: TenderError, *, now: datetime) -> dict[str, Any]:
-    if error.code == "payment_required":
-        return _menu_error(db, user, error.message)
-    if error.code == "not_approved":
-        return _menu_error(db, user, error.message)
+    """Map a failed request to a reply the routing model allows. Meta only accepts forward routes, so a
+    failure never sends the user back to an earlier screen: it stays on the same screen, or ends with a message."""
+    if error.code in ("payment_required", "not_approved"):
+        return _done(error.message)
     if error.code == "not_found":
         # Without the payment gate the web hides tender details, so a tender id from an unpaid
         # contractor's list gets the subscription message rather than revealing anything.
         profile = db.get(ContractorProfile, user.id)
         if profile is not None and not profile.is_verified_active:
-            return _menu_error(db, user, "Activate a subscription to view project details, drawings and to bid.")
-        return _feed_screen(db, user, heading="That project is no longer available", now=now)
+            return _done("Activate a subscription to view project details, drawings and to bid.")
+        return _done("That project is no longer available.")
     if screen == "SEARCH":
         return {"screen": "SEARCH", "data": {"search": "", "trade": "", "sort": "deadline", "error_message": error.message}}
     if screen == "SUBMIT_OFFER":
         form = {k: _text(v, 1000) for k, v in data.items() if k in ("project_id", "amount", "timeline", "message")}
         return {"screen": "SUBMIT_OFFER", "data": {**_offer_form(form.get("project_id", ""), "", None), **form, "error_message": error.message}}
-    if screen == "REVIEW_OFFER":
-        project_id = _text(data.get("project_id"), 64)
-        return {"screen": "SUBMIT_OFFER", "data": {**_offer_form(project_id, "", None), "amount": _text(data.get("amount"), 40), "timeline": _text(data.get("timeline"), 200), "message": _text(data.get("message"), 1000), "error_message": error.message}}
     if screen == "OFFER_DETAILS":
         return _offer_details(db, user, _text(data.get("project_id"), 64), now=now, message=error.message)
     project_id = _text(data.get("project_id"), 64)
-    if project_id:
+    if screen in ("PROJECT_LIST", "PROJECT_DETAILS") and project_id:
         return _project_details(db, user, project_id, now=now, message=error.message)
-    return _feed_screen(db, user, heading="Open projects", now=now)
+    if screen == "PROJECT_LIST":
+        return _feed_screen(db, user, heading="Open projects", now=now)
+    return _done(error.message)
 
 
 def contractor_menu_choice(db: Session, identity: WhatsAppIdentity, user: User, choice: str, *, now: datetime) -> dict[str, Any] | None:

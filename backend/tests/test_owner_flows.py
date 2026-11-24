@@ -182,15 +182,15 @@ def test_save_as_draft_keeps_the_tender_and_says_so(setup):
     assert _fresh(db, tender_id).status == ProjectStatus.draft
 
 
-def test_edit_from_review_reopens_the_form_with_the_saved_values(setup):
+def test_review_offers_no_edit_because_the_back_arrow_returns_to_the_form(setup):
+    """Meta only accepts forward routes, so REVIEW cannot send the user back to CREATE_TENDER."""
     tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3"})["data"]["tender_id"]
 
-    form = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "edit"})
+    review = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "edit"})
 
-    assert form["screen"] == "CREATE_TENDER"
-    assert form["data"]["tender_id"] == tender_id
-    assert form["data"]["title"] == "Villa"
-    assert form["data"]["address"] == "Block 3"
+    assert review["screen"] == "REVIEW"
+    assert review["data"]["error_message"] == "Choose an option."
+    assert "edit" not in {option["id"] for option in _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "publish"})["data"].get("actions", [])}
 
 
 def test_editing_an_existing_draft_updates_it_rather_than_creating_another(setup):
@@ -224,15 +224,15 @@ def test_a_tender_of_another_owner_cannot_be_opened(setup):
 
     reply = _send(setup["client"], setup["pem"], setup["token"], "MY_TENDERS", {"tender_id": theirs.id})
 
-    assert reply["screen"] == "MY_TENDERS"
-    assert "no longer available" in reply["data"]["heading"]
+    assert reply["screen"] == "DONE"
+    assert "no longer available" in reply["data"]["message"]
     assert theirs.title not in json.dumps(reply)
 
 
 def test_a_tender_id_that_does_not_exist_gets_the_same_answer(setup):
     reply = _send(setup["client"], setup["pem"], setup["token"], "MY_TENDERS", {"tender_id": "made-up-id"})
-    assert reply["screen"] == "MY_TENDERS"
-    assert "no longer available" in reply["data"]["heading"]
+    assert reply["screen"] == "DONE"
+    assert "no longer available" in reply["data"]["message"]
 
 
 def test_details_show_only_the_actions_the_state_allows(setup):
@@ -350,7 +350,7 @@ def test_amend_of_another_owners_tender_is_refused(setup):
 
     reply = _send(setup["client"], setup["pem"], setup["token"], "AMEND", {"tender_id": theirs.id, "title": "Hijacked"})
 
-    assert reply["screen"] == "MY_TENDERS"
+    assert reply["screen"] == "DONE"
     assert _fresh(db, theirs.id).title == "Not yours"
 
 
