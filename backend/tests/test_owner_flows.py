@@ -533,3 +533,38 @@ def test_a_date_without_a_time_is_refused_with_a_message(setup):
 
     assert reply["screen"] == "CREATE_TENDER"
     assert "both the date and the time" in reply["data"]["error_message"]
+
+
+def test_a_published_tender_can_be_closed_from_its_details(setup):
+    db = setup["db"]
+    future = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=30)
+    date_ms = _epoch_ms_for_utc_midnight(future)
+
+    created = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {
+        "title": "Villa", "address": "Block 3", "bid_deadline_date": date_ms, "bid_deadline_time": "12:00",
+    })
+    tender_id = created["data"]["tender_id"]
+    assert created["screen"] == "REVIEW"
+
+    published = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "option": "publish"})
+    assert published["screen"] == "DONE", published
+    assert _fresh(db, tender_id).status == ProjectStatus.open
+
+    details = _send(setup["client"], setup["pem"], setup["token"], "MY_TENDERS", {"tender_id": tender_id})
+    assert details["screen"] == "TENDER_DETAILS", details
+    assert "close" in [action["id"] for action in details["data"]["actions"]]
+
+    closed = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": tender_id, "action": "close"})
+    assert closed["screen"] == "DONE", closed
+    assert _fresh(db, tender_id).status == ProjectStatus.closed
+
+
+def test_a_choice_the_tender_does_not_allow_names_the_status_and_the_choice(setup):
+    db = setup["db"]
+    draft = _project(db, setup["owner"], status=ProjectStatus.draft, deadline=None)
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": draft.id, "action": "close"})
+
+    assert reply["screen"] == "TENDER_DETAILS"
+    assert "draft" in reply["data"]["error_message"]
+    assert "chose close" in reply["data"]["error_message"]

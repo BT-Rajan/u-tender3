@@ -302,7 +302,11 @@ def _submit_details(db: Session, owner: User, data: dict[str, Any], *, now: date
     action = _form(data, "action")
     allowed = tender_service.allowed_actions(project)
     if action not in allowed:
-        raise TenderError("not_allowed", "That action isn't available for this tender right now.")
+        choice = action or "no choice"
+        raise TenderError(
+            "not_allowed",
+            f"That action isn't available. This tender is {STATUS_LABEL[project.status].lower()} and you chose {choice}. Open it again from My tenders.",
+        )
 
     if action in CONFIRM_REQUIRED and _form(data, "confirm") != "yes":
         raise TenderError("confirm", f"Choose Yes to confirm: {ACTION_TITLE[action].lower()}.")
