@@ -79,7 +79,7 @@
           },
           {
             "type": "TextInput",
-            "label": "Full name or company name",
+            "label": "Name or company",
             "name": "full_name",
             "input-type": "text",
             "required": true,
