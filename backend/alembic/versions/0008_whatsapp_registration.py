@@ -24,18 +24,40 @@ branch_labels = None
 depends_on = None
 
 
+_INDEX = "ix_whatsapp_identities_user_id"
+_TMP_INDEX = "ix_whatsapp_identities_user_id_tmp"
+
+
+def _swap_user_id_index(unique: bool) -> None:
+    """Replace the user_id index with one of the requested uniqueness.
+
+    MySQL/MariaDB will not drop an index that a foreign key relies on, and
+    the user_id foreign key relies on this one. So the replacement index is
+    created first under a temporary name (the foreign key stays covered
+    throughout), the old index is dropped, and the new one takes the real
+    name. SQLite cannot rename indexes, so there the new index is simply
+    created after the drop.
+    """
+    bind = op.get_bind()
+    if bind.dialect.name == "mysql":
+        op.create_index(_TMP_INDEX, "whatsapp_identities", ["user_id"], unique=unique)
+        op.drop_index(_INDEX, table_name="whatsapp_identities")
+        op.execute(f"ALTER TABLE whatsapp_identities RENAME INDEX {_TMP_INDEX} TO {_INDEX}")
+    else:
+        op.drop_index(_INDEX, table_name="whatsapp_identities")
+        op.create_index(_INDEX, "whatsapp_identities", ["user_id"], unique=unique)
+
+
 def upgrade() -> None:
     with op.batch_alter_table("users") as batch:
         batch.alter_column("email", existing_type=sa.String(255), nullable=True)
         batch.alter_column("password_hash", existing_type=sa.String(255), nullable=True)
 
-    op.drop_index("ix_whatsapp_identities_user_id", table_name="whatsapp_identities")
-    op.create_index("ix_whatsapp_identities_user_id", "whatsapp_identities", ["user_id"], unique=True)
+    _swap_user_id_index(unique=True)
 
 
 def downgrade() -> None:
-    op.drop_index("ix_whatsapp_identities_user_id", table_name="whatsapp_identities")
-    op.create_index("ix_whatsapp_identities_user_id", "whatsapp_identities", ["user_id"])
+    _swap_user_id_index(unique=False)
 
     with op.batch_alter_table("users") as batch:
         batch.alter_column("password_hash", existing_type=sa.String(255), nullable=False)

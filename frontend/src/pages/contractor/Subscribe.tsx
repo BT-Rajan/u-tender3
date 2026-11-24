@@ -5,6 +5,7 @@ import type { ContractorProfile } from "@/api/types";
 import { PageLoading } from "@/components/PageLoading";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { useI18n } from "@/i18n/I18nContext";
+import { formatDate } from "@/lib/format";
 
 function PlanToggle({
   plan,
@@ -73,7 +74,7 @@ function PlanToggle({
 }
 
 export function ContractorSubscribePage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
   const [error, setError] = useState<string | null>(null);
 
@@ -128,7 +129,7 @@ export function ContractorSubscribePage() {
           {overrideOnly && <p className="text-sm text-steel mt-3">{t("contractor.subscribe.overrideMessage")}</p>}
           {!overrideOnly && profile.subscription_current_period_end && (
             <p className="text-sm text-steel mt-3">
-              {t("contractor.subscribe.renews")} {new Date(profile.subscription_current_period_end).toLocaleDateString()}
+              {t("contractor.subscribe.renews")} {formatDate(profile.subscription_current_period_end, language)}
             </p>
           )}
           {!overrideOnly && (

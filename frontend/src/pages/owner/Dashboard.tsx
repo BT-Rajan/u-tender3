@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
 import type { Project, ProjectStatus } from "@/api/types";
-import { formatDeadline } from "@/lib/format";
+import { formatDate, formatDeadline } from "@/lib/format";
 import { QueryError } from "@/components/QueryError";
 import { useI18n } from "@/i18n/I18nContext";
 
@@ -49,7 +49,7 @@ function KpiCard({ label, value, highlight }: { label: string; value: number; hi
 }
 
 export function OwnerDashboardPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const {
     data: projects,
     isError,
@@ -184,7 +184,7 @@ export function OwnerDashboardPage() {
               <div className="tblock-strip mt-4">
                 <div className="tblock-field">
                   <span className="k">{t("owner.dashboard.deadline")}</span>
-                  <span className="v">{formatDeadline(p.bid_deadline)}</span>
+                  <span className="v">{formatDeadline(p.bid_deadline, language)}</span>
                 </div>
                 <div className="tblock-field">
                   <span className="k">{t("owner.dashboard.trade")}</span>
@@ -193,7 +193,7 @@ export function OwnerDashboardPage() {
                 <div className="tblock-field">
                   <span className="k">{t("owner.dashboard.posted")}</span>
                   <span className="v">
-                    {new Date(p.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    {formatDate(p.created_at, language)}
                   </span>
                 </div>
               </div>

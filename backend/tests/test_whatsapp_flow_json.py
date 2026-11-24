@@ -20,7 +20,7 @@ from app.services.whatsapp_flows import (
 FLOW_DIR = Path(__file__).resolve().parents[1] / "whatsapp_flows"
 FLOWS = ("registration", "owner_dashboard", "contractor_dashboard")
 
-REGISTRATION_SCREENS = {"ROLE", "OWNER_DETAILS", "CONTRACTOR_DETAILS", "SUCCESS", "NOT_COMPLETED", "EXPIRED"}
+REGISTRATION_SCREENS = {"SPLASH", "REGISTER", "RESULT_OK", "SUMMARY", "THANKS", "RESULT_ERROR", "EXPIRED"}
 DASHBOARD_SCREENS = {"MENU", "DOCUMENTS", "LINKS_SENT", "COMING_SOON", "EXPIRED"}
 OWNER_TENDER_SCREENS = {"CREATE_TENDER", "REVIEW", "MY_TENDERS", "TENDER_DETAILS", "AMEND", "OFFERS", "DONE"}
 CONTRACTOR_TENDER_SCREENS = {
@@ -110,16 +110,10 @@ def test_registration_data_fields_match_what_the_endpoint_sends():
         assert set(fields) <= declared, f"{screen_id} does not declare {set(fields) - declared}"
 
 
-def test_the_contractor_trade_dropdown_offers_exactly_the_backend_trades():
+def test_the_register_form_offers_exactly_owner_and_contractor():
     screens = _screens(_load("registration"))
-    dropdown = next(c for c in _components(screens["CONTRACTOR_DETAILS"]) if c.get("type") == "Dropdown")
-    assert tuple(option["id"] for option in dropdown["data-source"]) == TRADE_OPTIONS
-
-
-def test_registration_language_choices_are_english_and_arabic():
-    screens = _screens(_load("registration"))
-    radios = [c for c in _components(screens["ROLE"]) if c.get("name") == "language"]
-    assert [option["id"] for option in radios[0]["data-source"]] == ["en", "ar"]
+    radio = next(c for c in _components(screens["REGISTER"]) if c.get("name") == "role")
+    assert tuple(option["id"] for option in radio["data-source"]) == ("owner", "contractor")
 
 
 @pytest.mark.parametrize(

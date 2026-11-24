@@ -1,0 +1,68 @@
+# Local development stack: MySQL, the FastAPI backend, and the Vite dev server.
+#
+#   cp backend/.env.example backend/.env   # then fill in the secrets
+#   docker compose up --build
+#
+# Then open http://localhost:5173 (web) and http://localhost:8000/docs (API).
+#
+# Source directories are bind-mounted, so edits reload without a rebuild.
+# The database and uploaded files live in named volumes and survive restarts.
+# For a real server, see the README's deployment notes.
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: utender
+      MYSQL_USER: utender
+      MYSQL_PASSWORD: ${DB_PASSWORD:-utender}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    # These override the values in backend/.env so the containers talk to
+    # each other by service name, while the browser still uses localhost.
+    environment:
+      DATABASE_URL: mysql+pymysql://utender:${DB_PASSWORD:-utender}@db:3306/utender
+      STORAGE_ROOT: /app/storage
+      CORS_ORIGINS: http://localhost:5173
+      APP_URL: http://localhost:5173
+      API_URL: http://localhost:8000
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - backend-storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_WHATSAPP_NUMBER: ${VITE_WHATSAPP_NUMBER:-}
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  db-data:
+  backend-storage:
+  frontend-node-modules:

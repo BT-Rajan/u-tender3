@@ -3,6 +3,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { apiFetch, ApiError } from "@/api/client";
 import { useI18n } from "@/i18n/I18nContext";
 import { AppHeader } from "@/components/AppHeader";
+import { WhatsAppCard } from "@/components/WhatsAppCard";
 
 const ROLE_HOME: Record<string, { label: string; href: string }> = {
   owner: { label: "Owner", href: "/owner/dashboard" },
@@ -124,6 +125,7 @@ export function AccountPage() {
       <AppHeader roleLabel={roleInfo.label} homeHref={roleInfo.href} />
       <main className="max-w-5xl mx-auto px-5 py-8">
         <EmailVerifyBanner />
+        <WhatsAppCard />
         <ChangePasswordForm />
       </main>
     </div>

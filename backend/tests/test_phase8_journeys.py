@@ -73,16 +73,17 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
     _admin(client, db)
 
     # 1. New owner registers from their first message.
-    assert _deliver(client, sender, monkeypatch, text_message("wamid.OWNER1", OWNER_WA, "hi")).status_code == 200
+    assert _deliver(client, sender, monkeypatch, text_message("wamid.OWNER1", OWNER_WA, "utender")).status_code == 200
     owner_token = sender.flows()[-1]["flow_token"]
-    assert _flow(client, public_pem, owner_token, "ROLE", {"role": "owner", "language": "en"})["screen"] == "OWNER_DETAILS"
-    assert _flow(client, public_pem, owner_token, "OWNER_DETAILS", {"full_name": "Layla Al-Sabah"})["screen"] == "SUCCESS"
+    registered = _flow(client, public_pem, owner_token, "REGISTER", {
+        "full_name": "Layla Al-Sabah", "address": "Block 4, Street 12, Salmiya", "role": "owner"})
+    assert registered["screen"] == "RESULT_OK"
     owner = db.scalar(select(User).where(User.phone == f"+{OWNER_WA}"))
     assert owner.role == UserRole.owner and owner.email is None and owner.password_hash is None
 
     # 2. Returning owner, while still unverified: the dashboard says what is missing.
     sender.sent.clear()
-    assert _deliver(client, sender, monkeypatch, text_message("wamid.OWNER2", OWNER_WA, "menu")).status_code == 200
+    assert _deliver(client, sender, monkeypatch, text_message("wamid.OWNER2", OWNER_WA, "utender")).status_code == 200
     owner_menu = sender.flows()[-1]["flow_token"]
     menu = _flow(client, public_pem, owner_menu, "MENU", action="INIT")
     assert "Documents are incomplete" in menu["data"]["status"]
@@ -110,11 +111,14 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
 
     # 5. Contractor registers, is approved, and has an active subscription.
     sender.sent.clear()
-    assert _deliver(client, sender, monkeypatch, text_message("wamid.CON1", CONTRACTOR_WA, "hi")).status_code == 200
+    assert _deliver(client, sender, monkeypatch, text_message("wamid.CON1", CONTRACTOR_WA, "utender")).status_code == 200
     con_token = sender.flows()[-1]["flow_token"]
-    _flow(client, public_pem, con_token, "ROLE", {"role": "contractor", "language": "en"})
-    assert _flow(client, public_pem, con_token, "CONTRACTOR_DETAILS", {
-        "contact_name": "Omar Haddad", "company_name": "Haddad Builders", "primary_trade": "Electrical"})["screen"] == "SUCCESS"
+    assert _flow(client, public_pem, con_token, "REGISTER", {
+        "full_name": "Omar Haddad", "address": "Block 9, Jabriya, Kuwait", "role": "contractor"})["screen"] == "RESULT_OK"
+    # The registration form doesn't ask for a trade, so the contractor's profile is set to the tender's trade here.
+    con_profile = db.scalar(select(ContractorProfile).join(User).where(User.full_name == "Omar Haddad"))
+    con_profile.primary_trade = "Electrical"
+    db.commit()
     contractor = db.scalar(select(User).where(User.phone == f"+{CONTRACTOR_WA}"))
     contractor_req = db.scalar(select(DocumentRequirement).where(DocumentRequirement.applies_to == UserRole.contractor))
     assert client.post("/admin/review/documents", json={
@@ -127,7 +131,7 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
     # 6. Owner creates a sealed tender over WhatsApp and publishes it. The paid contractor in Electrical is told.
     sender.sent.clear()
     deadline = (datetime.utcnow() + timedelta(days=10)).strftime("%Y-%m-%d %H:%M")
-    _deliver(client, sender, monkeypatch, text_message("wamid.OWNER3", OWNER_WA, "tender"))
+    _deliver(client, sender, monkeypatch, text_message("wamid.OWNER3", OWNER_WA, "utender"))
     owner_menu = sender.flows()[-1]["flow_token"]
     review_screen = _flow(client, public_pem, owner_menu, "CREATE_TENDER", {
         "title": "Villa renovation", "address": "Block 3, Salmiya", "trade": "Electrical",
@@ -139,7 +143,7 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
 
     # 7. Contractor discovers the tender, submits an offer, then revises it.
     sender.sent.clear()
-    _deliver(client, sender, monkeypatch, text_message("wamid.CON2", CONTRACTOR_WA, "projects"))
+    _deliver(client, sender, monkeypatch, text_message("wamid.CON2", CONTRACTOR_WA, "utender"))
     con_menu = sender.flows()[-1]["flow_token"]
     listing = _flow(client, public_pem, con_menu, "MENU", {"choice": "browse_projects"})
     assert [p["id"] for p in listing["data"]["projects"]] == [tender_id]
@@ -185,13 +189,13 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
     # 11. Duplicate webhook delivery: the same message again changes nothing.
     events_before = db.query(WhatsAppMessageEvent).count()
     outbox_before = db.query(WhatsAppOutbox).count()
-    replay = json.dumps(message_envelope(text_message("wamid.CON2", CONTRACTOR_WA, "projects"))).encode()
+    replay = json.dumps(message_envelope(text_message("wamid.CON2", CONTRACTOR_WA, "utender"))).encode()
     assert _deliver(client, sender, monkeypatch, raw_override=replay).status_code == 200
     assert db.query(WhatsAppMessageEvent).count() == events_before
     assert db.query(WhatsAppOutbox).count() == outbox_before
 
     # 12. Invalid signature is refused and stores nothing.
-    bad = _deliver(client, sender, monkeypatch, text_message("wamid.BAD", CONTRACTOR_WA, "x"), signature="sha256=00")
+    bad = _deliver(client, sender, monkeypatch, text_message("wamid.BAD", CONTRACTOR_WA, "utender"), signature="sha256=00")
     assert bad.status_code == 403
     assert db.scalar(select(WhatsAppMessageEvent).where(WhatsAppMessageEvent.provider_message_id == "wamid.BAD")) is None
 
@@ -200,7 +204,7 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
     assert client.post(f"/admin/contractors/{contractor.id}/suspend", json={"suspended": True}).status_code == 200
     dispatch_due(db, sender, now=datetime.utcnow() + timedelta(seconds=1), max_attempts=3)
     assert any(m.get("template") == "account_status" and m["to"] == CONTRACTOR_WA for m in sender.sent)
-    _deliver(client, sender, monkeypatch, text_message("wamid.CON3", CONTRACTOR_WA, "projects"))
+    _deliver(client, sender, monkeypatch, text_message("wamid.CON3", CONTRACTOR_WA, "utender"))
     suspended_menu = sender.flows()[-1]["flow_token"]
     refused = _flow(client, public_pem, suspended_menu, "MENU", {"choice": "browse_projects"})
     assert refused["screen"] == "MENU" and "verified" in refused["data"]["error_message"]

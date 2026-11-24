@@ -1,4 +1,7 @@
+import typing
 from functools import lru_cache
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -60,6 +63,9 @@ class Settings(BaseSettings):
     whatsapp_enabled: bool = False
     whatsapp_app_secret: str | None = None  # signs webhooks and Flow requests
     whatsapp_verify_token: str | None = None  # GET subscription handshake
+    # Shared with Cogzi, which forwards messages that start with the trigger word
+    # from the shared Karkathar number. Signs /whatsapp/forward requests.
+    whatsapp_forward_secret: str | None = None
     whatsapp_access_token: str | None = None
     whatsapp_phone_number_id: str | None = None
     whatsapp_api_version: str = "v21.0"
@@ -93,6 +99,18 @@ class Settings(BaseSettings):
     # one-time code sent in a separate WhatsApp message.
     upload_link_ttl_minutes: int = 20
     upload_link_max_wrong_codes: int = 5
+
+    # An env line left blank (e.g. "S3_ENDPOINT_URL=" copied from .env.example)
+    # must mean "not set". Otherwise an optional value arrives as "" and
+    # libraries such as boto3 try to use it and fail.
+    @field_validator("*", mode="before")
+    @classmethod
+    def _blank_optional_is_unset(cls, value, info):
+        if isinstance(value, str) and not value.strip():
+            field = cls.model_fields.get(info.field_name)
+            if field is not None and type(None) in typing.get_args(field.annotation):
+                return None
+        return value
 
 
 DEFAULT_SECRET_VALUES = ("change-me-in-production",)

@@ -1,5 +1,7 @@
 export interface Dictionary {
   common: { loading: string; save: string; cancel: string; back: string };
+  whatsapp: { title: string; body: string; cta: string };
+  errors: { notFoundTitle: string; notFoundBody: string; goHome: string; crashTitle: string; crashBody: string; reload: string };
   brand: { tagline: string };
   home: { login: string; signup: string };
   header: { logOut: string; account: string };
@@ -519,6 +521,19 @@ export interface Dictionary {
 }
 
 export const en: Dictionary = {
+  whatsapp: {
+    title: "Use U-Tender on WhatsApp",
+    body: "Open a chat and send the word utender. We'll reply with your account options.",
+    cta: "Open WhatsApp",
+  },
+  errors: {
+    notFoundTitle: "Page not found",
+    notFoundBody: "The page you're looking for doesn't exist or has moved.",
+    goHome: "Back to home",
+    crashTitle: "Something went wrong",
+    crashBody: "An unexpected error stopped this page from loading. Reloading usually fixes it.",
+    reload: "Reload page",
+  },
   common: {
     loading: "Loading…",
     save: "Save",
@@ -1068,6 +1083,19 @@ export const en: Dictionary = {
 };
 
 export const ar: Dictionary = {
+  whatsapp: {
+    title: "استخدم يو-تندر عبر واتساب",
+    body: "افتح محادثة وأرسل كلمة utender. سنرد عليك بخيارات حسابك.",
+    cta: "فتح واتساب",
+  },
+  errors: {
+    notFoundTitle: "الصفحة غير موجودة",
+    notFoundBody: "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
+    goHome: "العودة إلى الرئيسية",
+    crashTitle: "حدث خطأ ما",
+    crashBody: "أوقف خطأ غير متوقع تحميل هذه الصفحة. عادةً ما تحل إعادة التحميل المشكلة.",
+    reload: "إعادة تحميل الصفحة",
+  },
   common: {
     loading: "جارٍ التحميل…",
     save: "حفظ",
