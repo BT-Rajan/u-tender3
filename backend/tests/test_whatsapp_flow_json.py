@@ -131,3 +131,20 @@ def test_dashboard_flows_have_exactly_the_screens_the_backend_uses(name):
     extra = OWNER_TENDER_SCREENS if name == "owner_dashboard" else CONTRACTOR_TENDER_SCREENS
     expected = DASHBOARD_SCREENS | extra
     assert set(_screens(_load(name))) == expected
+
+
+def test_splash_banner_is_raw_base64_png_at_banner_size():
+    """Meta shows a broken image when the Image src carries a data URI prefix, so the banner is raw base64 PNG."""
+    import base64
+    import struct
+
+    splash = _screens(_load("registration"))["SPLASH"]
+    image = next(child for child in splash["layout"]["children"] if child["type"] == "Image")
+
+    assert not image["src"].startswith("data:")
+    raw = base64.b64decode(image["src"], validate=True)
+    assert raw[:8] == b"\x89PNG\r\n\x1a\n"
+    width, height = struct.unpack(">II", raw[16:24])
+    assert (width, height) == (1200, 480)
+    assert image["width"] / image["height"] == pytest.approx(width / height)
+    assert image["scale-type"] == "contain"
