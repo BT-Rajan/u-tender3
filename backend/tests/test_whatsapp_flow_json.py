@@ -238,3 +238,27 @@ def test_form_fields_are_not_named_action(flow_name):
     text = (FLOW_DIR / f"{flow_name}.json").read_text(encoding="utf-8")
     assert "${form.action}" not in text
     assert '"name": "action"' not in text
+
+
+def test_create_form_requires_address_and_bid_deadline_like_the_web_form():
+    """The web form requires title, address and bid deadline. Trade stays optional."""
+    children = _screens(_load("owner_dashboard"))["CREATE_TENDER"]["layout"]["children"]
+    by_name = {child["name"]: child for child in children if "name" in child}
+
+    assert by_name["title"]["required"] is True
+    assert by_name["address"]["required"] is True
+    assert by_name["bid_deadline_date"]["type"] == "DatePicker"
+    assert by_name["bid_deadline_date"]["required"] is True
+    assert by_name["bid_deadline_time"]["type"] == "Dropdown"
+    assert by_name["bid_deadline_time"]["required"] is True
+    assert by_name["trade"]["required"] is False
+    assert "bid_deadline" not in by_name
+
+
+def test_every_deadline_time_is_a_half_hour_slot():
+    children = _screens(_load("owner_dashboard"))["CREATE_TENDER"]["layout"]["children"]
+    times = next(child for child in children if child.get("name") == "bid_deadline_time")["data-source"]
+
+    assert len(times) == 48
+    assert times[0] == {"id": "00:00", "title": "00:00"}
+    assert times[-1] == {"id": "23:30", "title": "23:30"}

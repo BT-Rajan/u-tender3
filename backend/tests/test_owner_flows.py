@@ -5,7 +5,7 @@ that belongs to someone else is never reachable through these screens.
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
@@ -497,3 +497,39 @@ def test_a_contractor_cannot_reach_the_owner_screens(client, monkeypatch, db):
     # A contractor is answered with an error, not the owner screen, and nothing is created.
     assert "error_message" in reply["data"]
     assert db.query(Project).count() == 0
+
+
+def _epoch_ms_for_utc_midnight(day: datetime) -> str:
+    midnight = day.replace(hour=0, minute=0, second=0, microsecond=0)
+    return str(int(midnight.replace(tzinfo=timezone.utc).timestamp() * 1000))
+
+
+def test_the_calendar_date_and_time_set_the_bid_deadline_in_utc(setup):
+    """Kuwait 09:00 on 15 March 2030 is 06:00 UTC."""
+    db = setup["db"]
+    date_ms = _epoch_ms_for_utc_midnight(datetime(2030, 3, 15))
+
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {
+        "title": "Villa", "address": "Block 3", "bid_deadline_date": date_ms, "bid_deadline_time": "09:00",
+    })["data"]["tender_id"]
+
+    assert _fresh(db, tender_id).bid_deadline == datetime(2030, 3, 15, 6, 0)
+
+
+def test_the_calendar_accepts_a_plain_date_too(setup):
+    db = setup["db"]
+
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {
+        "title": "Villa", "address": "Block 3", "bid_deadline_date": "2030-03-15", "bid_deadline_time": "09:00",
+    })["data"]["tender_id"]
+
+    assert _fresh(db, tender_id).bid_deadline == datetime(2030, 3, 15, 6, 0)
+
+
+def test_a_date_without_a_time_is_refused_with_a_message(setup):
+    reply = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {
+        "title": "Villa", "address": "Block 3", "bid_deadline_date": "2030-03-15",
+    })
+
+    assert reply["screen"] == "CREATE_TENDER"
+    assert "both the date and the time" in reply["data"]["error_message"]

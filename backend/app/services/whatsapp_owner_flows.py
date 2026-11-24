@@ -7,7 +7,7 @@ allow (see tender_service.allowed_actions), and the service enforces the same ru
 again on submit.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -118,9 +118,31 @@ def _form(data: dict[str, Any], key: str) -> str:
     return value.strip() if isinstance(value, str) else ""
 
 
+def _deadline_text(data: dict[str, Any]) -> str:
+    """The bid deadline as 'YYYY-MM-DD HH:MM' from the calendar date and time fields.
+
+    The calendar returns a date as epoch milliseconds or as YYYY-MM-DD, so both are accepted.
+    The typed bid_deadline text is still read when the calendar fields are absent.
+    """
+    date_value = _form(data, "bid_deadline_date")
+    time_value = _form(data, "bid_deadline_time")
+    if not date_value and not time_value:
+        return _form(data, "bid_deadline")
+    if not date_value or not time_value:
+        raise TenderError("invalid", "Choose both the date and the time for the bid deadline.")
+    if date_value.isdigit() and len(date_value) >= 12:
+        day = datetime.fromtimestamp(int(date_value) / 1000, tz=timezone.utc).date().isoformat()
+    else:
+        try:
+            day = datetime.strptime(date_value, "%Y-%m-%d").date().isoformat()
+        except ValueError as exc:
+            raise TenderError("invalid", "Choose a date from the calendar.") from exc
+    return f"{day} {time_value}"
+
+
 def _fields_from_form(data: dict[str, Any]) -> TenderFields:
     """Read the create/amend form. Blank means not given, except where a blank field clears the value, as the web does."""
-    deadline_text = _form(data, "bid_deadline")
+    deadline_text = _deadline_text(data)
     deadline = tender_service.parse_local_deadline(deadline_text) if deadline_text else None
     tender_type_value = _form(data, "tender_type") or TenderType.owner_visible.value
     if tender_type_value not in (TenderType.sealed.value, TenderType.owner_visible.value):
@@ -325,7 +347,7 @@ def _amend_form(project: Project) -> dict[str, Any]:
 
 def _submit_amend(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     project = _with_owned(db, owner, _form(data, "tender_id"))
-    deadline_text = _form(data, "bid_deadline")
+    deadline_text = _deadline_text(data)
     # The form shows the deadline to the minute. Resubmitting that same text must not count as a change.
     unchanged_deadline = deadline_text == tender_service.format_local_deadline(project.bid_deadline)
     fields = TenderFields(
