@@ -70,7 +70,7 @@ def test_the_trigger_word_starts_the_registration_flow(client, monkeypatch, db):
     flow = sender.flows()[0]
     assert flow["to"] == PHONE
     assert flow["flow_id"] == "flow-registration"
-    assert flow["screen"] == "ROLE"
+    assert flow["screen"] == "SPLASH"
 
 
 @pytest.mark.parametrize("body", ["  UTENDER  ", "Utender", "utender\n"])
