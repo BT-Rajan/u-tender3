@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     whatsapp_api_url: str = "https://graph.facebook.com"
     whatsapp_flow_private_key: str | None = None  # PEM, RSA >= 2048 bits; never leaves U-Tender
     whatsapp_outbox_max_attempts: int = 8
+    # Option 1 bridge: Cogzi forwards inbound messages for a number it still owns. This is the
+    # shared secret that signs those forwarded events (Cogzi's outgoing webhook secret).
+    whatsapp_bridge_secret: str | None = None
+    # A forwarded message starts the registration Flow only when its text matches this word exactly.
+    whatsapp_bridge_trigger: str = "utender"
     whatsapp_message_retention_days: int = 30
     # Flow IDs issued by Meta when Cogzi publishes the Flows in
     # backend/whatsapp_flows/. Until these are set, the bot falls back to text.
