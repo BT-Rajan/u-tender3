@@ -66,6 +66,8 @@ class Settings(BaseSettings):
     # Shared with Cogzi, which forwards messages that start with the trigger word
     # from the shared Karkathar number. Signs /whatsapp/forward requests.
     whatsapp_forward_secret: str | None = None
+    # Cogzi's relay endpoint. When set, outgoing messages go through Cogzi, which sends them from the shared number.
+    whatsapp_relay_url: str | None = None
     whatsapp_access_token: str | None = None
     whatsapp_phone_number_id: str | None = None
     whatsapp_api_version: str = "v21.0"

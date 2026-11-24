@@ -18,6 +18,7 @@ from app.services.flow_crypto import (
     encrypt_response,
     load_private_key,
 )
+from app.services.whatsapp_relay import WhatsAppRelayClient
 from app.services.whatsapp_client import WhatsAppCloudClient, WhatsAppSendError
 from app.services.whatsapp_events import record_events
 from app.services.whatsapp_outbox import dispatch_due
@@ -171,8 +172,14 @@ def dispatch_outbox_now(db: Session) -> None:
 
 
 def build_whatsapp_sender() -> WhatsAppCloudClient:
-    """Indirection so tests can substitute a sender without touching the network."""
-    return WhatsAppCloudClient.from_settings(get_settings())
+    """Indirection so tests can substitute a sender without touching the network.
+
+    With WHATSAPP_RELAY_URL set, messages go through Cogzi. Otherwise they are sent directly.
+    """
+    settings = get_settings()
+    if settings.whatsapp_relay_url:
+        return WhatsAppRelayClient.from_settings(settings)
+    return WhatsAppCloudClient.from_settings(settings)
 
 
 def _flow_reply(db: Session, payload: dict[str, Any]) -> dict[str, Any]:
