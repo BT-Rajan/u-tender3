@@ -35,8 +35,7 @@
           },
           {
             "type": "TextHeading",
-            "text": "U-Tender",
-            "text-alignment": "center"
+            "text": "U-Tender"
           },
           {
             "type": "Footer",
@@ -94,7 +93,6 @@
             "name": "address",
             "required": true,
             "max-length": 255,
-            "helper-text": "Street, area and city",
             "init-value": "${data.address}"
           },
           {
@@ -212,13 +210,11 @@
         "children": [
           {
             "type": "TextHeading",
-            "text": "Thank you for joining U-Tender",
-            "text-alignment": "center"
+            "text": "Thank you for joining U-Tender"
           },
           {
             "type": "TextBody",
-            "text": "Send the word utender any time to open your dashboard.",
-            "text-alignment": "center"
+            "text": "Send the word utender any time to open your dashboard."
           },
           {
             "type": "Footer",
