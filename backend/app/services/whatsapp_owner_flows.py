@@ -209,7 +209,12 @@ def _tender_error_reply(db: Session, owner: User, screen: str, data: dict[str, A
     if screen == "CREATE_TENDER":
         return _error("CREATE_TENDER", error.message, {**_blank_create_form(), **{k: v for k, v in data.items() if k in _blank_create_form()}})
     if screen == "REVIEW":
-        return _error("REVIEW", error.message, {"tender_id": _form(data, "tender_id"), "summary": "", "actions": _review_actions()})
+        project = db.get(Project, _form(data, "tender_id"))
+        if project is not None and project.owner_id == owner.id:
+            reply = _review_screen(db, project)
+            reply["data"]["error_message"] = error.message
+            return reply
+        return _message(TENDER_GONE_MESSAGE)
     if screen == "TENDER_DETAILS":
         project = db.get(Project, _form(data, "tender_id"))
         if project is not None and project.owner_id == owner.id:
@@ -221,13 +226,6 @@ def _tender_error_reply(db: Session, owner: User, screen: str, data: dict[str, A
             return {"screen": "AMEND", "data": {**_amend_form(project), "error_message": error.message}}
         return _message(TENDER_GONE_MESSAGE)
     return open_my_tenders(db, owner, now=now)
-
-
-def _review_actions() -> list[dict[str, str]]:
-    return [
-        {"id": "publish", "title": "Publish now"},
-        {"id": "save_draft", "title": "Keep as draft"},
-    ]
 
 
 def _review_screen(db: Session, project: Project) -> dict[str, Any]:
@@ -245,7 +243,6 @@ def _review_screen(db: Session, project: Project) -> dict[str, Any]:
         "data": {
             "tender_id": project.id,
             "summary": "\n".join(summary_lines),
-            "actions": _review_actions(),
             "error_message": "",
         },
     }

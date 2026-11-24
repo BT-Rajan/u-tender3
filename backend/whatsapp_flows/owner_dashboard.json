@@ -403,26 +403,6 @@
           "type": "string",
           "__example__": "Title: Villa renovation"
         },
-        "actions": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              }
-            }
-          },
-          "__example__": [
-            {
-              "id": "1",
-              "title": "Sample item"
-            }
-          ]
-        },
         "error_message": {
           "type": "string",
           "__example__": ""
@@ -444,8 +424,17 @@
             "label": "What next?",
             "name": "action",
             "required": true,
-            "data-source": "${data.actions}",
-            "init-value": "publish"
+            "init-value": "publish",
+            "data-source": [
+              {
+                "id": "publish",
+                "title": "Publish now"
+              },
+              {
+                "id": "save_draft",
+                "title": "Keep as draft"
+              }
+            ]
           },
           {
             "type": "Footer",

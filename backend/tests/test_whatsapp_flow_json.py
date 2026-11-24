@@ -228,3 +228,8 @@ def test_review_radio_submits_the_option_it_shows_by_default():
 
     assert radio["init-value"] == "publish"
     assert radio["required"] is True
+    assert radio["data-source"] == [
+        {"id": "publish", "title": "Publish now"},
+        {"id": "save_draft", "title": "Keep as draft"},
+    ]
+    assert "actions" not in review["data"]
