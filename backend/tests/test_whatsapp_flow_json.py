@@ -221,12 +221,12 @@ def test_dashboard_routing_is_forward_only(flow_name):
     assert all(source in screens and target in screens for source, targets in routing.items() for target in targets)
 
 
-def test_review_radio_submits_the_option_it_shows_by_default():
-    """The highlighted option must be the submitted value, or Continue sends no action and fails."""
+def test_review_radio_has_no_static_default_so_the_choice_is_always_submitted():
+    """A static init-value on this radio stopped the choice reaching the Flow. No option is preselected."""
     review = _screens(_load("owner_dashboard"))["REVIEW"]
     radio = next(child for child in review["layout"]["children"] if child["type"] == "RadioButtonsGroup")
 
-    assert radio["init-value"] == "publish"
+    assert "init-value" not in radio
     assert radio["required"] is True
     assert radio["data-source"] == [
         {"id": "publish", "title": "Publish now"},

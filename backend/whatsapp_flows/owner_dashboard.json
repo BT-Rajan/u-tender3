@@ -424,7 +424,6 @@
             "label": "What next?",
             "name": "option",
             "required": true,
-            "init-value": "publish",
             "data-source": [
               {
                 "id": "publish",
