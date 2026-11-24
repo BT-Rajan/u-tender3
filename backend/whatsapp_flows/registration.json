@@ -2,9 +2,19 @@
   "version": "7.0",
   "data_api_version": "3.0",
   "routing_model": {
-    "ROLE": ["OWNER_DETAILS", "CONTRACTOR_DETAILS"],
-    "OWNER_DETAILS": ["SUCCESS", "NOT_COMPLETED", "OWNER_DETAILS"],
-    "CONTRACTOR_DETAILS": ["SUCCESS", "NOT_COMPLETED", "CONTRACTOR_DETAILS"]
+    "ROLE": [
+      "OWNER_DETAILS",
+      "CONTRACTOR_DETAILS",
+      "EXPIRED"
+    ],
+    "OWNER_DETAILS": [
+      "SUCCESS",
+      "NOT_COMPLETED"
+    ],
+    "CONTRACTOR_DETAILS": [
+      "SUCCESS",
+      "NOT_COMPLETED"
+    ]
   },
   "screens": [
     {
@@ -24,8 +34,14 @@
             "name": "role",
             "required": true,
             "data-source": [
-              { "id": "owner", "title": "Building owner" },
-              { "id": "contractor", "title": "Contractor" }
+              {
+                "id": "owner",
+                "title": "Building owner"
+              },
+              {
+                "id": "contractor",
+                "title": "Contractor"
+              }
             ]
           },
           {
@@ -34,8 +50,14 @@
             "name": "language",
             "required": true,
             "data-source": [
-              { "id": "en", "title": "English" },
-              { "id": "ar", "title": "العربية" }
+              {
+                "id": "en",
+                "title": "English"
+              },
+              {
+                "id": "ar",
+                "title": "العربية"
+              }
             ]
           },
           {
@@ -57,8 +79,14 @@
       "title": "Your details",
       "terminal": false,
       "data": {
-        "full_name": { "type": "string", "__example__": "Layla Al-Sabah" },
-        "error_message": { "type": "string", "__example__": "Enter your full name." }
+        "full_name": {
+          "type": "string",
+          "__example__": "Layla Al-Sabah"
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": "Enter your full name."
+        }
       },
       "layout": {
         "type": "SingleColumnLayout",
@@ -95,10 +123,22 @@
       "title": "Your company",
       "terminal": false,
       "data": {
-        "contact_name": { "type": "string", "__example__": "Omar Haddad" },
-        "company_name": { "type": "string", "__example__": "Haddad Builders" },
-        "primary_trade": { "type": "string", "__example__": "Electrical" },
-        "error_message": { "type": "string", "__example__": "Check the highlighted fields." }
+        "contact_name": {
+          "type": "string",
+          "__example__": "Omar Haddad"
+        },
+        "company_name": {
+          "type": "string",
+          "__example__": "Haddad Builders"
+        },
+        "primary_trade": {
+          "type": "string",
+          "__example__": "Electrical"
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": "Check the highlighted fields."
+        }
       },
       "layout": {
         "type": "SingleColumnLayout",
@@ -134,15 +174,42 @@
             "required": true,
             "init-value": "${data.primary_trade}",
             "data-source": [
-              { "id": "General contracting", "title": "General contracting" },
-              { "id": "Electrical", "title": "Electrical" },
-              { "id": "Plumbing", "title": "Plumbing" },
-              { "id": "HVAC", "title": "HVAC" },
-              { "id": "Civil works", "title": "Civil works" },
-              { "id": "Finishing", "title": "Finishing" },
-              { "id": "Fire safety", "title": "Fire safety" },
-              { "id": "Landscaping", "title": "Landscaping" },
-              { "id": "Other", "title": "Other" }
+              {
+                "id": "General contracting",
+                "title": "General contracting"
+              },
+              {
+                "id": "Electrical",
+                "title": "Electrical"
+              },
+              {
+                "id": "Plumbing",
+                "title": "Plumbing"
+              },
+              {
+                "id": "HVAC",
+                "title": "HVAC"
+              },
+              {
+                "id": "Civil works",
+                "title": "Civil works"
+              },
+              {
+                "id": "Finishing",
+                "title": "Finishing"
+              },
+              {
+                "id": "Fire safety",
+                "title": "Fire safety"
+              },
+              {
+                "id": "Landscaping",
+                "title": "Landscaping"
+              },
+              {
+                "id": "Other",
+                "title": "Other"
+              }
             ]
           },
           {
@@ -166,7 +233,10 @@
       "terminal": true,
       "success": true,
       "data": {
-        "message": { "type": "string", "__example__": "Your account is ready." }
+        "message": {
+          "type": "string",
+          "__example__": "Your account is ready."
+        }
       },
       "layout": {
         "type": "SingleColumnLayout",
@@ -194,7 +264,10 @@
       "terminal": true,
       "success": false,
       "data": {
-        "message": { "type": "string", "__example__": "This number is already linked to an account." }
+        "message": {
+          "type": "string",
+          "__example__": "This number is already linked to an account."
+        }
       },
       "layout": {
         "type": "SingleColumnLayout",

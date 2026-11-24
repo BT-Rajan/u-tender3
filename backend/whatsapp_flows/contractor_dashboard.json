@@ -3,7 +3,6 @@
   "data_api_version": "3.0",
   "routing_model": {
     "MENU": [
-      "MENU",
       "DOCUMENTS",
       "COMING_SOON",
       "EXPIRED",
@@ -13,21 +12,17 @@
       "AWARDS"
     ],
     "DOCUMENTS": [
-      "LINKS_SENT",
-      "DOCUMENTS"
+      "LINKS_SENT"
     ],
     "SEARCH": [
       "PROJECT_LIST",
-      "SEARCH",
       "MENU"
     ],
     "PROJECT_LIST": [
       "PROJECT_DETAILS",
-      "PROJECT_LIST",
       "MENU"
     ],
     "PROJECT_DETAILS": [
-      "PROJECT_DETAILS",
       "SUBMIT_OFFER",
       "OFFER_HISTORY",
       "DONE",
@@ -36,25 +31,21 @@
     ],
     "SUBMIT_OFFER": [
       "REVIEW_OFFER",
-      "SUBMIT_OFFER",
       "PROJECT_LIST",
       "MENU"
     ],
     "REVIEW_OFFER": [
       "DONE",
       "SUBMIT_OFFER",
-      "REVIEW_OFFER",
       "PROJECT_LIST",
       "MENU"
     ],
     "MY_OFFERS": [
       "OFFER_DETAILS",
-      "MY_OFFERS",
       "PROJECT_LIST",
       "MENU"
     ],
     "OFFER_DETAILS": [
-      "OFFER_DETAILS",
       "SUBMIT_OFFER",
       "OFFER_HISTORY",
       "DONE",
