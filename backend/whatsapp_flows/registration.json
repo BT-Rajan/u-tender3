@@ -2,24 +2,25 @@
   "version": "7.0",
   "data_api_version": "3.0",
   "routing_model": {
-    "ROLE": [
-      "OWNER_DETAILS",
-      "CONTRACTOR_DETAILS",
+    "SPLASH": [
+      "REGISTER",
       "EXPIRED"
     ],
-    "OWNER_DETAILS": [
-      "SUCCESS",
-      "NOT_COMPLETED"
+    "REGISTER": [
+      "RESULT_OK",
+      "RESULT_ERROR"
     ],
-    "CONTRACTOR_DETAILS": [
-      "SUCCESS",
-      "NOT_COMPLETED"
+    "RESULT_OK": [
+      "SUMMARY"
+    ],
+    "SUMMARY": [
+      "THANKS"
     ]
   },
   "screens": [
     {
-      "id": "ROLE",
-      "title": "Create your account",
+      "id": "SPLASH",
+      "title": "U-Tender",
       "terminal": false,
       "layout": {
         "type": "SingleColumnLayout",
@@ -27,21 +28,74 @@
           {
             "type": "Image",
             "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAADAFBMVEUWMk/ohx7///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADSp4RLAAAAPklEQVR42u3NMQoAMAgEQfP/T9uKVUCLBGbqOzYCAHjaqQYbAQEBAQEBAQEBAQEBAYF2viEgICDwYwAAgF0JNUAGWqFjjHwAAAAASUVORK5CYII=",
-            "height": 84,
+            "width": 120,
+            "height": 120,
             "scale-type": "contain",
             "alt-text": "U-Tender logo"
           },
           {
             "type": "TextHeading",
-            "text": "Welcome to U-Tender"
+            "text": "U-Tender",
+            "text-alignment": "center"
           },
           {
-            "type": "TextCaption",
-            "text": "Drawings in. Offers out."
-          },
+            "type": "Footer",
+            "label": "Get started",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "REGISTER"
+              },
+              "payload": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "REGISTER",
+      "title": "Create your account",
+      "terminal": false,
+      "data": {
+        "full_name": {
+          "type": "string",
+          "__example__": "Layla Al-Sabah"
+        },
+        "address": {
+          "type": "string",
+          "__example__": "Block 4, Street 12, Salmiya, Kuwait"
+        },
+        "error_message": {
+          "type": "string",
+          "__example__": "Enter your address."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
           {
             "type": "TextBody",
-            "text": "Choose how you will use U-Tender. Your role can't be changed later without support."
+            "text": "${data.error_message}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Full name or company name",
+            "name": "full_name",
+            "input-type": "text",
+            "required": true,
+            "min-chars": 2,
+            "max-chars": 120,
+            "init-value": "${data.full_name}"
+          },
+          {
+            "type": "TextArea",
+            "label": "Address",
+            "name": "address",
+            "required": true,
+            "max-length": 255,
+            "helper-text": "Street, area and city",
+            "init-value": "${data.address}"
           },
           {
             "type": "RadioButtonsGroup",
@@ -60,29 +114,56 @@
             ]
           },
           {
-            "type": "RadioButtonsGroup",
-            "label": "Preferred language",
-            "name": "language",
-            "required": true,
-            "data-source": [
-              {
-                "id": "en",
-                "title": "English"
-              },
-              {
-                "id": "ar",
-                "title": "العربية"
+            "type": "Footer",
+            "label": "Create account",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "full_name": "${form.full_name}",
+                "address": "${form.address}",
+                "role": "${form.role}"
               }
-            ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "RESULT_OK",
+      "title": "Account created",
+      "terminal": false,
+      "data": {
+        "reference": {
+          "type": "string",
+          "__example__": "9f1c2a7e-3b4d-4e8f-9a10-2c5d6e7f8a9b"
+        },
+        "capabilities": {
+          "type": "string",
+          "__example__": "- Browse open projects"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Registration successful"
+          },
+          {
+            "type": "TextBody",
+            "text": "Your U-Tender ID:\n${data.reference}"
           },
           {
             "type": "Footer",
             "label": "Continue",
             "on-click-action": {
-              "name": "data_exchange",
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "SUMMARY"
+              },
               "payload": {
-                "role": "${form.role}",
-                "language": "${form.language}"
+                "capabilities": "${data.capabilities}"
               }
             }
           }
@@ -90,17 +171,13 @@
       }
     },
     {
-      "id": "OWNER_DETAILS",
-      "title": "Your details",
+      "id": "SUMMARY",
+      "title": "What you can do",
       "terminal": false,
       "data": {
-        "full_name": {
+        "capabilities": {
           "type": "string",
-          "__example__": "Layla Al-Sabah"
-        },
-        "error_message": {
-          "type": "string",
-          "__example__": "Enter your full name."
+          "__example__": "- Browse open projects"
         }
       },
       "layout": {
@@ -108,157 +185,40 @@
         "children": [
           {
             "type": "TextBody",
-            "text": "${data.error_message}"
-          },
-          {
-            "type": "TextInput",
-            "label": "Full name",
-            "name": "full_name",
-            "input-type": "text",
-            "required": true,
-            "min-chars": 2,
-            "max-chars": 120,
-            "init-value": "${data.full_name}"
+            "text": "${data.capabilities}"
           },
           {
             "type": "Footer",
-            "label": "Create account",
+            "label": "Next",
             "on-click-action": {
-              "name": "data_exchange",
-              "payload": {
-                "full_name": "${form.full_name}"
-              }
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "THANKS"
+              },
+              "payload": {}
             }
           }
         ]
       }
     },
     {
-      "id": "CONTRACTOR_DETAILS",
-      "title": "Your company",
-      "terminal": false,
-      "data": {
-        "contact_name": {
-          "type": "string",
-          "__example__": "Omar Haddad"
-        },
-        "company_name": {
-          "type": "string",
-          "__example__": "Haddad Builders"
-        },
-        "primary_trade": {
-          "type": "string",
-          "__example__": "Electrical"
-        },
-        "error_message": {
-          "type": "string",
-          "__example__": "Check the highlighted fields."
-        }
-      },
-      "layout": {
-        "type": "SingleColumnLayout",
-        "children": [
-          {
-            "type": "TextBody",
-            "text": "${data.error_message}"
-          },
-          {
-            "type": "TextInput",
-            "label": "Contact name",
-            "name": "contact_name",
-            "input-type": "text",
-            "required": true,
-            "min-chars": 2,
-            "max-chars": 120,
-            "init-value": "${data.contact_name}"
-          },
-          {
-            "type": "TextInput",
-            "label": "Company name",
-            "name": "company_name",
-            "input-type": "text",
-            "required": true,
-            "min-chars": 2,
-            "max-chars": 255,
-            "init-value": "${data.company_name}"
-          },
-          {
-            "type": "Dropdown",
-            "label": "Primary trade",
-            "name": "primary_trade",
-            "required": true,
-            "init-value": "${data.primary_trade}",
-            "data-source": [
-              {
-                "id": "General contracting",
-                "title": "General contracting"
-              },
-              {
-                "id": "Electrical",
-                "title": "Electrical"
-              },
-              {
-                "id": "Plumbing",
-                "title": "Plumbing"
-              },
-              {
-                "id": "HVAC",
-                "title": "HVAC"
-              },
-              {
-                "id": "Civil works",
-                "title": "Civil works"
-              },
-              {
-                "id": "Finishing",
-                "title": "Finishing"
-              },
-              {
-                "id": "Fire safety",
-                "title": "Fire safety"
-              },
-              {
-                "id": "Landscaping",
-                "title": "Landscaping"
-              },
-              {
-                "id": "Other",
-                "title": "Other"
-              }
-            ]
-          },
-          {
-            "type": "Footer",
-            "label": "Create account",
-            "on-click-action": {
-              "name": "data_exchange",
-              "payload": {
-                "contact_name": "${form.contact_name}",
-                "company_name": "${form.company_name}",
-                "primary_trade": "${form.primary_trade}"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": "SUCCESS",
-      "title": "All set",
+      "id": "THANKS",
+      "title": "Thank you",
       "terminal": true,
       "success": true,
-      "data": {
-        "message": {
-          "type": "string",
-          "__example__": "Your account is ready."
-        }
-      },
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
           {
+            "type": "TextHeading",
+            "text": "Thank you for joining U-Tender",
+            "text-alignment": "center"
+          },
+          {
             "type": "TextBody",
-            "text": "${data.message}"
+            "text": "Send the word utender any time to open your dashboard.",
+            "text-alignment": "center"
           },
           {
             "type": "Footer",
@@ -274,22 +234,26 @@
       }
     },
     {
-      "id": "NOT_COMPLETED",
-      "title": "Account not created",
+      "id": "RESULT_ERROR",
+      "title": "Registration not completed",
       "terminal": true,
       "success": false,
       "data": {
-        "message": {
+        "error_message": {
           "type": "string",
-          "__example__": "This number is already linked to an account."
+          "__example__": "This number already has an account."
         }
       },
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
           {
+            "type": "TextHeading",
+            "text": "Registration not completed"
+          },
+          {
             "type": "TextBody",
-            "text": "${data.message}"
+            "text": "${data.error_message}"
           },
           {
             "type": "Footer",
@@ -314,7 +278,7 @@
         "children": [
           {
             "type": "TextBody",
-            "text": "This form has expired. Send any message to U-Tender to start again."
+            "text": "This form has expired. Send the word utender to start again."
           },
           {
             "type": "Footer",

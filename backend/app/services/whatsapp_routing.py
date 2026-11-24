@@ -94,10 +94,10 @@ def _queue_flow(
 def _start_registration(db: Session, identity: WhatsAppIdentity, event: WhatsAppMessageEvent, *, now: datetime) -> None:
     """Open the registration Flow, resuming an unfinished one with its saved place and answers."""
     previous = _find_resumable_registration(db, identity, now=now)
-    screen = "ROLE"
+    screen = "SPLASH"
     state: dict[str, Any] | None = None
     if previous is not None:
-        screen = previous.screen or "ROLE"
+        screen = previous.screen or "SPLASH"
         state = previous.state_json
         complete_flow_session(db, previous, now=now)
 
@@ -117,7 +117,7 @@ def _start_registration(db: Session, identity: WhatsAppIdentity, event: WhatsApp
         session,
         raw_token,
         flow_setting="whatsapp_flow_id_registration",
-        screen="ROLE",
+        screen="SPLASH",
         body=REGISTRATION_BODY,
         cta="Start",
         now=now,

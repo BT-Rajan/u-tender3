@@ -75,8 +75,9 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
     # 1. New owner registers from their first message.
     assert _deliver(client, sender, monkeypatch, text_message("wamid.OWNER1", OWNER_WA, "utender")).status_code == 200
     owner_token = sender.flows()[-1]["flow_token"]
-    assert _flow(client, public_pem, owner_token, "ROLE", {"role": "owner", "language": "en"})["screen"] == "OWNER_DETAILS"
-    assert _flow(client, public_pem, owner_token, "OWNER_DETAILS", {"full_name": "Layla Al-Sabah"})["screen"] == "SUCCESS"
+    registered = _flow(client, public_pem, owner_token, "REGISTER", {
+        "full_name": "Layla Al-Sabah", "address": "Block 4, Street 12, Salmiya", "role": "owner"})
+    assert registered["screen"] == "RESULT_OK"
     owner = db.scalar(select(User).where(User.phone == f"+{OWNER_WA}"))
     assert owner.role == UserRole.owner and owner.email is None and owner.password_hash is None
 
@@ -112,9 +113,12 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
     sender.sent.clear()
     assert _deliver(client, sender, monkeypatch, text_message("wamid.CON1", CONTRACTOR_WA, "utender")).status_code == 200
     con_token = sender.flows()[-1]["flow_token"]
-    _flow(client, public_pem, con_token, "ROLE", {"role": "contractor", "language": "en"})
-    assert _flow(client, public_pem, con_token, "CONTRACTOR_DETAILS", {
-        "contact_name": "Omar Haddad", "company_name": "Haddad Builders", "primary_trade": "Electrical"})["screen"] == "SUCCESS"
+    assert _flow(client, public_pem, con_token, "REGISTER", {
+        "full_name": "Omar Haddad", "address": "Block 9, Jabriya, Kuwait", "role": "contractor"})["screen"] == "RESULT_OK"
+    # The registration form doesn't ask for a trade, so the contractor's profile is set to the tender's trade here.
+    con_profile = db.scalar(select(ContractorProfile).join(User).where(User.full_name == "Omar Haddad"))
+    con_profile.primary_trade = "Electrical"
+    db.commit()
     contractor = db.scalar(select(User).where(User.phone == f"+{CONTRACTOR_WA}"))
     contractor_req = db.scalar(select(DocumentRequirement).where(DocumentRequirement.applies_to == UserRole.contractor))
     assert client.post("/admin/review/documents", json={

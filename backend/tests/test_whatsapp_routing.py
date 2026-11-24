@@ -51,7 +51,7 @@ def test_a_new_number_is_sent_the_registration_flow(monkeypatch, db):
     assert len(queued) == 1
     row = queued[0]
     assert row.kind == "flow"
-    assert row.params_json["screen"] == "ROLE"
+    assert row.params_json["screen"] == "SPLASH"
     assert row.params_json["flow_id"] == "flow-registration"
     assert row.params_json["flow_token"]
     session = _sessions(db)[0]
@@ -118,8 +118,8 @@ def test_an_unfinished_registration_resumes_on_the_same_screen_with_its_answers(
     enable_whatsapp(monkeypatch)
     _deliver(db, text_message("wamid.RES1", WA_ID, "utender"))
     first = _sessions(db)[0]
-    first.screen = "OWNER_DETAILS"
-    first.state_json = {"role": "owner", "language": "ar"}
+    first.screen = "REGISTER"
+    first.state_json = {"full_name": "Layla Al-Sabah", "address": "Block 4, Salmiya"}
     db.commit()
 
     later = get_or_create_identity(db, WA_ID, now=NOW)  # same identity, still no account
@@ -129,8 +129,8 @@ def test_an_unfinished_registration_resumes_on_the_same_screen_with_its_answers(
     db.refresh(first)
     newest = _sessions(db)[-1]
     assert newest.id != first.id
-    assert newest.screen == "OWNER_DETAILS"
-    assert newest.state_json == {"role": "owner", "language": "ar"}
+    assert newest.screen == "REGISTER"
+    assert newest.state_json == {"full_name": "Layla Al-Sabah", "address": "Block 4, Salmiya"}
     assert first.completed_at is not None
     assert first.state_json is None
 
@@ -153,14 +153,14 @@ def test_an_expired_unfinished_registration_starts_again_at_the_role_screen(monk
     enable_whatsapp(monkeypatch)
     _deliver(db, text_message("wamid.EXP1", WA_ID, "utender"))
     stale = _sessions(db)[0]
-    stale.screen = "CONTRACTOR_DETAILS"
-    stale.state_json = {"role": "contractor", "language": "en"}
+    stale.screen = "REGISTER"
+    stale.state_json = {"full_name": "Omar Haddad", "address": "Block 9, Jabriya"}
     stale.expires_at = datetime.utcnow() - timedelta(minutes=1)
     db.commit()
 
     _deliver(db, text_message("wamid.EXP2", WA_ID, "utender"))
 
-    assert _sessions(db)[-1].screen == "ROLE"
+    assert _sessions(db)[-1].screen == "SPLASH"
     assert _sessions(db)[-1].state_json is None
 
 
@@ -228,7 +228,7 @@ def test_the_keyword_ignores_case_and_surrounding_spaces(monkeypatch, db):
     queued = _outbox(db)
     assert len(queued) == 1
     assert queued[0].kind == "flow"
-    assert queued[0].params_json["screen"] == "ROLE"
+    assert queued[0].params_json["screen"] == "SPLASH"
 
 
 def test_the_keyword_inside_a_longer_message_does_not_trigger(monkeypatch, db):

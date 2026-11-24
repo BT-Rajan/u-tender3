@@ -52,14 +52,21 @@ def test_new_owner_registers_on_whatsapp_then_sees_the_owner_dashboard(monkeypat
     _deliver(client, monkeypatch, sender, text_message("wamid.E2E1", WA_ID, "utender"))
     flow = sender.flows()[0]
     assert flow["flow_id"] == "flow-registration"
-    assert flow["screen"] == "ROLE"
+    assert flow["screen"] == "SPLASH"
     token = flow["flow_token"]
 
     reply, _ = flow_request(client, public_pem, token=token, action="INIT")
-    assert reply == {"screen": "ROLE", "data": {}}
-    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "en"})
-    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="OWNER_DETAILS", data={"full_name": "Layla Al-Sabah"})
-    assert reply["screen"] == "SUCCESS"
+    assert reply == {"screen": "SPLASH", "data": {}}
+    reply, _ = flow_request(
+        client,
+        public_pem,
+        token=token,
+        action="data_exchange",
+        screen="REGISTER",
+        data={"full_name": "Layla Al-Sabah", "address": "Block 4, Street 12, Salmiya", "role": "owner"},
+    )
+    assert reply["screen"] == "RESULT_OK"
+    assert reply["data"]["reference"]
 
     user = db.scalar(select(User).where(User.phone == f"+{WA_ID}"))
     assert user.role == UserRole.owner
@@ -90,16 +97,15 @@ def test_new_contractor_registers_then_sees_the_contractor_dashboard(monkeypatch
     _deliver(client, monkeypatch, sender, text_message("wamid.E2E3", WA_ID, "utender"))
     token = sender.flows()[0]["flow_token"]
 
-    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "contractor", "language": "ar"})
     reply, _ = flow_request(
         client,
         public_pem,
         token=token,
         action="data_exchange",
-        screen="CONTRACTOR_DETAILS",
-        data={"contact_name": "Omar Haddad", "company_name": "Haddad Builders", "primary_trade": "Plumbing"},
+        screen="REGISTER",
+        data={"full_name": "Omar Haddad", "address": "Block 9, Jabriya, Kuwait", "role": "contractor"},
     )
-    assert reply["screen"] == "SUCCESS"
+    assert reply["screen"] == "RESULT_OK"
 
     sender.sent.clear()
     _deliver(client, monkeypatch, sender, text_message("wamid.E2E4", WA_ID, "utender"))
@@ -112,8 +118,7 @@ def test_an_interrupted_registration_resumes_where_it_stopped(monkeypatch, clien
 
     _deliver(client, monkeypatch, sender, text_message("wamid.INT1", WA_ID, "utender"))
     first_token = sender.flows()[0]["flow_token"]
-    flow_request(client, public_pem, token=first_token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "ar"})
-    # The customer closes the Flow here. Nothing was submitted for OWNER_DETAILS.
+    # The customer closes the Flow here, before submitting the form. Nothing was saved yet.
 
     sender.sent.clear()
     _deliver(client, monkeypatch, sender, text_message("wamid.INT2", WA_ID, "utender"))
@@ -124,12 +129,19 @@ def test_an_interrupted_registration_resumes_where_it_stopped(monkeypatch, clien
     assert reply == {"screen": "EXPIRED", "data": {}}
 
     reply, _ = flow_request(client, public_pem, token=resume_token, action="INIT")
-    assert reply == {"screen": "OWNER_DETAILS", "data": {}}
+    assert reply == {"screen": "SPLASH", "data": {}}
 
-    reply, _ = flow_request(client, public_pem, token=resume_token, action="data_exchange", screen="OWNER_DETAILS", data={"full_name": "Layla Al-Sabah"})
-    assert reply["screen"] == "SUCCESS"
+    reply, _ = flow_request(
+        client,
+        public_pem,
+        token=resume_token,
+        action="data_exchange",
+        screen="REGISTER",
+        data={"full_name": "Layla Al-Sabah", "address": "Block 4, Street 12, Salmiya", "role": "owner"},
+    )
+    assert reply["screen"] == "RESULT_OK"
     user = db.scalar(select(User).where(User.phone == f"+{WA_ID}"))
-    assert user.language.value == "ar"
+    assert user.address == "Block 4, Street 12, Salmiya"
 
 
 def test_a_duplicate_webhook_does_not_send_a_second_flow(monkeypatch, client, db):
