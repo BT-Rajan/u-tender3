@@ -422,7 +422,7 @@
           {
             "type": "RadioButtonsGroup",
             "label": "What next?",
-            "name": "action",
+            "name": "option",
             "required": true,
             "init-value": "publish",
             "data-source": [
@@ -443,7 +443,7 @@
               "name": "data_exchange",
               "payload": {
                 "tender_id": "${data.tender_id}",
-                "action": "${form.action}"
+                "action": "${form.option}"
               }
             }
           }
@@ -583,7 +583,7 @@
           {
             "type": "RadioButtonsGroup",
             "label": "Action",
-            "name": "action",
+            "name": "option",
             "required": true,
             "data-source": "${data.actions}"
           },
@@ -610,7 +610,7 @@
               "name": "data_exchange",
               "payload": {
                 "tender_id": "${data.tender_id}",
-                "action": "${form.action}",
+                "action": "${form.option}",
                 "confirm": "${form.confirm}"
               }
             }

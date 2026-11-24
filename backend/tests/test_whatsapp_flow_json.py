@@ -233,3 +233,11 @@ def test_review_radio_submits_the_option_it_shows_by_default():
         {"id": "save_draft", "title": "Keep as draft"},
     ]
     assert "actions" not in review["data"]
+
+
+@pytest.mark.parametrize("flow_name", ("owner_dashboard", "contractor_dashboard"))
+def test_form_fields_are_not_named_action(flow_name):
+    """Meta drops a form field called 'action', so Continue sends no choice. Choices use 'option' instead."""
+    text = (FLOW_DIR / f"{flow_name}.json").read_text(encoding="utf-8")
+    assert "${form.action}" not in text
+    assert '"name": "action"' not in text
