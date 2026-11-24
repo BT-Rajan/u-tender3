@@ -266,7 +266,7 @@ def test_every_deadline_time_is_a_half_hour_slot():
 
 def _option_radio(flow_name: str, screen_id: str) -> dict:
     screen = _screens(_load(flow_name))[screen_id]
-    return next(c for c in screen["layout"]["children"] if c.get("type") == "RadioButtonsGroup" and c.get("name") == "option")
+    return next(c for c in screen["layout"]["children"] if c.get("type") == "RadioButtonsGroup" and c.get("name") == "details_choice")
 
 
 def test_action_radios_read_their_options_from_the_reply():
@@ -275,3 +275,13 @@ def test_action_radios_read_their_options_from_the_reply():
         radio = _option_radio(flow_name, screen_id)
         assert radio["data-source"] == "${data.actions}", (flow_name, screen_id)
         assert radio["required"] is True
+        assert radio["name"] == "details_choice"
+
+
+@pytest.mark.parametrize("flow_name", ("owner_dashboard", "contractor_dashboard"))
+def test_form_fields_avoid_names_meta_does_not_send(flow_name):
+    """Radios named 'action' or 'option' never reached the backend on the phone. Other names do."""
+    text = (FLOW_DIR / f"{flow_name}.json").read_text(encoding="utf-8")
+    for reserved in ("action", "option"):
+        assert f'"name": "{reserved}"' not in text
+        assert f"${{form.{reserved}}}" not in text

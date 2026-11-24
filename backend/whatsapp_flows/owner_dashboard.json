@@ -764,7 +764,7 @@
           {
             "type": "RadioButtonsGroup",
             "label": "Action",
-            "name": "option",
+            "name": "details_choice",
             "required": true,
             "data-source": "${data.actions}"
           },
@@ -791,7 +791,7 @@
               "name": "data_exchange",
               "payload": {
                 "tender_id": "${data.tender_id}",
-                "action": "${form.option}",
+                "action": "${form.details_choice}",
                 "confirm": "${form.confirm}"
               }
             }
