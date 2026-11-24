@@ -86,17 +86,29 @@ def setup(client, monkeypatch, db):
 # --- entering the journeys -----------------------------------------------------
 
 
-def test_an_unverified_owner_is_turned_back_from_creating_a_tender(client, monkeypatch, db):
+def test_an_unverified_owner_can_open_the_form_and_reach_review_on_whatsapp(client, monkeypatch, db):
+    """Verification is a web rule. A WhatsApp-registered owner is not checked again."""
     _, public_pem = enable_whatsapp(monkeypatch)
     sender = RecordingSender()
     _owner(db, "96511110003", verified=False)
     token = _open_dashboard(client, monkeypatch, sender, "96511110003", "U")
 
-    reply = _send(client, public_pem, token, "MENU", {"choice": "create_tender"})
+    form = _send(client, public_pem, token, "MENU", {"choice": "create_tender"})
+    assert form["screen"] == "CREATE_TENDER"
 
-    assert reply["screen"] == "MENU"
-    assert "verified" in reply["data"]["error_message"]
-    assert db.query(Project).count() == 0
+    review = _send(client, public_pem, token, "CREATE_TENDER", {"title": "Villa", "address": "Block 3"})
+    assert review["screen"] == "REVIEW"
+    assert db.query(Project).count() == 1
+
+
+def test_the_web_service_still_requires_a_verified_owner(db):
+    from app.services.tender_service import TenderError, TenderFields, create_draft
+
+    owner = _owner(db, "96511110004", verified=False)
+
+    with pytest.raises(TenderError) as refused:
+        create_draft(db, owner, TenderFields(title="Villa"))
+    assert refused.value.code == "not_verified"
 
 
 def test_create_tender_opens_a_blank_form(setup):

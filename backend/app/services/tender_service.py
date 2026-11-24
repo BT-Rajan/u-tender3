@@ -89,9 +89,10 @@ def require_verified_owner(db: Session, owner: User) -> None:
         raise TenderError("not_verified", "Your account must be verified before you can post tenders.")
 
 
-def create_draft(db: Session, owner: User, fields: TenderFields) -> Project:
+def create_draft(db: Session, owner: User, fields: TenderFields, *, verification_required: bool = True) -> Project:
     """Save a tender as a draft. Only the title is required, so an incomplete tender can be saved and finished later."""
-    require_verified_owner(db, owner)
+    if verification_required:
+        require_verified_owner(db, owner)
     title = (fields.title or "").strip()
     if not title:
         raise TenderError("invalid", "Give the tender a title.")
@@ -113,9 +114,10 @@ def create_draft(db: Session, owner: User, fields: TenderFields) -> Project:
     return project
 
 
-def update_draft(db: Session, owner: User, project: Project, fields: TenderFields) -> Project:
+def update_draft(db: Session, owner: User, project: Project, fields: TenderFields, *, verification_required: bool = True) -> Project:
     """Change a draft freely. Drafts are not published, so no amendment record is made."""
-    require_verified_owner(db, owner)
+    if verification_required:
+        require_verified_owner(db, owner)
     if project.status != ProjectStatus.draft:
         raise TenderError("not_draft", "Only a draft can be edited this way. Use amend for a published tender.")
     if fields.title is not None:
@@ -138,9 +140,10 @@ def update_draft(db: Session, owner: User, project: Project, fields: TenderField
     return project
 
 
-def publish(db: Session, owner: User, project: Project, now: datetime) -> Project:
+def publish(db: Session, owner: User, project: Project, now: datetime, *, verification_required: bool = True) -> Project:
     """Draft -> open. The gate is the same as the web: draft only, deadline in the future."""
-    require_verified_owner(db, owner)
+    if verification_required:
+        require_verified_owner(db, owner)
     if project.status != ProjectStatus.draft:
         raise TenderError("not_draft", "Only a draft project can be published.")
     if not project.title or not project.address or project.address == "Not set":
@@ -154,14 +157,15 @@ def publish(db: Session, owner: User, project: Project, now: datetime) -> Projec
     return project
 
 
-def amend(db: Session, owner: User, project: Project, fields: TenderFields, *, reason: str | None, now: datetime) -> Project:
+def amend(db: Session, owner: User, project: Project, fields: TenderFields, *, reason: str | None, now: datetime, verification_required: bool = True) -> Project:
     """Change a tender's content.
 
     A draft is edited directly. A published tender gets a numbered amendment record,
     its revision goes up, and every bidder with a live offer is told. A deadline can't
     move earlier once bids have locked the tender type.
     """
-    require_verified_owner(db, owner)
+    if verification_required:
+        require_verified_owner(db, owner)
     if project.status not in AMENDABLE:
         raise TenderError("not_amendable", "This project can no longer be amended.")
     if project.status == ProjectStatus.draft:
