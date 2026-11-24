@@ -385,13 +385,25 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "__example__": "1"
               },
               "title": {
-                "type": "string"
+                "type": "string",
+                "__example__": "Sample item"
               }
+            },
+            "__example__": {
+              "id": "1",
+              "title": "Sample item"
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "Sample item"
+            }
+          ]
         },
         "empty_message": {
           "type": "string",
@@ -460,13 +472,25 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "__example__": "1"
               },
               "title": {
-                "type": "string"
+                "type": "string",
+                "__example__": "Sample item"
               }
+            },
+            "__example__": {
+              "id": "1",
+              "title": "Sample item"
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "Sample item"
+            }
+          ]
         },
         "error_message": {
           "type": "string",
@@ -680,13 +704,25 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "__example__": "1"
               },
               "title": {
-                "type": "string"
+                "type": "string",
+                "__example__": "Sample item"
               }
+            },
+            "__example__": {
+              "id": "1",
+              "title": "Sample item"
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "Sample item"
+            }
+          ]
         },
         "empty_message": {
           "type": "string",
@@ -755,13 +791,25 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "__example__": "1"
               },
               "title": {
-                "type": "string"
+                "type": "string",
+                "__example__": "Sample item"
               }
+            },
+            "__example__": {
+              "id": "1",
+              "title": "Sample item"
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "Sample item"
+            }
+          ]
         },
         "confirm": {
           "type": "string",

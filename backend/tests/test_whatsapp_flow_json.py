@@ -148,3 +148,28 @@ def test_splash_banner_is_raw_base64_png_at_banner_size():
     assert (width, height) == (1200, 480)
     assert image["width"] / image["height"] == pytest.approx(width / height)
     assert image["scale-type"] == "contain"
+
+
+def _fields_without_example(node: object, path: str = "data") -> list[str]:
+    """Every typed field under a screen's data block, including array items, that Meta requires an __example__ for."""
+    missing: list[str] = []
+    if isinstance(node, dict):
+        if node.get("type") in ("string", "number", "boolean", "array", "object") and "__example__" not in node:
+            missing.append(path)
+        for key, value in node.items():
+            missing.extend(_fields_without_example(value, f"{path}.{key}"))
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            missing.extend(_fields_without_example(value, f"{path}[{index}]"))
+    return missing
+
+
+@pytest.mark.parametrize("flow_name", FLOWS)
+def test_every_data_field_has_an_example_for_meta(flow_name):
+    """Meta rejects a Flow with a typed data field, array item or array that has no __example__."""
+    missing = {
+        screen_id: fields
+        for screen_id, screen in _screens(_load(flow_name)).items()
+        if (fields := _fields_without_example(screen.get("data", {})))
+    }
+    assert missing == {}
