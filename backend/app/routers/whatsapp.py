@@ -73,6 +73,35 @@ def verify_webhook(
     raise HTTPException(status_code=403, detail="Verification failed")
 
 
+@router.post("/whatsapp/forward")
+async def receive_forwarded_message(request: Request, db: Session = Depends(get_db)) -> dict[str, bool]:
+    """Receive a single inbound message that Cogzi forwards from the shared number.
+
+    Cogzi signs the body with WHATSAPP_FORWARD_SECRET, which is separate from
+    U-Tender's own app secret. Without that secret configured, nothing is accepted.
+    """
+    _whatsapp_enabled_or_404()
+    settings = get_settings()
+    raw_body = await request.body()
+
+    if not settings.whatsapp_forward_secret:
+        raise HTTPException(status_code=404, detail="Not Found")
+    if not verify_signature(raw_body, request.headers.get("X-Hub-Signature-256"), settings.whatsapp_forward_secret):
+        logger.warning("WhatsApp forward rejected: signature did not verify")
+        raise HTTPException(status_code=403, detail="Invalid signature")
+
+    try:
+        body = json.loads(raw_body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Malformed JSON") from exc
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Malformed payload")
+
+    record_events(db, body, now=datetime.utcnow())
+    await run_in_threadpool(dispatch_outbox_now, db)
+    return {"received": True}
+
+
 @router.post("/whatsapp/webhook")
 async def receive_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, bool]:
     """Receive messages and status updates. The signature is checked over the raw bytes before parsing."""
