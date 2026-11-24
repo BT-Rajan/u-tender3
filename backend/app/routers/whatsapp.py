@@ -227,7 +227,8 @@ async def flow_data_endpoint(request: Request, db: Session = Depends(get_db)) ->
 
     reply = _flow_reply(db, decrypted.payload)
     form = decrypted.payload.get("data")
+    form_keys = sorted(form.keys()) if isinstance(form, dict) else None
     form_action = form.get("action") if isinstance(form, dict) else None
-    logger.warning("TEMP flow reply action=%s screen=%s form_action=%s reply=%s", decrypted.payload.get("action"), decrypted.payload.get("screen"), form_action, json.dumps(reply, ensure_ascii=False))
+    logger.warning("TEMP flow reply action=%s screen=%s form_keys=%s form_action=%s reply=%s", decrypted.payload.get("action"), decrypted.payload.get("screen"), form_keys, form_action, json.dumps(reply, ensure_ascii=False))
     encrypted = encrypt_response(reply, decrypted.aes_key, decrypted.iv)
     return Response(content=encrypted, media_type="text/plain")
