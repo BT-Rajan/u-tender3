@@ -201,7 +201,7 @@ def test_review_offers_no_edit_because_the_back_arrow_returns_to_the_form(setup)
     review = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "edit"})
 
     assert review["screen"] == "REVIEW"
-    assert review["data"]["error_message"] == "Choose an option."
+    assert review["data"]["error_message"] == "Choose Publish now or Keep as draft, then tap Continue."
     assert "edit" not in {option["id"] for option in _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "publish"})["data"].get("actions", [])}
 
 

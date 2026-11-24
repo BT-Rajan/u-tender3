@@ -273,7 +273,7 @@ def _submit_review(db: Session, owner: User, data: dict[str, Any], *, now: datet
         return _message("Your tender is published. Bidders can now see it and submit offers.")
     if action == "save_draft":
         return _message("Draft saved. You can find it under My tenders.")
-    raise TenderError("invalid", "Choose an option.")
+    raise TenderError("invalid", "Choose Publish now or Keep as draft, then tap Continue.")
 
 
 def _pick_tender(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
