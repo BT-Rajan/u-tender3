@@ -420,29 +420,13 @@
             "text": "${data.error_message}"
           },
           {
-            "type": "RadioButtonsGroup",
-            "label": "What next?",
-            "name": "option",
-            "required": true,
-            "data-source": [
-              {
-                "id": "publish",
-                "title": "Publish now"
-              },
-              {
-                "id": "save_draft",
-                "title": "Keep as draft"
-              }
-            ]
-          },
-          {
             "type": "Footer",
-            "label": "Continue",
+            "label": "Publish now",
             "on-click-action": {
               "name": "data_exchange",
               "payload": {
                 "tender_id": "${data.tender_id}",
-                "action": "${form.option}"
+                "option": "publish"
               }
             }
           }

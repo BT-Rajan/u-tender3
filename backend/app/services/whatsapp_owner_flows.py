@@ -264,13 +264,10 @@ def _submit_create(db: Session, owner: User, data: dict[str, Any], *, now: datet
 
 def _submit_review(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     project = _with_owned(db, owner, _form(data, "tender_id"))
-    action = _form(data, "action")
-    if action == "publish":
-        project = tender_service.publish(db, owner, project, now, verification_required=False)
-        return _message("Your tender is published. Bidders can now see it and submit offers.")
-    if action == "save_draft":
-        return _message("Draft saved. You can find it under My tenders.")
-    raise TenderError("invalid", "Choose Publish now or Keep as draft, then tap Continue.")
+    if _form(data, "option") != "publish":
+        raise TenderError("invalid", "Tap Publish now to publish this tender.")
+    tender_service.publish(db, owner, project, now, verification_required=False)
+    return _message("Your tender is published. Bidders can now see it and submit offers.")
 
 
 def _pick_tender(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:

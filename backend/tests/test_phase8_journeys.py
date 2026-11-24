@@ -137,7 +137,7 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
         "title": "Villa renovation", "address": "Block 3, Salmiya", "trade": "Electrical",
         "bid_deadline": deadline, "tender_type": "sealed"})
     tender_id = review_screen["data"]["tender_id"]
-    assert _flow(client, public_pem, owner_menu, "REVIEW", {"tender_id": tender_id, "action": "publish"})["screen"] == "DONE"
+    assert _flow(client, public_pem, owner_menu, "REVIEW", {"tender_id": tender_id, "option": "publish"})["screen"] == "DONE"
     dispatch_due(db, sender, now=datetime.utcnow() + timedelta(seconds=1), max_attempts=3)
     assert any(m.get("template") == "new_tender" and m["to"] == CONTRACTOR_WA for m in sender.sent)
 

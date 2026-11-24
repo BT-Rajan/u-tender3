@@ -140,7 +140,7 @@ def test_a_full_tender_can_be_published_from_review(setup):
     )
     tender_id = reply["data"]["tender_id"]
 
-    done = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "publish"})
+    done = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "option": "publish"})
 
     assert done["screen"] == "DONE"
     assert "published" in done["data"]["message"]
@@ -155,7 +155,7 @@ def test_publishing_without_a_deadline_stays_on_review_with_a_message(setup):
     reply = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3"})
     tender_id = reply["data"]["tender_id"]
 
-    again = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "publish"})
+    again = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "option": "publish"})
 
     assert again["screen"] == "REVIEW"
     assert "deadline" in again["data"]["error_message"].lower()
@@ -183,14 +183,10 @@ def test_a_trade_outside_the_list_is_refused(setup):
     assert "trade" in reply["data"]["error_message"].lower()
 
 
-def test_save_as_draft_keeps_the_tender_and_says_so(setup):
+def test_a_tender_saved_at_the_form_stays_a_draft_until_published(setup):
     db = setup["db"]
     tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa"})["data"]["tender_id"]
 
-    done = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "save_draft"})
-
-    assert done["screen"] == "DONE"
-    assert "Draft saved" in done["data"]["message"]
     assert _fresh(db, tender_id).status == ProjectStatus.draft
 
 
@@ -198,12 +194,12 @@ def test_review_offers_no_edit_because_the_back_arrow_returns_to_the_form(setup)
     """Meta only accepts forward routes, so REVIEW cannot send the user back to CREATE_TENDER."""
     tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3"})["data"]["tender_id"]
 
-    review = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "edit"})
+    review = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "option": "edit"})
 
     assert review["screen"] == "REVIEW"
-    assert review["data"]["error_message"] == "Choose Publish now or Keep as draft, then tap Continue."
+    assert review["data"]["error_message"] == "Tap Publish now to publish this tender."
     assert "Title: Villa" in review["data"]["summary"]
-    assert "edit" not in {option["id"] for option in _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "publish"})["data"].get("actions", [])}
+    assert "edit" not in {option["id"] for option in _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "option": "publish"})["data"].get("actions", [])}
 
 
 def test_editing_an_existing_draft_updates_it_rather_than_creating_another(setup):

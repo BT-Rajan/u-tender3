@@ -221,18 +221,15 @@ def test_dashboard_routing_is_forward_only(flow_name):
     assert all(source in screens and target in screens for source, targets in routing.items() for target in targets)
 
 
-def test_review_radio_has_no_static_default_so_the_choice_is_always_submitted():
-    """A static init-value on this radio stopped the choice reaching the Flow. No option is preselected."""
+def test_review_has_one_publish_button_and_no_choice_to_submit():
+    """Meta drops radio values on this screen, so the only action is a fixed Publish now payload."""
     review = _screens(_load("owner_dashboard"))["REVIEW"]
-    radio = next(child for child in review["layout"]["children"] if child["type"] == "RadioButtonsGroup")
+    children = review["layout"]["children"]
 
-    assert "init-value" not in radio
-    assert radio["required"] is True
-    assert radio["data-source"] == [
-        {"id": "publish", "title": "Publish now"},
-        {"id": "save_draft", "title": "Keep as draft"},
-    ]
-    assert "actions" not in review["data"]
+    assert not any(child["type"] == "RadioButtonsGroup" for child in children)
+    footer = next(child for child in children if child["type"] == "Footer")
+    assert footer["label"] == "Publish now"
+    assert footer["on-click-action"]["payload"] == {"tender_id": "${data.tender_id}", "option": "publish"}
 
 
 @pytest.mark.parametrize("flow_name", ("owner_dashboard", "contractor_dashboard"))
