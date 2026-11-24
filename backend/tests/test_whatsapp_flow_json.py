@@ -150,26 +150,36 @@ def test_splash_banner_is_raw_base64_png_at_banner_size():
     assert image["scale-type"] == "contain"
 
 
-def _fields_without_example(node: object, path: str = "data") -> list[str]:
-    """Every typed field under a screen's data block, including array items, that Meta requires an __example__ for."""
-    missing: list[str] = []
+def _top_level_fields_without_example(data: dict) -> list[str]:
+    """Top-level data fields that Meta requires an __example__ for."""
+    return [name for name, schema in data.items() if "__example__" not in schema]
+
+
+def _nested_examples(node: object, path: str = "data") -> list[str]:
+    """Nested schemas (array items and their fields). Meta rejects __example__ anywhere but the top level."""
+    found: list[str] = []
     if isinstance(node, dict):
-        if node.get("type") in ("string", "number", "boolean", "array", "object") and "__example__" not in node:
-            missing.append(path)
         for key, value in node.items():
-            missing.extend(_fields_without_example(value, f"{path}.{key}"))
+            if key == "__example__":
+                found.append(path)
+            found.extend(_nested_examples(value, f"{path}.{key}"))
     elif isinstance(node, list):
         for index, value in enumerate(node):
-            missing.extend(_fields_without_example(value, f"{path}[{index}]"))
-    return missing
+            found.extend(_nested_examples(value, f"{path}[{index}]"))
+    return found
 
 
 @pytest.mark.parametrize("flow_name", FLOWS)
-def test_every_data_field_has_an_example_for_meta(flow_name):
-    """Meta rejects a Flow with a typed data field, array item or array that has no __example__."""
-    missing = {
-        screen_id: fields
-        for screen_id, screen in _screens(_load(flow_name)).items()
-        if (fields := _fields_without_example(screen.get("data", {})))
-    }
-    assert missing == {}
+def test_data_examples_are_only_on_top_level_fields(flow_name):
+    """Meta requires __example__ on each top-level data field and rejects it on nested schemas."""
+    problems = {}
+    for screen_id, screen in _screens(_load(flow_name)).items():
+        data = screen.get("data", {})
+        missing = _top_level_fields_without_example(data)
+        nested = []
+        for name, schema in data.items():
+            nested.extend(_nested_examples(schema.get("items", {}) if schema.get("type") == "array" else {}, f"data.{name}.items"))
+            nested.extend(_nested_examples({k: v for k, v in schema.items() if k not in ("__example__", "items")}, f"data.{name}"))
+        if missing or nested:
+            problems[screen_id] = {"missing": missing, "nested": nested}
+    assert problems == {}

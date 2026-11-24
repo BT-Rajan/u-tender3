@@ -385,17 +385,11 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string",
-                "__example__": "1"
+                "type": "string"
               },
               "title": {
-                "type": "string",
-                "__example__": "Sample item"
+                "type": "string"
               }
-            },
-            "__example__": {
-              "id": "1",
-              "title": "Sample item"
             }
           },
           "__example__": [
@@ -472,17 +466,11 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string",
-                "__example__": "1"
+                "type": "string"
               },
               "title": {
-                "type": "string",
-                "__example__": "Sample item"
+                "type": "string"
               }
-            },
-            "__example__": {
-              "id": "1",
-              "title": "Sample item"
             }
           },
           "__example__": [
@@ -704,17 +692,11 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string",
-                "__example__": "1"
+                "type": "string"
               },
               "title": {
-                "type": "string",
-                "__example__": "Sample item"
+                "type": "string"
               }
-            },
-            "__example__": {
-              "id": "1",
-              "title": "Sample item"
             }
           },
           "__example__": [
@@ -791,17 +773,11 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string",
-                "__example__": "1"
+                "type": "string"
               },
               "title": {
-                "type": "string",
-                "__example__": "Sample item"
+                "type": "string"
               }
-            },
-            "__example__": {
-              "id": "1",
-              "title": "Sample item"
             }
           },
           "__example__": [
