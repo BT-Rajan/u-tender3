@@ -24,6 +24,7 @@ from app.services.storage import get_storage
 from app.services.whatsapp_identity import get_or_create_identity
 from app.services.whatsapp_outbox import dispatch_due
 from app.services.whatsapp_routing import install_whatsapp_handlers
+from flow_contract import check_reply
 from whatsapp_helpers import RecordingSender, enable_whatsapp, flow_request, message_envelope, sign, text_message
 
 NOW = datetime.utcnow()
@@ -84,7 +85,10 @@ def _open_dashboard(client, monkeypatch, sender, wa_id, tag) -> str:
 
 
 def _send(client, public_pem, token, screen, data, action="data_exchange"):
-    return flow_request(client, public_pem, token=token, action=action, screen=screen, data=data)[0]
+    reply = flow_request(client, public_pem, token=token, action=action, screen=screen, data=data)[0]
+    if reply is not None:
+        check_reply("contractor_dashboard", reply)
+    return reply
 
 
 @pytest.fixture
@@ -488,3 +492,12 @@ def test_a_suspended_contractor_loses_browsing(client, monkeypatch, db):
     reply = _send(client, public_pem, token, "MENU", {"choice": "browse_projects"})
 
     assert reply["screen"] == "MENU"
+
+
+# --- scenario matrix: every contractor menu choice ------------------------------------
+
+
+def test_every_contractor_menu_choice_opens_a_screen(setup):
+    for choice in ["browse_projects", "search_projects", "my_offers", "my_documents", "my_awards"]:
+        reply = _send(setup["client"], setup["pem"], setup["token"], "MENU", {"choice": choice})
+        assert reply["screen"] in {"PROJECT_LIST", "SEARCH", "MY_OFFERS", "DOCUMENTS", "AWARDS", "COMING_SOON"}, (choice, reply["screen"])

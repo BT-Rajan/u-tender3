@@ -133,11 +133,9 @@ def _flow_reply(db: Session, payload: dict[str, Any]) -> dict[str, Any]:
         if handled is not None:
             return handled
 
-    screen = payload.get("screen")
-    fallback: dict[str, Any] = {"data": {"error_message": "This form is not available. Please try again later."}}
-    if isinstance(screen, str) and screen:
-        fallback["screen"] = screen
-    return fallback
+    # No handler knew this request. Close the Flow with a message. A screen sent back without the
+    # fields it shows makes WhatsApp fail with "Something went wrong", so the fallback never names one.
+    return {"screen": "DONE", "data": {"heading": "", "message": "This form is no longer available. Send any message to open your dashboard."}}
 
 
 @router.post("/whatsapp/flows")

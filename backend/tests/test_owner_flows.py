@@ -22,6 +22,7 @@ from app.models.whatsapp import WhatsAppIdentity
 from app.routers import whatsapp as whatsapp_router
 from app.services.whatsapp_identity import get_or_create_identity
 from app.services.whatsapp_routing import install_whatsapp_handlers
+from flow_contract import check_reply
 from whatsapp_helpers import RecordingSender, enable_whatsapp, flow_request, message_envelope, sign, text_message
 
 FUTURE_LOCAL = (datetime.utcnow() + timedelta(days=20)).strftime("%d-%m-%Y %H:%M")
@@ -54,7 +55,10 @@ def _open_dashboard(client, monkeypatch, sender, wa_id, tag) -> str:
 
 
 def _send(client, public_pem, token, screen, data, action="data_exchange"):
-    return flow_request(client, public_pem, token=token, action=action, screen=screen, data=data)[0]
+    reply = flow_request(client, public_pem, token=token, action=action, screen=screen, data=data)[0]
+    if reply is not None:
+        check_reply("owner_dashboard", reply)
+    return reply
 
 
 def _fresh(db, project_id):
@@ -485,7 +489,8 @@ def test_a_contractor_cannot_reach_the_owner_screens(client, monkeypatch, db):
     reply = _send(client, public_pem, token, "CREATE_TENDER", {"title": "Sneaky"})
 
     # A contractor is answered with an error, not the owner screen, and nothing is created.
-    assert "error_message" in reply["data"]
+    assert reply["screen"] == "DONE"
+    assert "no longer available" in reply["data"]["message"]
     assert db.query(Project).count() == 0
 
 def test_the_calendar_date_becomes_the_end_of_that_day(setup):
@@ -560,3 +565,65 @@ def test_the_details_choice_is_read_from_next_step(setup):
     reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": tender_id, "next_step": "edit"})
 
     assert reply["screen"] == "AMEND"
+
+def test_repro_edit_a_draft(setup):
+    tid = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
+    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": tid, "next_step": "edit"})
+    print("EDIT SCREEN", reply["screen"], sorted(reply["data"].keys()))
+    reply2 = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"tender_id": tid, "title": "Villa v2", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})
+    print("SAVE", reply2["screen"])
+
+
+# --- scenario matrix: every owner menu choice, status and review path -----------------
+
+
+def _draft_with_deadline(setup, title="Villa"):
+    return _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": title, "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
+
+
+def test_every_owner_menu_choice_opens_a_screen(setup):
+    expected = {"create_tender": "CREATE_TENDER", "my_tenders": "MY_TENDERS", "received_offers": "MY_TENDERS", "my_documents": "DOCUMENTS"}
+    for choice, screen in expected.items():
+        reply = _send(setup["client"], setup["pem"], setup["token"], "MENU", {"choice": choice})
+        assert reply["screen"] == screen, (choice, reply["screen"])
+
+
+@pytest.mark.parametrize("status", [ProjectStatus.draft, ProjectStatus.open, ProjectStatus.closed, ProjectStatus.under_evaluation, ProjectStatus.awarded, ProjectStatus.canceled])
+def test_the_details_screen_opens_for_every_status(setup, status):
+    project = _project(setup["db"], setup["owner"], status=status)
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": project.id})
+
+    assert reply["screen"] == "TENDER_DETAILS"
+    assert "publish" not in [a["id"] for a in reply["data"]["actions"]] or status == ProjectStatus.draft
+
+
+def test_publish_a_draft_from_its_details(setup):
+    tender_id = _draft_with_deadline(setup)
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": tender_id, "next_step": "publish"})
+
+    assert reply["screen"] == "DONE"
+    project = _fresh(setup["db"], tender_id)
+    assert project.status == ProjectStatus.open
+    assert project.reference_code in reply["data"]["heading"]
+
+
+def test_review_without_a_choice_stays_on_review_with_a_message(setup):
+    tender_id = _draft_with_deadline(setup)
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id})
+
+    assert reply["screen"] == "REVIEW"
+    assert "Choose" in reply["data"]["error_message"]
+
+
+def test_a_document_that_is_not_accepted_is_named_on_review(setup):
+    tender_id = _draft_with_deadline(setup)
+    documents = [{"file_name": "plan.exe", "cdn_url": "https://example.invalid/x", "encryption_metadata": {}}]
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "documents": documents, "next_step": "save_draft"})
+
+    assert reply["screen"] == "REVIEW"
+    assert "plan.exe" in reply["data"]["error_message"]
+    assert _fresh(setup["db"], tender_id).status == ProjectStatus.draft

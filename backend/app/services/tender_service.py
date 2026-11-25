@@ -111,11 +111,9 @@ def deadline_from_calendar(value: Any) -> datetime:
     return end.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
 
 
-def calendar_value(deadline: datetime) -> int:
-    """Epoch milliseconds of local midnight on the deadline's day, so the calendar opens on that day."""
-    local = _local(deadline)
-    start = datetime(local.year, local.month, local.day, tzinfo=ZoneInfo(get_settings().tender_timezone))
-    return int(start.timestamp() * 1000)
+def calendar_value(deadline: datetime) -> str:
+    """The deadline's day as YYYY-MM-DD in the tender timezone. Meta's DatePicker takes its start value as text."""
+    return _local(deadline).strftime("%Y-%m-%d")
 
 
 def owner_project(db: Session, owner: User, project_id: str) -> Project:

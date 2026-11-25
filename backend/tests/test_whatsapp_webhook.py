@@ -253,8 +253,8 @@ def test_unhandled_data_exchange_gets_an_encrypted_fallback_with_the_screen(monk
 
     reply = decode_response(_flow_post(client, body).text, aes_key, iv)
 
-    assert reply["screen"] == "NAME"
-    assert "error_message" in reply["data"]
+    assert reply["screen"] == "DONE"
+    assert "no longer available" in reply["data"]["message"]
 
 
 def test_a_registered_flow_handler_supplies_the_reply(monkeypatch, client):
