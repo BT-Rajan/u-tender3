@@ -117,7 +117,7 @@ def _fields_for_draft(project: Project) -> dict[str, Any]:
         "title": project.title,
         "address": project.address if project.address != "Not set" else "",
         "description": project.description or "",
-        "trade": project.trade or "",
+        "trade": project.trade if project.trade in TRADE_OPTIONS else "",
         "bid_deadline": "",
         "tender_type": project.tender_type.value,
         "error_message": "",
@@ -280,7 +280,13 @@ def _tender_error_reply(db: Session, owner: User, screen: str, data: dict[str, A
     if error.code == "not_found":
         return open_my_tenders(db, owner, now=now, heading="That tender is no longer available")
     if screen == "CREATE_TENDER":
-        return _error("CREATE_TENDER", error.message, {**_blank_create_form(), **{k: v for k, v in data.items() if k in _blank_create_form()}})
+        echoed = {**_blank_create_form(), **{k: v for k, v in data.items() if k in _blank_create_form()}}
+        # Only listed choices go back to the form; anything else would be a start value the Flow cannot show.
+        if echoed.get("trade") not in TRADE_OPTIONS:
+            echoed["trade"] = ""
+        if echoed.get("tender_type") not in (TenderType.owner_visible.value, TenderType.sealed.value):
+            echoed["tender_type"] = TenderType.owner_visible.value
+        return _error("CREATE_TENDER", error.message, echoed)
     if screen == "REVIEW":
         return _error("REVIEW", error.message, {"tender_id": _form(data, "tender_id"), "summary": "", "actions": _review_actions()})
     if screen == "TENDER_DETAILS":
@@ -411,7 +417,7 @@ def _amend_form(project: Project) -> dict[str, Any]:
         "tender_id": project.id,
         "title": project.title,
         "description": project.description or "",
-        "trade": project.trade or "",
+        "trade": project.trade if project.trade in TRADE_OPTIONS else "",
         "bid_deadline": "",
         "reason": "",
         "error_message": "",

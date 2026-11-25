@@ -39,6 +39,18 @@ def _check_value(path: str, declared: dict[str, Any], value: Any) -> None:
                 _check_value(f"{path}[{index}].{key}", sub, item[key])
 
 
+def _init_bindings(screen: dict[str, Any]) -> list[tuple[str, list[str]]]:
+    """(data field, allowed ids) for each dropdown or radio whose start value comes from data."""
+    found = []
+    for child in (screen.get("layout") or {}).get("children") or []:
+        if child.get("type") in ("Dropdown", "RadioButtonsGroup") and isinstance(child.get("data-source"), list):
+            init = str(child.get("init-value", ""))
+            match = re.fullmatch(r"\$\{data\.([A-Za-z_]+)\}", init)
+            if match:
+                found.append((match.group(1), [item["id"] for item in child["data-source"]]))
+    return found
+
+
 def check_reply(flow_name: str, reply: dict[str, Any]) -> None:
     """Raise AssertionError if the reply does not carry what its screen shows, with the declared types."""
     screen = _screen(flow_name, reply["screen"])
@@ -53,6 +65,9 @@ def check_reply(flow_name: str, reply: dict[str, Any]) -> None:
     for key in bound:
         if key in data:
             assert data[key], f"{reply['screen']}.{key} is an empty list; WhatsApp cannot show a choice list with no rows"
+    for field, allowed in _init_bindings(screen):
+        if field in data:
+            assert data[field] in ("", *allowed), f"{reply['screen']}.{field} starts at {data[field]!r}, which is not one of the choices"
     for key, value in data.items():
         if isinstance(value, list) and value and all(isinstance(item, dict) and "id" in item and "title" in item for item in value):
             assert len(value) <= MAX_LIST_ROWS, f"{reply['screen']}.{key} has {len(value)} rows; WhatsApp allows {MAX_LIST_ROWS}"

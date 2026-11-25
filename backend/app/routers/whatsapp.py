@@ -1,6 +1,7 @@
 import hmac
 import json
 import logging
+import sys
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
@@ -25,6 +26,12 @@ from app.services.whatsapp_signature import verify_signature
 
 router = APIRouter(tags=["whatsapp"])
 logger = logging.getLogger("utender.whatsapp")
+# Flow requests are logged at INFO so a failure can be traced. stdout is kept by pm2.
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    _console = logging.StreamHandler(sys.stdout)
+    _console.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    logger.addHandler(_console)
 
 # Status codes WhatsApp acts on for the Flow data endpoint. 432: the signature
 # does not verify. 421: the request can't be decrypted with this key, and
