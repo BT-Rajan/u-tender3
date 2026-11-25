@@ -339,7 +339,7 @@ def test_cancel_moves_a_draft_to_canceled(db):
 @pytest.mark.parametrize(
     "status, expected",
     [
-        (ProjectStatus.draft, {"details", "edit", "publish", "cancel", "offers"}),
+        (ProjectStatus.draft, {"details", "edit", "publish", "cancel"}),
         (ProjectStatus.open, {"details", "edit", "close", "cancel", "offers"}),
         (ProjectStatus.closed, {"details", "edit", "start_evaluation", "no_award", "cancel", "offers"}),
         (ProjectStatus.under_evaluation, {"details", "edit", "no_award", "cancel", "offers"}),
