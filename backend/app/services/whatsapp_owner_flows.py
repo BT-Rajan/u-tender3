@@ -111,7 +111,7 @@ def _fields_for_draft(project: Project) -> dict[str, Any]:
         "address": project.address if project.address != "Not set" else "",
         "description": project.description or "",
         "trade": project.trade or "",
-        "bid_deadline": tender_service.format_local_deadline(project.bid_deadline) if project.bid_deadline else "",
+        "bid_deadline": tender_service.calendar_value(project.bid_deadline) if project.bid_deadline else "",
         "tender_type": project.tender_type.value,
         "error_message": "",
     }
@@ -122,10 +122,21 @@ def _form(data: dict[str, Any], key: str) -> str:
     return value.strip() if isinstance(value, str) else ""
 
 
+def _deadline_from_data(data: dict[str, Any], key: str) -> datetime | None:
+    """The bid end date from the calendar (epoch milliseconds). Typed DD-MM-YYYY text is still accepted."""
+    raw = data.get(key)
+    if raw is None or raw == "":
+        return None
+    if isinstance(raw, (int, float)) or (isinstance(raw, str) and raw.strip().isdigit()):
+        return tender_service.deadline_from_calendar(raw)
+    if isinstance(raw, str):
+        return tender_service.parse_local_deadline(raw)
+    raise TenderError("invalid", "Choose the bid end date from the calendar.")
+
+
 def _fields_from_form(data: dict[str, Any]) -> TenderFields:
     """Read the create/amend form. Blank means not given, except where a blank field clears the value, as the web does."""
-    deadline_text = _form(data, "bid_deadline")
-    deadline = tender_service.parse_local_deadline(deadline_text) if deadline_text else None
+    deadline = _deadline_from_data(data, "bid_deadline")
     tender_type_value = _form(data, "tender_type") or TenderType.owner_visible.value
     if tender_type_value not in (TenderType.sealed.value, TenderType.owner_visible.value):
         raise TenderError("invalid", "Choose sealed or owner visible.")
@@ -150,13 +161,17 @@ def _menu_error(db: Session, owner: User, message: str) -> dict[str, Any]:
 
 
 def _message(message: str) -> dict[str, Any]:
-    return {"screen": "DONE", "data": {"message": message}}
+    return {"screen": "DONE", "data": {"heading": "", "message": message}}
 
 
 def _published_message(project: Project) -> dict[str, Any]:
-    return _message(
-        f"Your tender is published. Tender number: {project.reference_code}. Bidders can now see it and submit offers."
-    )
+    return {
+        "screen": "DONE",
+        "data": {
+            "heading": f"Tender number: {project.reference_code}",
+            "message": "Your tender is published. Bidders can now see it and submit offers. Keep this number for your records.",
+        },
+    }
 
 
 def open_create(db: Session, owner: User) -> dict[str, Any]:
@@ -346,7 +361,7 @@ def _amend_form(project: Project) -> dict[str, Any]:
         "title": project.title,
         "description": project.description or "",
         "trade": project.trade or "",
-        "bid_deadline": tender_service.format_local_deadline(project.bid_deadline) if project.bid_deadline else "",
+        "bid_deadline": tender_service.calendar_value(project.bid_deadline) if project.bid_deadline else "",
         "reason": "",
         "error_message": "",
     }
@@ -354,14 +369,16 @@ def _amend_form(project: Project) -> dict[str, Any]:
 
 def _submit_amend(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     project = _with_owned(db, owner, _form(data, "tender_id"))
-    deadline_text = _form(data, "bid_deadline")
-    # The form shows the deadline to the minute. Resubmitting that same text must not count as a change.
-    unchanged_deadline = deadline_text == tender_service.format_local_deadline(project.bid_deadline)
+    new_deadline = _deadline_from_data(data, "bid_deadline")
+    # Picking the same day again is not a change, so the time already set is kept.
+    unchanged_deadline = (
+        new_deadline is not None and project.bid_deadline is not None and tender_service.same_local_day(new_deadline, project.bid_deadline)
+    )
     fields = TenderFields(
         title=_form(data, "title") or None,
         description=_form(data, "description"),
         trade=_form(data, "trade"),
-        bid_deadline=None if (not deadline_text or unchanged_deadline) else tender_service.parse_local_deadline(deadline_text),
+        bid_deadline=None if (new_deadline is None or unchanged_deadline) else new_deadline,
     )
     if _form(data, "trade") and _form(data, "trade") not in TRADE_OPTIONS:
         raise TenderError("invalid", "Choose a trade from the list.")

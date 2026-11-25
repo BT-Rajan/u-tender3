@@ -287,9 +287,10 @@
             "label": "Address",
             "name": "address",
             "input-type": "text",
-            "required": false,
+            "required": true,
             "max-chars": 500,
-            "init-value": "${data.address}"
+            "init-value": "${data.address}",
+            "helper-text": "Required."
           },
           {
             "type": "TextArea",
@@ -345,12 +346,10 @@
             ]
           },
           {
-            "type": "TextInput",
-            "label": "Bid end date (DD-MM-YYYY), Kuwait time",
+            "type": "DatePicker",
+            "label": "Bid end date (Kuwait time)",
             "name": "bid_deadline",
-            "input-type": "text",
             "required": false,
-            "helper-text": "Optional for a draft. Required to publish.",
             "init-value": "${data.bid_deadline}"
           },
           {
@@ -752,10 +751,9 @@
             ]
           },
           {
-            "type": "TextInput",
-            "label": "Bid end date (DD-MM-YYYY), Kuwait time",
+            "type": "DatePicker",
+            "label": "Bid end date (Kuwait time)",
             "name": "bid_deadline",
-            "input-type": "text",
             "required": false,
             "init-value": "${data.bid_deadline}"
           },
@@ -831,6 +829,10 @@
       "terminal": true,
       "success": true,
       "data": {
+        "heading": {
+          "type": "string",
+          "__example__": "Tender number: 123456"
+        },
         "message": {
           "type": "string",
           "__example__": "Your tender is published."
@@ -839,6 +841,10 @@
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.heading}"
+          },
           {
             "type": "TextBody",
             "text": "${data.message}"

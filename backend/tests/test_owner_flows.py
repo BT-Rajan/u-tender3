@@ -487,3 +487,20 @@ def test_a_contractor_cannot_reach_the_owner_screens(client, monkeypatch, db):
     # A contractor is answered with an error, not the owner screen, and nothing is created.
     assert "error_message" in reply["data"]
     assert db.query(Project).count() == 0
+
+def test_the_calendar_date_becomes_the_end_of_that_day(setup):
+    from zoneinfo import ZoneInfo
+
+    from app.config import get_settings
+
+    zone = ZoneInfo(get_settings().tender_timezone)
+    day = datetime.now(zone) + timedelta(days=20)
+    midnight = datetime(day.year, day.month, day.day, tzinfo=zone)
+    millis = int(midnight.timestamp() * 1000)
+
+    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "bid_deadline": millis})
+
+    project = setup["db"].query(Project).one()
+    local = project.bid_deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(zone)
+    assert (local.year, local.month, local.day) == (day.year, day.month, day.day)
+    assert (local.hour, local.minute) == (23, 59)

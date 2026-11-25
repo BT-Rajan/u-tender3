@@ -90,6 +90,34 @@ def format_local_deadline(deadline: datetime | None) -> str:
     return local.strftime(DEADLINE_DATE_TIME_FORMAT)
 
 
+def _local(deadline: datetime) -> datetime:
+    """A stored (UTC, naive) deadline in the tender timezone."""
+    return deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo(get_settings().tender_timezone))
+
+
+def same_local_day(first: datetime, second: datetime) -> bool:
+    a, b = _local(first), _local(second)
+    return (a.year, a.month, a.day) == (b.year, b.month, b.day)
+
+
+def deadline_from_calendar(value: Any) -> datetime:
+    """The end of the day the calendar picked. The calendar sends epoch milliseconds."""
+    zone = ZoneInfo(get_settings().tender_timezone)
+    try:
+        picked = datetime.fromtimestamp(int(float(value)) / 1000, zone)
+    except (TypeError, ValueError, OverflowError, OSError) as exc:
+        raise TenderError("invalid", "Choose the bid end date from the calendar.") from exc
+    end = datetime(picked.year, picked.month, picked.day, END_OF_DAY[0], END_OF_DAY[1], tzinfo=zone)
+    return end.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+
+
+def calendar_value(deadline: datetime) -> int:
+    """Epoch milliseconds of local midnight on the deadline's day, so the calendar opens on that day."""
+    local = _local(deadline)
+    start = datetime(local.year, local.month, local.day, tzinfo=ZoneInfo(get_settings().tender_timezone))
+    return int(start.timestamp() * 1000)
+
+
 def owner_project(db: Session, owner: User, project_id: str) -> Project:
     """The tender, if this owner owns it. Anything else looks identical to a missing tender, so ids can't be probed."""
     project = db.get(Project, project_id)
