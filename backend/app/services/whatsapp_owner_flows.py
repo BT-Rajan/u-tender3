@@ -12,12 +12,14 @@ import re
 from datetime import datetime
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.enums import ProjectStatus, TenderType
+from app.models.whatsapp import WhatsAppIdentity
 from app.models.project import Project
 from app.models.user import User
-from app.services import tender_service
+from app.services import tender_service, whatsapp_outbox
 from app.services.flow_documents import attach_flow_documents
 from app.services.registration import TRADE_OPTIONS
 from app.services.tender_service import TenderError, TenderFields
@@ -185,6 +187,24 @@ def _message(message: str) -> dict[str, Any]:
     return {"screen": "DONE", "data": {"heading": "", "message": message}}
 
 
+def _announce_tender_number(db: Session, owner: User, project: Project, *, now: datetime) -> None:
+    """Also send the tender number as a chat message, so the owner keeps it after the Flow closes."""
+    identity = db.scalar(select(WhatsAppIdentity).where(WhatsAppIdentity.user_id == owner.id))
+    if identity is None:
+        return
+    whatsapp_outbox.enqueue(
+        db,
+        dedupe_key=f"{whatsapp_outbox.TENDER_NUMBER_PREFIX}{project.id}",
+        recipient_wa_id=identity.wa_id,
+        kind=whatsapp_outbox.KIND_TEXT,
+        now=now,
+        params={
+            "body": f"Your tender is published. Tender number: {project.reference_code}. Keep this number for your records."
+        },
+    )
+    db.commit()
+
+
 def _published_message(project: Project) -> dict[str, Any]:
     return {
         "screen": "DONE",
@@ -326,6 +346,7 @@ def _submit_review(db: Session, owner: User, data: dict[str, Any], *, now: datet
     action = _form(data, "next_step") or _form(data, "action")
     if action == "publish":
         project = tender_service.publish(db, owner, project, now, verified_required=False)
+        _announce_tender_number(db, owner, project, now=now)
         return _published_message(project)
     if action == "save_draft":
         return _message("Draft saved. You can find it under My tenders.")
@@ -360,6 +381,7 @@ def _submit_details(db: Session, owner: User, data: dict[str, Any], *, now: date
         return {"screen": "AMEND", "data": _amend_form(project)}
     if action == "publish":
         project = tender_service.publish(db, owner, project, now, verified_required=False)
+        _announce_tender_number(db, owner, project, now=now)
         return _published_message(project)
     if action == "close":
         tender_service.close(db, owner, project)

@@ -527,3 +527,18 @@ def test_the_calendar_may_send_an_iso_date_or_decimal_milliseconds(setup):
     project = setup["db"].query(Project).one()
     local = project.bid_deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(zone)
     assert (local.year, local.month, local.day) == (day.year, day.month, day.day)
+
+def test_publishing_also_sends_the_tender_number_in_chat(setup):
+    from app.models.whatsapp import WhatsAppOutbox
+
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "next_step": "publish"})
+
+    db = setup["db"]
+    project = db.get(Project, tender_id)
+    assert reply["screen"] == "DONE"
+    assert project.reference_code in reply["data"]["heading"]
+    rows = db.query(WhatsAppOutbox).filter(WhatsAppOutbox.dedupe_key == f"tender-number:{project.id}").all()
+    assert len(rows) == 1
+    assert project.reference_code in rows[0].params_json["body"]

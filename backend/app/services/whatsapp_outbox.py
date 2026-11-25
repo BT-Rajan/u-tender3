@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Protocol
 
-from sqlalchemy import select
+from sqlalchemy import false, or_, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -24,6 +24,8 @@ KIND_TEXT = "text"
 KIND_FLOW = "flow"
 KIND_CTA_URL = "cta_url"
 KIND_BUTTONS = "buttons"
+# Queued messages whose dedupe key starts with this prefix are sent at once from the Flow endpoint.
+TENDER_NUMBER_PREFIX = "tender-number:"
 KINDS = (KIND_TEMPLATE, KIND_TEXT, KIND_FLOW, KIND_CTA_URL, KIND_BUTTONS)
 
 # Params that are bearer credentials (a Flow session token or an upload link). They're removed once the row is finished.
@@ -184,6 +186,7 @@ def dispatch_due(
     max_attempts: int,
     batch_size: int = DEFAULT_BATCH_SIZE,
     kinds: tuple[str, ...] | None = None,
+    dedupe_prefixes: tuple[str, ...] | None = None,
 ) -> dict[str, int]:
     """Send every pending row whose next_attempt_at has passed.
 
@@ -194,8 +197,13 @@ def dispatch_due(
     straight away, with no retry.
     """
     statement = select(WhatsAppOutbox).where(WhatsAppOutbox.status == OUTBOX_PENDING, WhatsAppOutbox.next_attempt_at <= now)
-    if kinds is not None:
-        statement = statement.where(WhatsAppOutbox.kind.in_(kinds))
+    if kinds is not None or dedupe_prefixes is not None:
+        clauses = []
+        if kinds:
+            clauses.append(WhatsAppOutbox.kind.in_(kinds))
+        for prefix in dedupe_prefixes or ():
+            clauses.append(WhatsAppOutbox.dedupe_key.startswith(prefix))
+        statement = statement.where(or_(*clauses) if clauses else false())
     due = db.scalars(statement.order_by(WhatsAppOutbox.next_attempt_at).limit(batch_size)).all()
 
     stats = {"sent": 0, "retry": 0, "failed": 0, "dead": 0, "held": 0}
