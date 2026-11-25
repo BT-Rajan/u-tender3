@@ -203,7 +203,7 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
     _deliver(client, sender, monkeypatch, text_message("wamid.CON3", CONTRACTOR_WA, "projects"))
     suspended_menu = sender.flows()[-1]["flow_token"]
     refused = _flow(client, public_pem, suspended_menu, "MENU", {"choice": "browse_projects"})
-    assert refused["screen"] == "MENU" and "verified" in refused["data"]["error_message"]
+    assert refused["screen"] == "MENU" and "suspended" in refused["data"]["error_message"]
 
     # 14. Expired upload link: the page refuses it, generically.
     from app.services.upload_links import issue_upload_link
