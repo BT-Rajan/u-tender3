@@ -253,3 +253,14 @@ def test_the_account_created_message_has_yes_and_no_buttons_and_is_sent(monkeypa
     assert sender.sent[-1]["body"] == body
     assert [button["title"] for button in sender.sent[-1]["buttons"]] == [yes, no]
     assert [button["id"] for button in sender.sent[-1]["buttons"]] == ["continue_yes", "continue_no"]
+
+
+def test_the_dashboard_menu_always_sends_the_error_field_it_shows(monkeypatch, db):
+    from app.services.whatsapp_flows import _menu_data
+
+    enable_whatsapp(monkeypatch)
+    user = _account(db, UserRole.owner)
+
+    menu = _menu_data(db, user, True)
+    assert menu["error_message"] == ""
+    assert menu["greeting"].startswith("Hello ")

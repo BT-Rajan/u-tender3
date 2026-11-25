@@ -321,6 +321,8 @@ def _menu_data(db: Session, user: User, is_owner: bool) -> dict[str, str]:
     return {
         "greeting": f"Hello {first_name}",
         "status": STATUS_TEXT.get(marketplace_status, ""),
+        # The menu shows this field, so it is always sent; an empty string shows nothing.
+        "error_message": "",
     }
 
 
