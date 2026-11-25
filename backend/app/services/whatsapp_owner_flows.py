@@ -110,13 +110,18 @@ def _details_text(db: Session, project: Project) -> str:
     return "\n".join(lines)[:3500]
 
 
+def _box(value: object, limit: int) -> str:
+    """Saved text as a form box can show it: one line, within the box's limit."""
+    return " ".join(str(value or "").split())[:limit]
+
+
 def _fields_for_draft(project: Project) -> dict[str, Any]:
     """The values an edit screen starts with. The owner sees what is saved, not a blank form."""
     return {
         "tender_id": project.id,
-        "title": project.title,
-        "address": project.address if project.address != "Not set" else "",
-        "description": project.description or "",
+        "title": _box(project.title, 255),
+        "address": _box(project.address, 500) if project.address != "Not set" else "",
+        "description": _box(project.description, 1000),
         "trade": project.trade if project.trade in TRADE_OPTIONS else "",
         "bid_deadline": "",
         "tender_type": project.tender_type.value,
@@ -415,8 +420,8 @@ def _submit_details(db: Session, owner: User, data: dict[str, Any], *, now: date
 def _amend_form(project: Project) -> dict[str, Any]:
     return {
         "tender_id": project.id,
-        "title": project.title,
-        "description": project.description or "",
+        "title": _box(project.title, 255),
+        "description": _box(project.description, 1000),
         "trade": project.trade if project.trade in TRADE_OPTIONS else "",
         "bid_deadline": "",
         "reason": "",

@@ -630,3 +630,19 @@ def test_a_long_tender_list_is_capped_at_twenty_rows(setup):
 
     assert reply["screen"] == "MY_TENDERS"
     assert len(reply["data"]["tenders"]) == 20
+
+
+@pytest.mark.parametrize("tender_type", [TenderType.owner_visible, TenderType.sealed])
+def test_editing_a_draft_sends_saved_text_within_each_box(setup, tender_type):
+    db = setup["db"]
+    project = _project(db, setup["owner"], status=ProjectStatus.draft, title="Villa", tender_type=tender_type)
+    project.address = "Block 3,\nSalmiya"
+    project.description = "Ground floor works. " * 80
+    db.commit()
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": project.id, "next_step": "edit"})
+
+    assert reply["screen"] == "CREATE_TENDER"
+    assert "\n" not in reply["data"]["address"]
+    assert len(reply["data"]["description"]) <= 1000
+    assert reply["data"]["tender_type"] == tender_type.value

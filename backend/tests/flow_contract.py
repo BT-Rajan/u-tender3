@@ -51,6 +51,17 @@ def _init_bindings(screen: dict[str, Any]) -> list[tuple[str, list[str]]]:
     return found
 
 
+def _text_bindings(screen: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
+    """(data field, box) for each text box whose start value comes from data."""
+    found = []
+    for child in (screen.get("layout") or {}).get("children") or []:
+        if child.get("type") in ("TextInput", "TextArea"):
+            match = re.fullmatch(r"\$\{data\.([A-Za-z_]+)\}", str(child.get("init-value", "")))
+            if match:
+                found.append((match.group(1), child))
+    return found
+
+
 def check_reply(flow_name: str, reply: dict[str, Any]) -> None:
     """Raise AssertionError if the reply does not carry what its screen shows, with the declared types."""
     screen = _screen(flow_name, reply["screen"])
@@ -65,6 +76,13 @@ def check_reply(flow_name: str, reply: dict[str, Any]) -> None:
     for key in bound:
         if key in data:
             assert data[key], f"{reply['screen']}.{key} is an empty list; WhatsApp cannot show a choice list with no rows"
+    for field, box in _text_bindings(screen):
+        if field in data:
+            value = str(data[field])
+            limit = box.get("max-chars") or box.get("max-length")
+            assert limit is None or len(value) <= limit, f"{reply['screen']}.{field} is {len(value)} characters; the box allows {limit}"
+            if box["type"] == "TextInput":
+                assert "\n" not in value, f"{reply['screen']}.{field} has a line break; a one-line box cannot show it"
     for field, allowed in _init_bindings(screen):
         if field in data:
             assert data[field] in ("", *allowed), f"{reply['screen']}.{field} starts at {data[field]!r}, which is not one of the choices"
