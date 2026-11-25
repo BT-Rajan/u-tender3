@@ -489,7 +489,7 @@
           {
             "type": "RadioButtonsGroup",
             "label": "What next?",
-            "name": "action",
+            "name": "next_step",
             "required": true,
             "data-source": "${data.actions}"
           },
@@ -500,7 +500,7 @@
               "name": "data_exchange",
               "payload": {
                 "project_id": "${data.project_id}",
-                "action": "${form.action}"
+                "next_step": "${form.next_step}"
               }
             }
           }
@@ -800,7 +800,7 @@
           {
             "type": "RadioButtonsGroup",
             "label": "Action",
-            "name": "action",
+            "name": "next_step",
             "required": true,
             "data-source": "${data.actions}"
           },
@@ -827,8 +827,8 @@
               "name": "data_exchange",
               "payload": {
                 "project_id": "${data.project_id}",
-                "action": "${form.action}",
-                "confirm": "${form.confirm}"
+                "confirm": "${form.confirm}",
+                "next_step": "${form.next_step}"
               }
             }
           }

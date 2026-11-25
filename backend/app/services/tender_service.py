@@ -431,5 +431,6 @@ def allowed_actions(project: Project) -> list[str]:
         actions.append("no_award")
     if status in CANCELABLE:
         actions.append("cancel")
-    actions.append("offers")
+    if status != ProjectStatus.draft:
+        actions.append("offers")
     return actions

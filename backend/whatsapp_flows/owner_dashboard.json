@@ -608,7 +608,7 @@
           {
             "type": "RadioButtonsGroup",
             "label": "Action",
-            "name": "action",
+            "name": "next_step",
             "required": true,
             "data-source": "${data.actions}"
           },
@@ -635,8 +635,8 @@
               "name": "data_exchange",
               "payload": {
                 "tender_id": "${data.tender_id}",
-                "action": "${form.action}",
-                "confirm": "${form.confirm}"
+                "confirm": "${form.confirm}",
+                "next_step": "${form.next_step}"
               }
             }
           }

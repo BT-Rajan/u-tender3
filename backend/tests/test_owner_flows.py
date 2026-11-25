@@ -542,3 +542,21 @@ def test_publishing_also_sends_the_tender_number_in_chat(setup):
     rows = db.query(WhatsAppOutbox).filter(WhatsAppOutbox.dedupe_key == f"tender-number:{project.id}").all()
     assert len(rows) == 1
     assert project.reference_code in rows[0].params_json["body"]
+
+def test_a_draft_is_not_offered_close_or_view_offers(setup):
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3"})["data"]["tender_id"]
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "MY_TENDERS", {"tender_id": tender_id})
+
+    ids = [action["id"] for action in reply["data"]["actions"]]
+    assert "close" not in ids
+    assert "offers" not in ids
+
+
+def test_the_details_choice_is_read_from_next_step(setup):
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
+    _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "next_step": "publish"})
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": tender_id, "next_step": "edit"})
+
+    assert reply["screen"] == "AMEND"

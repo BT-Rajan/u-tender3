@@ -336,7 +336,7 @@ def _send_drawing_links(db: Session, identity: WhatsAppIdentity, user: User, pro
 
 def _details_action(db: Session, identity: WhatsAppIdentity, user: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     project_id = _text(data.get("project_id"), 64)
-    action = _text(data.get("action"), 20)
+    action = _text(data.get("next_step") or data.get("action"), 20)
     if action == "details":
         return _project_details(db, user, project_id, now=now)
     if action == "submit":
@@ -360,7 +360,7 @@ def _details_action(db: Session, identity: WhatsAppIdentity, user: User, data: d
 
 def _offer_details_action(db: Session, user: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     project_id = _text(data.get("project_id"), 64)
-    action = _text(data.get("action"), 20)
+    action = _text(data.get("next_step") or data.get("action"), 20)
     if action == "details":
         return _offer_details(db, user, project_id, now=now)
     if action == "history":

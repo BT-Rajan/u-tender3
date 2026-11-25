@@ -363,7 +363,7 @@ def _pick_tender(db: Session, owner: User, data: dict[str, Any], *, now: datetim
 
 def _submit_details(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     project = _with_owned(db, owner, _form(data, "tender_id"))
-    action = _form(data, "action")
+    action = _form(data, "next_step") or _form(data, "action")
     allowed = tender_service.allowed_actions(project)
     if action not in allowed:
         raise TenderError("not_allowed", "That action isn't available for this tender right now.")
