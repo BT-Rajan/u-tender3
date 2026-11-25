@@ -7,6 +7,7 @@ allow (see tender_service.allowed_actions), and the service enforces the same ru
 again on submit.
 """
 
+import logging
 from datetime import datetime
 from typing import Any
 
@@ -16,8 +17,11 @@ from app.models.enums import ProjectStatus, TenderType
 from app.models.project import Project
 from app.models.user import User
 from app.services import tender_service
+from app.services.flow_documents import attach_flow_documents
 from app.services.registration import TRADE_OPTIONS
 from app.services.tender_service import TenderError, TenderFields
+
+_log = logging.getLogger("utender.whatsapp")
 
 # Shown as "[Draft] ..." and so on, so the status is visible in a list item.
 STATUS_LABEL: dict[ProjectStatus, str] = {
@@ -149,6 +153,12 @@ def _message(message: str) -> dict[str, Any]:
     return {"screen": "DONE", "data": {"message": message}}
 
 
+def _published_message(project: Project) -> dict[str, Any]:
+    return _message(
+        f"Your tender is published. Tender number: {project.reference_code}. Bidders can now see it and submit offers."
+    )
+
+
 def open_create(db: Session, owner: User) -> dict[str, Any]:
     return {"screen": "CREATE_TENDER", "data": _blank_create_form()}
 
@@ -267,14 +277,25 @@ def _submit_create(db: Session, owner: User, data: dict[str, Any], *, now: datet
 
 def _submit_review(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     project = _with_owned(db, owner, _form(data, "tender_id"))
+    documents = data.get("documents")
+    if isinstance(documents, list) and documents:
+        result = attach_flow_documents(db, project, documents)
+        if result.failed:
+            review = _review_screen(db, project)
+            review["data"]["error_message"] = (
+                f"These files could not be attached: {', '.join(result.failed)}. "
+                "Use PDF, JPG, PNG or ZIP files up to 25 MB each."
+            )
+            return review
     action = _form(data, "action")
     if action == "publish":
         project = tender_service.publish(db, owner, project, now, verified_required=False)
-        return _message("Your tender is published. Bidders can now see it and submit offers.")
+        return _published_message(project)
     if action == "save_draft":
         return _message("Draft saved. You can find it under My tenders.")
     if action == "edit":
         return {"screen": "CREATE_TENDER", "data": _fields_for_draft(project)}
+    _log.warning("Owner review had no usable action. Fields: %s, action: %r", sorted(data), data.get("action"))
     raise TenderError("invalid", "Choose an option.")
 
 
@@ -302,8 +323,8 @@ def _submit_details(db: Session, owner: User, data: dict[str, Any], *, now: date
             return {"screen": "CREATE_TENDER", "data": _fields_for_draft(project)}
         return {"screen": "AMEND", "data": _amend_form(project)}
     if action == "publish":
-        tender_service.publish(db, owner, project, now, verified_required=False)
-        return _message("Your tender is published. Bidders can now see it and submit offers.")
+        project = tender_service.publish(db, owner, project, now, verified_required=False)
+        return _published_message(project)
     if action == "close":
         tender_service.close(db, owner, project)
         return _message("The tender is closed to new bids.")

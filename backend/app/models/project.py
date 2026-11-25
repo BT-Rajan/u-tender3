@@ -43,6 +43,8 @@ class Project(Base):
     # published tender's material fields change (spec §2.8/§2.12).
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     deadline_reminder_sent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Six digits, given the first time the tender is published. The owner and bidders see it as the tender number.
+    reference_code: Mapped[str | None] = mapped_column(String(6), unique=True, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     drawings = relationship("ProjectDrawing", back_populates="project", cascade="all, delete-orphan")

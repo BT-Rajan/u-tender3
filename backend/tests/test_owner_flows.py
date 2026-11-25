@@ -24,7 +24,7 @@ from app.services.whatsapp_identity import get_or_create_identity
 from app.services.whatsapp_routing import install_whatsapp_handlers
 from whatsapp_helpers import RecordingSender, enable_whatsapp, flow_request, message_envelope, sign, text_message
 
-FUTURE_LOCAL = (datetime.utcnow() + timedelta(days=20)).strftime("%Y-%m-%d %H:%M")
+FUTURE_LOCAL = (datetime.utcnow() + timedelta(days=20)).strftime("%d-%m-%Y %H:%M")
 NOW = datetime.utcnow()
 
 
@@ -154,7 +154,7 @@ def test_a_deadline_typed_wrongly_is_refused_on_the_form(setup):
     reply = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "bid_deadline": "next Friday"})
 
     assert reply["screen"] == "CREATE_TENDER"
-    assert "YYYY-MM-DD HH:MM" in reply["data"]["error_message"]
+    assert "DD-MM-YYYY" in reply["data"]["error_message"]
     assert db.query(Project).count() == 0
 
 
@@ -332,7 +332,7 @@ def test_amend_cannot_move_the_deadline_earlier_after_bids(setup):
     project = _project(db, setup["owner"], status=ProjectStatus.open)
     project.tender_type_locked = True
     db.commit()
-    earlier = (NOW + timedelta(days=2)).strftime("%Y-%m-%d %H:%M")
+    earlier = (NOW + timedelta(days=2)).strftime("%d-%m-%Y %H:%M")
 
     reply = _send(
         setup["client"], setup["pem"], setup["token"], "AMEND",

@@ -126,7 +126,7 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
 
     # 6. Owner creates a sealed tender over WhatsApp and publishes it. The paid contractor in Electrical is told.
     sender.sent.clear()
-    deadline = (datetime.utcnow() + timedelta(days=10)).strftime("%Y-%m-%d %H:%M")
+    deadline = (datetime.utcnow() + timedelta(days=10)).strftime("%d-%m-%Y %H:%M")
     _deliver(client, sender, monkeypatch, text_message("wamid.OWNER3", OWNER_WA, "tender"))
     owner_menu = sender.flows()[-1]["flow_token"]
     review_screen = _flow(client, public_pem, owner_menu, "CREATE_TENDER", {

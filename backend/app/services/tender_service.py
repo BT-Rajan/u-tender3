@@ -6,6 +6,7 @@ records, and who gets notified. The web routes and the WhatsApp Flows both call 
 Web behaviour and error messages are unchanged except where noted in the module.
 """
 
+import secrets
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -55,15 +56,27 @@ class TenderFields:
     tender_type: TenderType | None = None
 
 
+# A bid end date is typed as DD-MM-YYYY. A date with no time ends at the close of that day.
+DEADLINE_DATE_FORMAT = "%d-%m-%Y"
+DEADLINE_DATE_TIME_FORMAT = "%d-%m-%Y %H:%M"
+END_OF_DAY = (23, 59)
+
+
 def parse_local_deadline(text: str) -> datetime:
-    """Read 'YYYY-MM-DD HH:MM' in the tender timezone and return naive UTC.
+    """Read 'DD-MM-YYYY' (or 'DD-MM-YYYY HH:MM') in the tender timezone and return naive UTC.
 
     Owners think in local time, and the database stores UTC.
     """
+    raw = text.strip()
+    local: datetime | None = None
     try:
-        local = datetime.strptime(text.strip(), "%Y-%m-%d %H:%M").replace(tzinfo=ZoneInfo(get_settings().tender_timezone))
-    except (ValueError, KeyError) as exc:
-        raise TenderError("invalid", "Enter the deadline as YYYY-MM-DD HH:MM.") from exc
+        local = datetime.strptime(raw, DEADLINE_DATE_TIME_FORMAT)
+    except ValueError:
+        try:
+            local = datetime.strptime(raw, DEADLINE_DATE_FORMAT).replace(hour=END_OF_DAY[0], minute=END_OF_DAY[1])
+        except ValueError as exc:
+            raise TenderError("invalid", "Enter the bid end date as DD-MM-YYYY.") from exc
+    local = local.replace(tzinfo=ZoneInfo(get_settings().tender_timezone))
     return local.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
 
 
@@ -71,7 +84,10 @@ def format_local_deadline(deadline: datetime | None) -> str:
     if deadline is None:
         return "not set"
     utc = deadline.replace(tzinfo=ZoneInfo("UTC"))
-    return utc.astimezone(ZoneInfo(get_settings().tender_timezone)).strftime("%Y-%m-%d %H:%M")
+    local = utc.astimezone(ZoneInfo(get_settings().tender_timezone))
+    if (local.hour, local.minute) == END_OF_DAY:
+        return local.strftime(DEADLINE_DATE_FORMAT)
+    return local.strftime(DEADLINE_DATE_TIME_FORMAT)
 
 
 def owner_project(db: Session, owner: User, project_id: str) -> Project:
@@ -142,6 +158,15 @@ def update_draft(
     return project
 
 
+def _new_reference_code(db: Session) -> str:
+    """A six-digit tender number that no other tender has."""
+    for _ in range(50):
+        code = str(secrets.randbelow(900000) + 100000)
+        if db.scalar(select(Project.id).where(Project.reference_code == code)) is None:
+            return code
+    raise TenderError("busy", "Could not give this tender a number. Try publishing again.")
+
+
 def publish(db: Session, owner: User, project: Project, now: datetime, *, verified_required: bool = True) -> Project:
     """Draft -> open. The gate is the same as the web: draft only, deadline in the future."""
     if verified_required:
@@ -152,6 +177,8 @@ def publish(db: Session, owner: User, project: Project, now: datetime, *, verifi
         raise TenderError("incomplete", "Add the address before publishing.")
     if project.bid_deadline is None or project.bid_deadline <= now:
         raise TenderError("deadline_past", "Set a bid deadline in the future before publishing.")
+    if project.reference_code is None:
+        project.reference_code = _new_reference_code(db)
     project.status = ProjectStatus.open
     db.commit()
     db.refresh(project)

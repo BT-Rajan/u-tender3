@@ -346,7 +346,7 @@
           },
           {
             "type": "TextInput",
-            "label": "Bid deadline (YYYY-MM-DD HH:MM, Kuwait time)",
+            "label": "Bid end date (DD-MM-YYYY), Kuwait time",
             "name": "bid_deadline",
             "input-type": "text",
             "required": false,
@@ -439,6 +439,21 @@
             "text": "${data.error_message}"
           },
           {
+            "type": "DocumentPicker",
+            "name": "documents",
+            "label": "Tender documents (optional)",
+            "description": "Add PDF, JPG, PNG or ZIP files, up to 25 MB each.",
+            "min-uploaded-documents": 0,
+            "max-uploaded-documents": 10,
+            "max-file-size-kb": 25600,
+            "allowed-mime-types": [
+              "application/pdf",
+              "image/jpeg",
+              "image/png",
+              "application/zip"
+            ]
+          },
+          {
             "type": "RadioButtonsGroup",
             "label": "What next?",
             "name": "action",
@@ -452,7 +467,8 @@
               "name": "data_exchange",
               "payload": {
                 "tender_id": "${data.tender_id}",
-                "action": "${form.action}"
+                "action": "${form.action}",
+                "documents": "${form.documents}"
               }
             }
           }
@@ -736,7 +752,7 @@
           },
           {
             "type": "TextInput",
-            "label": "Bid deadline (YYYY-MM-DD HH:MM, Kuwait time)",
+            "label": "Bid end date (DD-MM-YYYY), Kuwait time",
             "name": "bid_deadline",
             "input-type": "text",
             "required": false,

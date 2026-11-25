@@ -420,7 +420,7 @@ def test_admin_suspended_offers_are_never_shown_to_the_owner(db):
 
 
 def test_a_local_kuwait_deadline_is_stored_as_utc():
-    deadline = tender_service.parse_local_deadline("2026-12-31 14:00")
+    deadline = tender_service.parse_local_deadline("31-12-2026 14:00")
     assert deadline == datetime(2026, 12, 31, 11, 0)
 
 
@@ -432,7 +432,7 @@ def test_a_deadline_in_the_wrong_format_is_refused():
 
 def test_a_deadline_round_trips_through_the_local_display():
     stored = datetime(2026, 12, 31, 11, 0)
-    assert tender_service.format_local_deadline(stored) == "2026-12-31 14:00"
+    assert tender_service.format_local_deadline(stored) == "31-12-2026 14:00"
 
 
 def test_an_unset_deadline_displays_as_not_set():

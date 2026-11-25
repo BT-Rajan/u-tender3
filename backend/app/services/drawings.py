@@ -91,3 +91,10 @@ async def upload_drawings_for_project(
 
     db.commit()
     return {"uploaded": uploaded, "failed": failed}
+
+
+def add_drawing_file(db: Session, storage: Storage, project_id: str, file_name: str, content: bytes, content_type: str) -> None:
+    """Save one file as a drawing of the project. Used by WhatsApp uploads, which are already checked by the caller."""
+    path = f"{project_id}/{int(time.time() * 1000)}-{sanitize_path_segment(file_name)}"
+    storage.save("project-drawings", path, content, content_type)
+    _record_drawing(db, project_id, path, file_name)
