@@ -287,7 +287,7 @@ def _submit_review(db: Session, owner: User, data: dict[str, Any], *, now: datet
                 "Use PDF, JPG, PNG or ZIP files up to 25 MB each."
             )
             return review
-    action = _form(data, "action")
+    action = _form(data, "next_step") or _form(data, "action")
     if action == "publish":
         project = tender_service.publish(db, owner, project, now, verified_required=False)
         return _published_message(project)

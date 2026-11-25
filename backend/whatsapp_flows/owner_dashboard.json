@@ -456,7 +456,7 @@
           {
             "type": "RadioButtonsGroup",
             "label": "What next?",
-            "name": "action",
+            "name": "next_step",
             "required": true,
             "data-source": "${data.actions}",
             "init-value": "publish"
@@ -468,8 +468,8 @@
               "name": "data_exchange",
               "payload": {
                 "tender_id": "${data.tender_id}",
-                "action": "${form.action}",
-                "documents": "${form.documents}"
+                "documents": "${form.documents}",
+                "next_step": "${form.next_step}"
               }
             }
           }
