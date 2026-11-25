@@ -32,9 +32,27 @@ FLOW_CONTRACTOR_DASHBOARD = "contractor_dashboard"
 # Fields each registration screen may carry in its `data`. The Flow JSON
 # declares the same names, and a test keeps the two in step.
 REGISTRATION_SCREEN_FIELDS: dict[str, tuple[str, ...]] = {
-    "ROLE": (),
-    "OWNER_DETAILS": ("full_name",),
-    "CONTRACTOR_DETAILS": ("contact_name", "company_name", "primary_trade"),
+    "SPLASH": (),
+    "REGISTER": ("full_name", "address"),
+}
+
+# Contractors give one name on the form. The company name is set to it, and
+# the trade is "Other" until the contractor completes their profile.
+CONTRACTOR_DEFAULT_TRADE = "Other"
+
+# What each role can do, shown on the summary screen after registration.
+ROLE_CAPABILITIES: dict[str, str] = {
+    "owner": (
+        "- Post a tender for your project with drawings\n"
+        "- Receive sealed or open offers from contractors\n"
+        "- Review offers and award the work\n"
+        "- Keep your documents up to date"
+    ),
+    "contractor": (
+        "- Browse open projects and send offers\n"
+        "- Track your offers and awards\n"
+        "- Keep your documents up to date"
+    ),
 }
 
 OWNER_MENU_CHOICES = ("create_tender", "my_tenders", "received_offers", "my_documents")
@@ -85,10 +103,10 @@ def _registration_reply(
 ) -> dict[str, Any] | None:
     action = payload.get("action")
     if action == "INIT":
-        screen = session.screen or "ROLE"
+        screen = session.screen or "SPLASH"
         return {"screen": screen, "data": _saved_fields(session, screen)}
     if action == "BACK":
-        return {"screen": "ROLE", "data": {}}
+        return {"screen": "SPLASH", "data": {}}
     if action != "data_exchange":
         return None
 
@@ -98,74 +116,55 @@ def _registration_reply(
     if identity is None:
         return _expired_reply()
 
-    if screen == "ROLE":
-        return _choose_role(db, session, data, now=now)
-    if screen == "OWNER_DETAILS":
-        return _complete_owner(db, session, identity, data, now=now)
-    if screen == "CONTRACTOR_DETAILS":
-        return _complete_contractor(db, session, identity, data, now=now)
+    if screen == "REGISTER":
+        return _complete_registration(db, session, identity, data, now=now)
     return None
 
 
-def _choose_role(db: Session, session: WhatsAppFlowSession, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
+def _complete_registration(
+    db: Session, session: WhatsAppFlowSession, identity: WhatsAppIdentity, data: dict[str, Any], *, now: datetime
+) -> dict[str, Any]:
     role = data.get("role")
-    language = data.get("language")
-    if role not in ("owner", "contractor") or language not in ("en", "ar"):
-        return {"screen": "ROLE", "data": {"error_message": "Choose a role and a language."}}
+    full_name = data.get("full_name")
+    address = data.get("address")
+    if role not in ("owner", "contractor"):
+        return {"screen": "REGISTER", "data": {"error_message": "Choose whether you are an owner or a contractor."}}
 
-    session.state_json = {**(session.state_json or {}), "role": role, "language": language}
-    next_screen = "OWNER_DETAILS" if role == "owner" else "CONTRACTOR_DETAILS"
-    session.screen = next_screen
+    session.state_json = {**(session.state_json or {}), "full_name": full_name, "address": address, "role": role}
+    session.screen = "REGISTER"
     db.commit()
-    return {"screen": next_screen, "data": {}}
 
-
-def _language_of(session: WhatsAppFlowSession) -> str:
-    return str((session.state_json or {}).get("language", "en"))
-
-
-def _complete_owner(
-    db: Session, session: WhatsAppFlowSession, identity: WhatsAppIdentity, data: dict[str, Any], *, now: datetime
-) -> dict[str, Any]:
     try:
-        register_owner(
-            db,
-            identity,
-            session,
-            full_name=data.get("full_name"),
-            language=_language_of(session),
-            now=now,
-        )
+        if role == "owner":
+            user = register_owner(
+                db, identity, session, full_name=full_name, address=address, language="en", now=now
+            )
+        else:
+            user = register_contractor(
+                db,
+                identity,
+                session,
+                contact_name=full_name,
+                company_name=full_name,
+                primary_trade=CONTRACTOR_DEFAULT_TRADE,
+                address=address,
+                language="en",
+                now=now,
+            )
     except RegistrationError as error:
-        return _registration_failure("OWNER_DETAILS", error)
-    return {"screen": "SUCCESS", "data": {"message": "Your account is ready. Send any message to open your dashboard."}}
+        return _registration_failure(error)
+    return {
+        "screen": "RESULT_OK",
+        "data": {"reference": user.id, "capabilities": ROLE_CAPABILITIES[role]},
+    }
 
 
-def _complete_contractor(
-    db: Session, session: WhatsAppFlowSession, identity: WhatsAppIdentity, data: dict[str, Any], *, now: datetime
-) -> dict[str, Any]:
-    try:
-        register_contractor(
-            db,
-            identity,
-            session,
-            contact_name=data.get("contact_name"),
-            company_name=data.get("company_name"),
-            primary_trade=data.get("primary_trade"),
-            language=_language_of(session),
-            now=now,
-        )
-    except RegistrationError as error:
-        return _registration_failure("CONTRACTOR_DETAILS", error)
-    return {"screen": "SUCCESS", "data": {"message": "Your account is ready. Send any message to open your dashboard."}}
-
-
-def _registration_failure(screen: str, error: RegistrationError) -> dict[str, Any]:
+def _registration_failure(error: RegistrationError) -> dict[str, Any]:
     if error.code == "invalid":
-        # Stay on the same screen so the user can correct the field.
-        return {"screen": screen, "data": {"error_message": error.message}}
-    # The number is already taken, so the form can't succeed. End it on a terminal screen.
-    return {"screen": "NOT_COMPLETED", "data": {"message": error.message}}
+        # Stay on the form so the user can correct the field.
+        return {"screen": "REGISTER", "data": {"error_message": error.message}}
+    # The number is already taken, so the form can't succeed. Show why on the result screen.
+    return {"screen": "RESULT_ERROR", "data": {"error_message": error.message}}
 
 
 def _dashboard_reply(db: Session, session: WhatsAppFlowSession, payload: dict[str, Any], *, now: datetime) -> dict[str, Any] | None:

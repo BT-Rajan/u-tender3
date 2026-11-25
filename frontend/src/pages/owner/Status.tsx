@@ -3,6 +3,7 @@ import { apiFetch } from "@/api/client";
 import type { OwnerDocument, OwnerProfile } from "@/api/types";
 import { PageLoading } from "@/components/PageLoading";
 import { useI18n } from "@/i18n/I18nContext";
+import { formatDate } from "@/lib/format";
 
 function statusBadge(status: string) {
   switch (status) {
@@ -18,7 +19,7 @@ function statusBadge(status: string) {
 }
 
 export function OwnerStatusPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { data: profile } = useQuery({
     queryKey: ["owner-profile"],
     queryFn: () => apiFetch<OwnerProfile>("/owner/profile"),
@@ -69,7 +70,7 @@ export function OwnerStatusPage() {
         <div>
           <div className="font-display font-semibold text-navy text-sm">{bannerTitle}</div>
           <div className="font-mono text-[11px] text-steel mt-1">
-            {t("owner.status.submittedOn")} {new Date(profile.created_at).toLocaleDateString()}
+            {t("owner.status.submittedOn")} {formatDate(profile.created_at, language)}
           </div>
         </div>
         <span className={`font-mono text-[10px] uppercase px-2.5 py-1 rounded-full ${statusBadge(profile.verification_status === "pending_review" ? "pending" : "rejected")}`}>

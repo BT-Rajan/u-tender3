@@ -1,4 +1,6 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { NotFoundPage } from "@/pages/NotFound";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { AuthenticatedRoute } from "@/auth/AuthenticatedRoute";
 import { HomePage } from "@/pages/Home";
@@ -33,9 +35,10 @@ import { AdminProjectsPage } from "@/pages/admin/Projects";
 import { AdminProjectDetailPage } from "@/pages/admin/ProjectDetail";
 import { AdminCmsPage } from "@/pages/admin/Cms";
 
-export function App() {
+function AppRoutes() {
+  const { pathname } = useLocation();
   return (
-    <BrowserRouter>
+    <ErrorBoundary resetKey={pathname}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -147,7 +150,17 @@ export function App() {
           <Route path="projects/:id" element={<AdminProjectDetailPage />} />
           <Route path="cms" element={<AdminCmsPage />} />
         </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
+    </ErrorBoundary>
+  );
+}
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 }

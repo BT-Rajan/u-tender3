@@ -18,6 +18,7 @@ from app.services.flow_crypto import (
     encrypt_response,
     load_private_key,
 )
+from app.services.whatsapp_relay import WhatsAppRelayClient
 from app.services.whatsapp_client import WhatsAppCloudClient, WhatsAppSendError
 from app.services.whatsapp_events import record_events
 from app.services.whatsapp_outbox import dispatch_due
@@ -73,6 +74,35 @@ def verify_webhook(
     raise HTTPException(status_code=403, detail="Verification failed")
 
 
+@router.post("/whatsapp/forward")
+async def receive_forwarded_message(request: Request, db: Session = Depends(get_db)) -> dict[str, bool]:
+    """Receive a single inbound message that Cogzi forwards from the shared number.
+
+    Cogzi signs the body with WHATSAPP_FORWARD_SECRET, which is separate from
+    U-Tender's own app secret. Without that secret configured, nothing is accepted.
+    """
+    _whatsapp_enabled_or_404()
+    settings = get_settings()
+    raw_body = await request.body()
+
+    if not settings.whatsapp_forward_secret:
+        raise HTTPException(status_code=404, detail="Not Found")
+    if not verify_signature(raw_body, request.headers.get("X-Hub-Signature-256"), settings.whatsapp_forward_secret):
+        logger.warning("WhatsApp forward rejected: signature did not verify")
+        raise HTTPException(status_code=403, detail="Invalid signature")
+
+    try:
+        body = json.loads(raw_body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Malformed JSON") from exc
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Malformed payload")
+
+    record_events(db, body, now=datetime.utcnow())
+    await run_in_threadpool(dispatch_outbox_now, db)
+    return {"received": True}
+
+
 @router.post("/whatsapp/webhook")
 async def receive_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, bool]:
     """Receive messages and status updates. The signature is checked over the raw bytes before parsing."""
@@ -98,6 +128,32 @@ async def receive_webhook(request: Request, db: Session = Depends(get_db)) -> di
     return {"received": True}
 
 
+@router.post("/whatsapp/bridge/cogzi")
+async def receive_cogzi_bridge(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Messages for a number Cogzi still owns, forwarded by Cogzi's outgoing webhook (see whatsapp_bridge)."""
+    from app.services.whatsapp_bridge import envelope_for_trigger, verify_bridge_signature
+
+    settings = get_settings()
+    if not settings.whatsapp_enabled or not settings.whatsapp_bridge_secret:
+        raise HTTPException(status_code=404, detail="Not found")
+    raw_body = await request.body()
+    if not verify_bridge_signature(raw_body, request.headers.get("X-Hub-Signature-256"), settings):
+        raise HTTPException(status_code=403, detail="Invalid signature")
+    try:
+        event = json.loads(raw_body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Malformed JSON") from exc
+    if not isinstance(event, dict):
+        raise HTTPException(status_code=400, detail="Malformed payload")
+
+    envelope = envelope_for_trigger(event, settings)
+    if envelope is None:
+        return {"received": True, "started": False}
+    record_events(db, envelope, now=datetime.utcnow())
+    await run_in_threadpool(dispatch_outbox_now, db)
+    return {"received": True, "started": True}
+
+
 def dispatch_outbox_now(db: Session) -> None:
     settings = get_settings()
     if not settings.whatsapp_enabled:
@@ -116,8 +172,14 @@ def dispatch_outbox_now(db: Session) -> None:
 
 
 def build_whatsapp_sender() -> WhatsAppCloudClient:
-    """Indirection so tests can substitute a sender without touching the network."""
-    return WhatsAppCloudClient.from_settings(get_settings())
+    """Indirection so tests can substitute a sender without touching the network.
+
+    With WHATSAPP_RELAY_URL set, messages go through Cogzi. Otherwise they are sent directly.
+    """
+    settings = get_settings()
+    if settings.whatsapp_relay_url:
+        return WhatsAppRelayClient.from_settings(settings)
+    return WhatsAppCloudClient.from_settings(settings)
 
 
 def _flow_reply(db: Session, payload: dict[str, Any]) -> dict[str, Any]:

@@ -29,6 +29,8 @@ TRADE_OPTIONS: tuple[str, ...] = (
 
 NAME_MIN = 2
 NAME_MAX = 120
+ADDRESS_MIN = 5
+ADDRESS_MAX = 255
 COMPANY_MAX = 255
 
 CODE_INVALID = "invalid"
@@ -104,6 +106,7 @@ def _create_account(
     full_name: str,
     language: Language,
     now: datetime,
+    address: str,
     contractor: dict[str, str] | None = None,
 ) -> User:
     """Create the user, its role profile, the document checklist, the identity link and the session completion.
@@ -125,6 +128,7 @@ def _create_account(
             role=role,
             full_name=full_name,
             phone=identity.phone_e164,
+            address=address,
             language=language,
             email_verified=False,
         )
@@ -168,10 +172,12 @@ def register_owner(
     session: WhatsAppFlowSession,
     *,
     full_name: object,
+    address: object,
     language: object,
     now: datetime,
 ) -> User:
     name = _clean_text(full_name, "Full name", NAME_MIN, NAME_MAX)
+    place = _clean_text(address, "Address", ADDRESS_MIN, ADDRESS_MAX)
     return _create_account(
         db,
         identity,
@@ -180,6 +186,7 @@ def register_owner(
         full_name=name,
         language=_clean_language(language),
         now=now,
+        address=place,
     )
 
 
@@ -191,12 +198,14 @@ def register_contractor(
     contact_name: object,
     company_name: object,
     primary_trade: object,
+    address: object,
     language: object,
     now: datetime,
 ) -> User:
     contact = _clean_text(contact_name, "Contact name", NAME_MIN, NAME_MAX)
     company = _clean_text(company_name, "Company name", NAME_MIN, COMPANY_MAX)
     trade = _clean_trade(primary_trade)
+    place = _clean_text(address, "Address", ADDRESS_MIN, ADDRESS_MAX)
     return _create_account(
         db,
         identity,
@@ -205,5 +214,6 @@ def register_contractor(
         full_name=contact,
         language=_clean_language(language),
         now=now,
+        address=place,
         contractor={"company_name": company, "primary_trade": trade},
     )

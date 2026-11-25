@@ -24,6 +24,12 @@ DASHBOARD_BODY = "Open your U-Tender dashboard."
 ADMIN_TEXT = "Admin accounts are managed on the U-Tender web dashboard."
 SETUP_TEXT = "U-Tender WhatsApp is being set up. Please try again shortly."
 
+# Only this word (any capitalisation, surrounding spaces ignored) opens the
+# flows. Any other text gets HINT_TEXT, so the number does nothing until a
+# user deliberately asks for it.
+TRIGGER_KEYWORD = "utender"
+HINT_TEXT = 'Send the word "utender" to open U-Tender.'
+
 
 def _is_nfm_reply(message: dict[str, Any]) -> bool:
     """A completed Flow. The Flow data endpoint has already acted on it, so the router must not reply to it."""
@@ -91,7 +97,7 @@ def _start_registration(db: Session, identity: WhatsAppIdentity, event: WhatsApp
     screen = "WELCOME"
     state: dict[str, Any] | None = None
     if previous is not None:
-        screen = previous.screen or "ROLE"
+        screen = previous.screen or "SPLASH"
         state = previous.state_json
         complete_flow_session(db, previous, now=now)
 
@@ -149,9 +155,20 @@ def _send_text(db: Session, identity: WhatsAppIdentity, event: WhatsAppMessageEv
     )
 
 
-def handle_inbound_message(db: Session, event: WhatsAppMessageEvent, message: dict[str, Any]) -> None:
-    """Route the first message from a number, as an inbound handler.
+def _is_trigger(message: dict[str, Any]) -> bool:
+    if message.get("type") != "text":
+        return False
+    body = (message.get("text") or {}).get("body")
+    return isinstance(body, str) and body.strip().lower() == TRIGGER_KEYWORD
 
+
+def handle_inbound_message(db: Session, event: WhatsAppMessageEvent, message: dict[str, Any]) -> None:
+    """Route a message to the right flow, as an inbound handler.
+
+    Only a message whose text is the trigger word ("utender") starts anything.
+    Any other text gets a one-line hint and no identity is created for it.
+
+    On the trigger:
     1. Resolve the number to an identity, creating it if new.
     2. Owner -> Owner Dashboard Flow. Contractor -> Contractor Dashboard Flow.
     3. Admin -> a text pointing to the web dashboard.
@@ -164,6 +181,16 @@ def handle_inbound_message(db: Session, event: WhatsAppMessageEvent, message: di
         return
 
     now = datetime.utcnow()
+    if not _is_trigger(message):
+        whatsapp_outbox.enqueue(
+            db,
+            dedupe_key=f"text:{event.id}",
+            recipient_wa_id=str(raw_wa_id),
+            kind=whatsapp_outbox.KIND_TEXT,
+            now=now,
+            params={"body": HINT_TEXT},
+        )
+        return
     identity = get_or_create_identity(db, str(raw_wa_id), now=now)
 
     user = db.get(User, identity.user_id) if identity.user_id else None

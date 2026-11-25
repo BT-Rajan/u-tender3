@@ -8,7 +8,7 @@ import { QueryError } from "@/components/QueryError";
 import { useI18n } from "@/i18n/I18nContext";
 
 export function ContractorFeedPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const location = useLocation() as { state?: { notice?: string } };
   const [search, setSearch] = useState("");
   const [trade, setTrade] = useState("");
@@ -120,11 +120,11 @@ export function ContractorFeedPage() {
                   </span>
                 )}
               </div>
-              <p className="font-mono text-xs text-blue">{timeRemaining(p.bid_deadline)}</p>
+              <p className="font-mono text-xs text-blue">{timeRemaining(p.bid_deadline, language)}</p>
               <div className="tblock-strip mt-4">
                 <div className="tblock-field">
                   <span className="k">{t("contractor.feed.deadline")}</span>
-                  <span className="v">{formatDeadline(p.bid_deadline)}</span>
+                  <span className="v">{formatDeadline(p.bid_deadline, language)}</span>
                 </div>
                 <div className="tblock-field">
                   <span className="k">{t("contractor.feed.offersSoFar")}</span>
