@@ -2,38 +2,44 @@ import { NavLink, Outlet } from "react-router-dom";
 import { AppHeader } from "@/components/AppHeader";
 import { useI18n } from "@/i18n/I18nContext";
 
-const navClass = ({ isActive }: { isActive: boolean }) =>
-  `font-mono text-xs uppercase tracking-wide ${isActive ? "text-navy" : "text-steel hover:text-navy"}`;
+const tabClass = ({ isActive }: { isActive: boolean }) =>
+  `whitespace-nowrap border-b-2 px-1 pb-3 pt-2 text-sm font-semibold transition-colors ${
+    isActive ? "border-navy text-navy" : "border-transparent text-steel hover:text-navy"
+  }`;
 
 export function AdminLayout() {
   const { t } = useI18n();
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-paper text-ink">
       <AppHeader roleLabel="Site Admin" homeHref="/admin/requirements" />
-      <div className="max-w-5xl mx-auto px-5 pt-4 flex flex-wrap gap-x-4 gap-y-2">
-        <NavLink to="/admin/requirements" className={navClass}>
-          {t("admin.nav.requirements")}
-        </NavLink>
-        <NavLink to="/admin/review" className={navClass}>
-          {t("admin.nav.review")}
-        </NavLink>
-        <NavLink to="/admin/contractors" className={navClass}>
-          {t("admin.nav.contractors")}
-        </NavLink>
-        <NavLink to="/admin/owners" className={navClass}>
-          {t("admin.nav.owners")}
-        </NavLink>
-        <NavLink to="/admin/projects" className={navClass}>
-          {t("admin.nav.projects")}
-        </NavLink>
-        <NavLink to="/admin/offers" className={navClass}>
-          {t("admin.nav.offers")}
-        </NavLink>
-        <NavLink to="/admin/cms" className={navClass}>
-          {t("admin.nav.cms")}
-        </NavLink>
+      <nav className="border-b border-border bg-white">
+        <div className="mx-auto flex max-w-6xl gap-6 overflow-x-auto px-5">
+          <NavLink to="/admin/requirements" className={tabClass}>
+            {t("admin.nav.requirements")}
+          </NavLink>
+          <NavLink to="/admin/review" className={tabClass}>
+            {t("admin.nav.review")}
+          </NavLink>
+          <NavLink to="/admin/contractors" className={tabClass}>
+            {t("admin.nav.contractors")}
+          </NavLink>
+          <NavLink to="/admin/owners" className={tabClass}>
+            {t("admin.nav.owners")}
+          </NavLink>
+          <NavLink to="/admin/projects" className={tabClass}>
+            {t("admin.nav.projects")}
+          </NavLink>
+          <NavLink to="/admin/offers" className={tabClass}>
+            {t("admin.nav.offers")}
+          </NavLink>
+          <NavLink to="/admin/cms" className={tabClass}>
+            {t("admin.nav.cms")}
+          </NavLink>
+        </div>
+      </nav>
+      <div className="mx-auto max-w-6xl px-5 py-8">
+        <Outlet />
       </div>
-      <Outlet />
     </div>
   );
 }
