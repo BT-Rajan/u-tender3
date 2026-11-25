@@ -458,7 +458,8 @@
             "label": "What next?",
             "name": "action",
             "required": true,
-            "data-source": "${data.actions}"
+            "data-source": "${data.actions}",
+            "init-value": "publish"
           },
           {
             "type": "Footer",
