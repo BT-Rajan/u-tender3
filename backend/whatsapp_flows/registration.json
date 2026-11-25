@@ -20,13 +20,6 @@
       "SUCCESS",
       "NOT_COMPLETED",
       "EXPIRED"
-    ],
-    "EXPIRED": [],
-    "SUCCESS": [
-      "EXPIRED"
-    ],
-    "NOT_COMPLETED": [
-      "EXPIRED"
     ]
   },
   "screens": [

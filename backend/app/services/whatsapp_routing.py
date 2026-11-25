@@ -111,7 +111,7 @@ def _start_registration(db: Session, identity: WhatsAppIdentity, event: WhatsApp
         session,
         raw_token,
         flow_setting="whatsapp_flow_id_registration",
-        screen="WELCOME" if previous is None else "ROLE",
+        screen="WELCOME",
         body=REGISTRATION_BODY,
         cta="Start",
         now=now,

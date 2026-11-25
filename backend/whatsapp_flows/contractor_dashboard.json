@@ -38,13 +38,6 @@
     "OFFER_DETAILS": [
       "OFFER_HISTORY",
       "DONE"
-    ],
-    "EXPIRED": [],
-    "LINKS_SENT": [
-      "EXPIRED"
-    ],
-    "COMING_SOON": [
-      "EXPIRED"
     ]
   },
   "screens": [
