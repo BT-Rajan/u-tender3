@@ -5,9 +5,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "mysql+pymysql://utender:utender@localhost:3306/utender"
+    # Required, no default. The app refuses to start without an explicit MySQL URL.
+    database_url: str
 
-    jwt_secret: str = "change-me-in-production"
+    # Required, no default. Must be random and at least 32 characters.
+    jwt_secret: str
     jwt_algorithm: str = "HS256"
     jwt_access_ttl_minutes: int = 30
     jwt_refresh_ttl_days: int = 30
@@ -16,7 +18,8 @@ class Settings(BaseSettings):
     # route. s3: boto3 presigned URLs. Switching is config-only.
     storage_backend: str = "local"  # "local" | "s3"
     storage_root: str = "./storage"
-    storage_signing_secret: str = "change-me-in-production"
+    # Required, no default. Must be random and at least 32 characters.
+    storage_signing_secret: str
 
     s3_bucket_drawings: str = "project-drawings"
     s3_bucket_documents: str = "contractor-documents"
@@ -40,7 +43,8 @@ class Settings(BaseSettings):
     resend_api_key: str | None = None
     email_from: str = "U-Tender <notifications@u-tender.example>"
 
-    cron_secret: str | None = None
+    # Required, no default. Must be random and at least 32 characters.
+    cron_secret: str
     app_url: str = "http://localhost:5173"  # frontend origin, used in email links
     api_url: str = "http://localhost:8000"  # this backend's own public origin
 
@@ -49,10 +53,6 @@ class Settings(BaseSettings):
     # Matches the original app's raised Server Action body limit (25MB ->
     # 50MB) to accommodate zipped folders of drawings.
     max_upload_mb: int = 50
-
-    # "development" | "production". In production the app refuses to start
-    # with any default secret (see validate_runtime_settings).
-    app_env: str = "development"
 
     # WhatsApp Cloud API. U-Tender uses its own Meta app, separate from
     # Cogzi. Every value below is a secret or an identifier that belongs in
@@ -90,28 +90,40 @@ class Settings(BaseSettings):
     upload_link_max_wrong_codes: int = 5
 
 
-DEFAULT_SECRET_VALUES = ("change-me-in-production",)
+MIN_SECRET_LENGTH = 32
+PLACEHOLDER_MARKERS = ("change-me", "changeme", "replace-me", "change_me", "example")
+SECRET_FIELDS = ("jwt_secret", "storage_signing_secret", "cron_secret")
 
 
 class UnsafeConfigurationError(RuntimeError):
-    """Raised at startup when production is configured with an unsafe value."""
+    """Raised at startup when a required setting is missing, a placeholder, or too weak."""
+
+
+def _secret_problem(name: str, value: str) -> str | None:
+    if len(value) < MIN_SECRET_LENGTH:
+        return f"{name} must be at least {MIN_SECRET_LENGTH} characters"
+    if any(marker in value.lower() for marker in PLACEHOLDER_MARKERS):
+        return f"{name} still holds a placeholder value"
+    return None
 
 
 def validate_runtime_settings(settings: Settings) -> None:
-    """Fail fast rather than run production on a known or missing secret.
+    """Refuse to run on missing, placeholder or weak configuration. Every environment, no exceptions.
 
-    Development keeps the permissive defaults so local runs and the test
-    suite work without extra setup.
+    Nothing is defaulted. A problem is reported with the names of the settings
+    that need fixing, so the failure is explicit and the fix is obvious.
     """
-    if settings.app_env != "production":
-        return
+    problems: list[str] = []
 
-    unsafe: list[str] = []
-    for name in ("jwt_secret", "storage_signing_secret"):
-        if getattr(settings, name) in DEFAULT_SECRET_VALUES:
-            unsafe.append(name)
-    if not settings.cron_secret:
-        unsafe.append("cron_secret")
+    if "change_me" in settings.database_url.lower():
+        problems.append("database_url still holds a placeholder value")
+    elif not settings.database_url.startswith("mysql+pymysql://"):
+        problems.append("database_url must be a mysql+pymysql:// URL (MySQL or MariaDB only)")
+
+    for name in SECRET_FIELDS:
+        problem = _secret_problem(name, getattr(settings, name) or "")
+        if problem:
+            problems.append(problem)
 
     if settings.whatsapp_enabled:
         for name in (
@@ -122,12 +134,10 @@ def validate_runtime_settings(settings: Settings) -> None:
             "whatsapp_flow_private_key",
         ):
             if not getattr(settings, name):
-                unsafe.append(name)
+                problems.append(f"{name} is required when whatsapp_enabled is true")
 
-    if unsafe:
-        raise UnsafeConfigurationError(
-            "Refusing to start in production with unset or default secrets: " + ", ".join(sorted(unsafe))
-        )
+    if problems:
+        raise UnsafeConfigurationError("Refusing to start: " + "; ".join(problems))
 
 
 @lru_cache

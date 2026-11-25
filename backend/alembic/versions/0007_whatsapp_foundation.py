@@ -92,17 +92,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_whatsapp_outbox_status_next", table_name="whatsapp_outbox")
-    op.drop_index("ix_whatsapp_outbox_next_attempt_at", table_name="whatsapp_outbox")
     op.drop_table("whatsapp_outbox")
 
-    op.drop_index("ix_whatsapp_flow_sessions_identity_id", table_name="whatsapp_flow_sessions")
     op.drop_table("whatsapp_flow_sessions")
 
-    op.drop_index("ix_whatsapp_message_events_status", table_name="whatsapp_message_events")
-    op.drop_index("ix_whatsapp_message_events_wa_id", table_name="whatsapp_message_events")
-    op.drop_index("ix_whatsapp_message_events_provider_message_id", table_name="whatsapp_message_events")
     op.drop_table("whatsapp_message_events")
 
-    op.drop_index("ix_whatsapp_identities_user_id", table_name="whatsapp_identities")
     op.drop_table("whatsapp_identities")

@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
-from app.models.common import gen_uuid
+from app.models.common import gen_uuid, DateTime
 
 
 # Tender-specific Q&A (spec §2.7, D-008). One row per question; answer +

@@ -26,13 +26,16 @@ re-running creates a second batch of them. Intended to run once against a
 database that doesn't already have this demo data in it.
 """
 import argparse
+import secrets
 import sys
 import time
 from datetime import datetime, timedelta
 
 import requests
 
-PASSWORD = "Kuwait#2026"
+# One random password per run, shared by the demo accounts and printed once.
+# Never a fixed value in the repository.
+PASSWORD = secrets.token_urlsafe(18)
 
 OWNERS = [
     {"email": "owner.alsabah@example.com", "full_name": "Mohammed Al-Sabah", "approve": True},
@@ -397,7 +400,7 @@ def main() -> None:
 
     step("Done")
     print()
-    print("Kuwait demo dataset created. Everyone's password is: " + PASSWORD)
+    print("Kuwait demo dataset created. Every demo account uses this one-time password: " + PASSWORD)
     print()
     print("Sample logins:")
     print(f"  Owner (approved):      {OWNERS[0]['email']}")

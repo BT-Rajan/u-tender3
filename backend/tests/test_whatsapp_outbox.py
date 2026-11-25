@@ -232,8 +232,10 @@ def test_one_failing_row_does_not_stop_the_others(db):
     stats = dispatch_due(db, sender, now=NOW, max_attempts=3)
 
     assert stats == {"sent": 2, "retry": 0, "failed": 1, "dead": 0, "held": 0}
-    assert _row(db, "b").status == OUTBOX_SENT
-    assert _row(db, "c").status == OUTBOX_SENT
+    # Rows enqueued together share a due time, so the order they are sent in is not defined.
+    # What matters is that exactly one row failed and the other two still went out.
+    statuses = sorted(_row(db, key).status for key in ("a", "b", "c"))
+    assert statuses == sorted([OUTBOX_FAILED, OUTBOX_SENT, OUTBOX_SENT])
 
 
 def test_batch_size_limits_how_many_rows_one_run_sends(db):

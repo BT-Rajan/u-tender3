@@ -6,9 +6,11 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+
+from mysql_support import scratch_engine
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import inspect
 
 import app.db as db_module
 import app.models  # noqa: F401
@@ -146,12 +148,11 @@ def _run(engine, migration, direction):
 @pytest.fixture
 def pre_0008_engine():
     """Schema as it stands after 0007: all current tables, then 0007's WhatsApp tables."""
-    engine = create_engine("sqlite:///:memory:")
-    non_whatsapp = [t for n, t in db_module.Base.metadata.tables.items() if not n.startswith("whatsapp_")]
-    db_module.Base.metadata.create_all(bind=engine, tables=non_whatsapp)
-    _run(engine, _load("0007_whatsapp_foundation"), "upgrade")
-    yield engine
-    engine.dispose()
+    with scratch_engine() as engine:
+        non_whatsapp = [t for n, t in db_module.Base.metadata.tables.items() if not n.startswith("whatsapp_")]
+        db_module.Base.metadata.create_all(bind=engine, tables=non_whatsapp)
+        _run(engine, _load("0007_whatsapp_foundation"), "upgrade")
+        yield engine
 
 
 def test_0008_makes_email_and_password_nullable(pre_0008_engine):

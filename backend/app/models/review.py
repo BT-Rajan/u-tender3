@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, SmallInteger, String, Text, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, ForeignKey, SmallInteger, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
-from app.models.common import gen_uuid
+from app.models.common import gen_uuid, DateTime
 
 
 class Review(Base):

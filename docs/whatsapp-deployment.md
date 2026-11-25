@@ -31,14 +31,15 @@ The integration is built and tested in software. It has **not** been run against
 
 Set these in `backend/.env` (or the platform's secret store). Secrets must not be committed.
 
-### Required in production
+### Required in every environment
+
+The app refuses to start if any of these is missing, a placeholder, or too short. There is no development mode that relaxes this.
 
 | Variable | Purpose |
 |---|---|
-| `APP_ENV` | `production`. Enables the startup check that refuses default secrets. |
 | `DATABASE_URL` | MySQL connection string |
-| `JWT_SECRET` | Must not be `change-me-in-production` |
-| `STORAGE_SIGNING_SECRET` | Must not be the default |
+| `JWT_SECRET` | Random, at least 32 characters |
+| `STORAGE_SIGNING_SECRET` | Random, at least 32 characters, different from `JWT_SECRET` |
 | `CRON_SECRET` | Bearer secret for `/cron/*` |
 | `API_URL` | Public HTTPS origin of the backend. Upload links and signed URLs are built from it. |
 | `APP_URL` | Frontend origin |

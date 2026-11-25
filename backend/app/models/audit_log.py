@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
-from app.models.common import gen_uuid
+from app.models.common import gen_uuid, DateTime
 
 
 # Append-only trail for every sensitive action (spec §52, D-010). No route

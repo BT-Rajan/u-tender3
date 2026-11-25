@@ -21,40 +21,63 @@ import os
 import shutil
 import sys
 import tempfile
-
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
-os.environ.setdefault("JWT_SECRET", "test-secret")
-os.environ.setdefault("STORAGE_SIGNING_SECRET", "test-signing-secret")
-os.environ.setdefault("STORAGE_ROOT", tempfile.mkdtemp(prefix="utender-test-storage-"))
-os.environ.setdefault("AWS_ACCESS_KEY_ID", "testing")
-os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
-os.environ.setdefault("S3_REGION", "us-east-1")
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
+# One scratch MySQL database per run. Fails explicitly if TEST_DATABASE_ADMIN_URL is not set.
+from mysql_support import create_scratch_database, drop_scratch_database  # noqa: E402
 
-import app.db as db_module
-import app.models  # noqa: F401  registers every ORM model on Base.metadata
-import app.services.storage as storage_module
+_TEST_ENGINE = create_scratch_database()
 
-from fastapi.testclient import TestClient
-from app.main import app as fastapi_app  # imported once for the whole session
+# Explicit test values for every required setting. Nothing here is a default for production.
+os.environ["DATABASE_URL"] = _TEST_ENGINE.url.render_as_string(hide_password=False)
+os.environ["JWT_SECRET"] = "test-jwt-secret-" + "x" * 32
+os.environ["STORAGE_SIGNING_SECRET"] = "test-storage-secret-" + "x" * 32
+os.environ["CRON_SECRET"] = "test-cron-secret-" + "x" * 32
+os.environ["STORAGE_ROOT"] = tempfile.mkdtemp(prefix="utender-test-storage-")
+os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+os.environ["S3_REGION"] = "us-east-1"
+
+import pytest  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
+
+import app.db as db_module  # noqa: E402
+import app.models  # noqa: F401,E402  registers every ORM model on Base.metadata
+import app.services.storage as storage_module  # noqa: E402
+
+from fastapi.testclient import TestClient  # noqa: E402
+from app.main import app as fastapi_app  # noqa: E402  imported once for the whole session
+
+
+def _clear_all_tables(engine) -> None:
+    """Delete every row, children first. Keeps the schema, so tests stay fast on MySQL."""
+    with engine.begin() as connection:
+        connection.exec_driver_sql("SET FOREIGN_KEY_CHECKS = 0")
+        try:
+            for table in reversed(db_module.Base.metadata.sorted_tables):
+                connection.exec_driver_sql(f"DELETE FROM `{table.name}`")
+        finally:
+            connection.exec_driver_sql("SET FOREIGN_KEY_CHECKS = 1")
+
+
+def pytest_configure(config):
+    db_module.Base.metadata.create_all(bind=_TEST_ENGINE)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    drop_scratch_database(_TEST_ENGINE)
+    shutil.rmtree(os.environ["STORAGE_ROOT"], ignore_errors=True)
 
 
 @pytest.fixture(autouse=True)
 def isolated_backend(tmp_path):
-    """Runs before/after every test: fresh DB, fresh storage root."""
-    engine = create_engine(
-        "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
-    )
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    db_module.engine = engine
-    db_module.SessionLocal = SessionLocal
-    db_module.Base.metadata.create_all(bind=engine)
+    """Before each test: empty tables and a fresh storage root. The app's session factory points at the scratch database."""
+    db_module.engine = _TEST_ENGINE
+    db_module.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_TEST_ENGINE)
+    _clear_all_tables(_TEST_ENGINE)
 
     storage_root = tmp_path / "storage"
     storage_root.mkdir()
@@ -64,7 +87,7 @@ def isolated_backend(tmp_path):
 
     yield
 
-    engine.dispose()
+    _clear_all_tables(_TEST_ENGINE)
 
 
 @pytest.fixture(autouse=True)

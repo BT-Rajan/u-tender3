@@ -3,11 +3,14 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import inspect
 
 import app.db as db_module
+
+from mysql_support import scratch_engine
 import app.models  # noqa: F401
 
 VERSIONS = Path(__file__).resolve().parents[1] / "alembic" / "versions"
@@ -31,21 +34,22 @@ def _deadline_nullable(engine):
     return column["nullable"]
 
 
-def _engine():
+@pytest.fixture
+def engine_before_0010():
     """The schema as it stood before 0010: projects.bid_deadline NOT NULL. create_all builds from the current model, so reset it."""
     import sqlalchemy as sa
 
-    engine = create_engine("sqlite:///:memory:")
-    db_module.Base.metadata.create_all(bind=engine)
-    with engine.begin() as connection:
-        with Operations.context(MigrationContext.configure(connection)) as ops:
-            with ops.batch_alter_table("projects") as batch:
-                batch.alter_column("bid_deadline", existing_type=sa.DateTime(), nullable=False)
-    return engine
+    with scratch_engine() as engine:
+        db_module.Base.metadata.create_all(bind=engine)
+        with engine.begin() as connection:
+            with Operations.context(MigrationContext.configure(connection)) as ops:
+                with ops.batch_alter_table("projects") as batch:
+                    batch.alter_column("bid_deadline", existing_type=sa.DateTime(), nullable=False)
+        yield engine
 
 
-def test_0010_makes_the_deadline_nullable_and_keeps_existing_rows():
-    engine = _engine()
+def test_0010_makes_the_deadline_nullable_and_keeps_existing_rows(engine_before_0010):
+    engine = engine_before_0010
     with engine.begin() as connection:
         connection.exec_driver_sql(
             "INSERT INTO users (id, email, password_hash, role, language, email_verified) VALUES ('o1', 'o@example.com', 'h', 'owner', 'en', 0)"
@@ -64,8 +68,8 @@ def test_0010_makes_the_deadline_nullable_and_keeps_existing_rows():
     assert str(row[0]).startswith("2026-12-31")
 
 
-def test_0010_downgrade_restores_not_null_when_every_row_has_a_deadline():
-    engine = _engine()
+def test_0010_downgrade_restores_not_null_when_every_row_has_a_deadline(engine_before_0010):
+    engine = engine_before_0010
     migration = _load("0010_tender_drafts")
     _run(engine, migration, "upgrade")
     _run(engine, migration, "downgrade")

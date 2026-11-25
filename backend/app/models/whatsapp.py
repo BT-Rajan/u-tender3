@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, func
+from sqlalchemy import JSON, ForeignKey, Index, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
-from app.models.common import gen_uuid
+from app.models.common import gen_uuid, DateTime
 
 # Status and direction values are plain strings rather than DB enums so a new
 # state can be added without a migration on MySQL. The constants below are the

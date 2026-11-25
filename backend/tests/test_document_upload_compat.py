@@ -4,9 +4,11 @@ import importlib.util
 from pathlib import Path
 
 import pytest
+
+from mysql_support import scratch_engine
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import create_engine, inspect, select
+from sqlalchemy import inspect, select
 
 import app.db as db_module
 import app.models  # noqa: F401
@@ -35,11 +37,10 @@ def _run(engine, migration, direction):
 
 @pytest.fixture
 def pre_0009_engine():
-    engine = create_engine("sqlite:///:memory:")
-    base = [t for n, t in db_module.Base.metadata.tables.items() if n not in ("document_upload_links", "document_versions")]
-    db_module.Base.metadata.create_all(bind=engine, tables=base)
-    yield engine
-    engine.dispose()
+    with scratch_engine() as engine:
+        base = [t for n, t in db_module.Base.metadata.tables.items() if n not in ("document_upload_links", "document_versions")]
+        db_module.Base.metadata.create_all(bind=engine, tables=base)
+        yield engine
 
 
 def test_0009_creates_the_two_tables_with_the_declared_columns(pre_0009_engine):

@@ -516,7 +516,9 @@ def test_migration_0011_creates_the_template_table_and_is_reversible():
 
     from alembic.migration import MigrationContext
     from alembic.operations import Operations
-    from sqlalchemy import create_engine, inspect
+    from sqlalchemy import inspect
+
+    from mysql_support import scratch_engine
 
     import app.db as db_module
 
@@ -525,13 +527,13 @@ def test_migration_0011_creates_the_template_table_and_is_reversible():
     migration = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(migration)
 
-    engine = create_engine("sqlite:///:memory:")
-    db_module.Base.metadata.create_all(bind=engine, tables=[t for n, t in db_module.Base.metadata.tables.items() if n != "whatsapp_template_status"])
-    with engine.begin() as connection:
-        with Operations.context(MigrationContext.configure(connection)):
-            migration.upgrade()
-    assert "whatsapp_template_status" in inspect(engine).get_table_names()
-    with engine.begin() as connection:
-        with Operations.context(MigrationContext.configure(connection)):
-            migration.downgrade()
-    assert "whatsapp_template_status" not in inspect(engine).get_table_names()
+    with scratch_engine() as engine:
+        db_module.Base.metadata.create_all(bind=engine, tables=[t for n, t in db_module.Base.metadata.tables.items() if n != "whatsapp_template_status"])
+        with engine.begin() as connection:
+            with Operations.context(MigrationContext.configure(connection)):
+                migration.upgrade()
+        assert "whatsapp_template_status" in inspect(engine).get_table_names()
+        with engine.begin() as connection:
+            with Operations.context(MigrationContext.configure(connection)):
+                migration.downgrade()
+        assert "whatsapp_template_status" not in inspect(engine).get_table_names()

@@ -1,9 +1,10 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.models.common import DateTime
 from app.db import Base
 from app.models.enums import SubscriptionStatus, VerificationStatus
 

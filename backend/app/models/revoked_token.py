@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.models.common import DateTime
 from app.db import Base
 
 

@@ -4,8 +4,8 @@ Revision ID: 0012
 Revises: 0011
 Create Date: 2026-11-23
 
-utender2 stored bids as DECIMAL(15,3). u-tender3 stored DECIMAL(12,2), which would
-round imported bids. This widens offers, offer_revisions and award_records amounts
+KWD bids need three decimal places. The column stored DECIMAL(12,2), which
+would round fils. This widens offers, offer_revisions and award_records amounts
 to DECIMAL(15,3). Widening loses no data. Downgrade narrows back to DECIMAL(12,2),
 which fails if any amount has a fraction of a fils or a value above 10 digits.
 """

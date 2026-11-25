@@ -1,5 +1,6 @@
 """Migration 0012: bid amounts widen to DECIMAL(15,3) so imported KWD fils are kept. Widening loses no data."""
 
+import pytest
 import importlib.util
 from decimal import Decimal
 from pathlib import Path
@@ -7,10 +8,12 @@ from pathlib import Path
 import sqlalchemy as sa
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import inspect
 
 import app.db as db_module
 import app.models  # noqa: F401
+
+from mysql_support import scratch_engine
 
 VERSIONS = Path(__file__).resolve().parents[1] / "alembic" / "versions"
 TABLES = ("offers", "offer_revisions", "award_records")
@@ -29,16 +32,16 @@ def _run(engine, migration, direction):
             getattr(migration, direction)()
 
 
-def _engine_before_0012():
-    """The schema as it stood at 0011: amounts DECIMAL(12,2). create_all builds from the current model, so narrow them back."""
-    engine = create_engine("sqlite:///:memory:")
-    db_module.Base.metadata.create_all(bind=engine)
-    with engine.begin() as connection:
-        with Operations.context(MigrationContext.configure(connection)) as ops:
-            for table in TABLES:
-                with ops.batch_alter_table(table) as batch:
-                    batch.alter_column("amount", existing_type=sa.Numeric(15, 3), type_=sa.Numeric(12, 2), existing_nullable=False)
-    return engine
+@pytest.fixture
+def engine_before_0012():
+    with scratch_engine() as engine:
+        db_module.Base.metadata.create_all(bind=engine)
+        with engine.begin() as connection:
+            with Operations.context(MigrationContext.configure(connection)) as ops:
+                for table in TABLES:
+                    with ops.batch_alter_table(table) as batch:
+                        batch.alter_column("amount", existing_type=sa.Numeric(15, 3), type_=sa.Numeric(12, 2), existing_nullable=False)
+        yield engine
 
 
 def _amount_type(engine, table):
@@ -46,8 +49,8 @@ def _amount_type(engine, table):
     return column["type"]
 
 
-def test_0012_widens_bid_amounts_to_three_decimals_and_keeps_existing_values():
-    engine = _engine_before_0012()
+def test_0012_widens_bid_amounts_to_three_decimals_and_keeps_existing_values(engine_before_0012):
+    engine = engine_before_0012
     assert _amount_type(engine, "offers").scale == 2
 
     with engine.begin() as connection:
@@ -60,6 +63,10 @@ def test_0012_widens_bid_amounts_to_three_decimals_and_keeps_existing_values():
         )
         connection.exec_driver_sql(
             "INSERT INTO users (id, email, password_hash, role, language, email_verified) VALUES ('c1', 'c@example.com', 'h', 'contractor', 'en', 0)"
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO contractor_profiles (user_id, company_name, verification_status, is_suspended, avg_rating, review_count, payment_override_active) "
+            "VALUES ('c1', 'Gulf Builders', 'incomplete', 0, 0, 0, 0)"
         )
         connection.exec_driver_sql(
             "INSERT INTO offers (id, project_id, contractor_id, amount, status, revision, is_suspended) "
@@ -75,8 +82,8 @@ def test_0012_widens_bid_amounts_to_three_decimals_and_keeps_existing_values():
     assert Decimal(str(amount)) == Decimal("1500.250")
 
 
-def test_0012_downgrade_narrows_back_to_two_decimals():
-    engine = _engine_before_0012()
+def test_0012_downgrade_narrows_back_to_two_decimals(engine_before_0012):
+    engine = engine_before_0012
     _run(engine, _load("0012_offer_amounts_three_decimals"), "upgrade")
     assert _amount_type(engine, "offers").scale == 3
 

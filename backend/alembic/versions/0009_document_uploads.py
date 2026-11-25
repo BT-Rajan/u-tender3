@@ -63,7 +63,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_document_versions_user_id", table_name="document_versions")
     op.drop_table("document_versions")
-    op.drop_index("ix_document_upload_links_user_id", table_name="document_upload_links")
     op.drop_table("document_upload_links")

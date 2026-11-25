@@ -9,9 +9,11 @@ import importlib.util
 from pathlib import Path
 
 import pytest
+
+from mysql_support import scratch_engine
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import inspect
 
 import app.db as db_module
 import app.models  # noqa: F401  registers every model on Base.metadata
@@ -41,11 +43,10 @@ def _schema_of(engine, tables):
 @pytest.fixture
 def base_engine():
     """SQLite schema with only the non-WhatsApp tables, so 0007 starts from the same place production would."""
-    engine = create_engine("sqlite:///:memory:")
-    other_tables = [table for name, table in db_module.Base.metadata.tables.items() if not name.startswith("whatsapp_")]
-    db_module.Base.metadata.create_all(bind=engine, tables=other_tables)
-    yield engine
-    engine.dispose()
+    with scratch_engine() as engine:
+        other_tables = [table for name, table in db_module.Base.metadata.tables.items() if not name.startswith("whatsapp_")]
+        db_module.Base.metadata.create_all(bind=engine, tables=other_tables)
+        yield engine
 
 
 def _run(engine, migration, direction: str) -> None:
