@@ -568,6 +568,40 @@ def contractor_audit_log(contractor_id: str, db: Session = Depends(get_db)):
     ]
 
 
+@router.get("/users/{user_id}/history")
+def user_history(user_id: str, db: Session = Depends(get_db)):
+    """Every audited action on this user, or taken by them, newest first. Works for owners and contractors."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    rows = (
+        db.query(AuditLog)
+        .filter((AuditLog.target_id == user_id) | (AuditLog.actor_id == user_id))
+        .order_by(AuditLog.created_at.desc())
+        .limit(500)
+        .all()
+    )
+    actor_ids = {r.actor_id for r in rows if r.actor_id}
+    names = {}
+    if actor_ids:
+        names = {u.id: (u.full_name or u.email or "") for u in db.query(User).filter(User.id.in_(actor_ids)).all()}
+    return [
+        {
+            "id": r.id,
+            "action": r.action,
+            "target_type": r.target_type,
+            "target_id": r.target_id,
+            "actor_id": r.actor_id,
+            "actor_name": names.get(r.actor_id or "", "System"),
+            "previous_value": r.previous_value,
+            "new_value": r.new_value,
+            "reason": r.reason,
+            "created_at": r.created_at,
+        }
+        for r in rows
+    ]
+
+
 # ---------- public-site CMS (spec §14, §2.9) ----------
 
 class CmsEntry(BaseModel):

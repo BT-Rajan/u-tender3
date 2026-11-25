@@ -5,6 +5,9 @@ import { useI18n } from "@/i18n/I18nContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ApiError } from "@/api/client";
 
+const INPUT =
+  "w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20";
+
 export function LoginPage() {
   const { login } = useAuth();
   const { t } = useI18n();
@@ -29,65 +32,90 @@ export function LoginPage() {
   }
 
   return (
-    <main className="max-w-sm mx-auto px-5 py-16">
-      <div className="flex items-center justify-between mb-10">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 border-2 border-navy flex items-center justify-center font-display font-bold text-sm text-navy">
+    <div className="grid min-h-screen bg-paper text-ink md:grid-cols-2">
+      <aside className="hidden flex-col justify-between bg-navy p-12 text-white md:flex">
+        <Link to="/" className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded bg-white font-display text-lg font-bold text-navy">
             U
-          </div>
-          <div>
-            <div className="font-display font-bold text-lg text-navy leading-none">U-TENDER</div>
-            <div className="text-[10px] text-steel uppercase tracking-widest">{t("brand.tagline")}</div>
-          </div>
-        </div>
-        <LanguageSwitcher />
-      </div>
-
-      <h1 className="font-display text-xl font-semibold text-navy mb-6">{t("auth.login.heading")}</h1>
-
-      {location.state?.notice && (
-        <p className="text-xs bg-blue-tint text-blue border border-blue rounded px-3 py-2.5 mb-4">
-          {location.state.notice}
-        </p>
-      )}
-      {error && <p className="text-xs bg-red-tint text-red border border-red rounded px-3 py-2.5 mb-4">{error}</p>}
-
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
-            {t("auth.login.email")}
-          </label>
-          <input type="email" name="email" required className="w-full border border-border rounded px-3 py-2.5 text-sm" />
-        </div>
-        <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
-            {t("auth.login.password")}
-          </label>
-          <input
-            type="password"
-            name="password"
-            required
-            className="w-full border border-border rounded px-3 py-2.5 text-sm"
-          />
-          <Link to="/forgot-password" className="text-xs text-navy underline mt-1.5 inline-block">
-            {t("auth.login.forgotPassword")}
-          </Link>
-        </div>
-        <button
-          type="submit"
-          disabled={pending}
-          className="bg-amber hover:bg-amber-dark disabled:opacity-60 text-white font-semibold text-sm rounded px-5 py-2.5 mt-2"
-        >
-          {pending ? t("auth.login.submitting") : t("auth.login.submit")}
-        </button>
-      </form>
-
-      <p className="text-xs text-steel mt-6">
-        {t("auth.login.noAccount")}{" "}
-        <Link to="/signup" className="text-navy underline">
-          {t("auth.login.signupLink")}
+          </span>
+          <span className="font-display text-base font-bold tracking-wide">U-TENDER</span>
         </Link>
-      </p>
-    </main>
+        <div>
+          <p className="font-display text-3xl font-bold leading-tight">{t("brand.tagline")}</p>
+          <p className="mt-4 max-w-md text-white/75">{t("home.heroBody")}</p>
+        </div>
+        <p className="text-xs uppercase tracking-widest text-white/50">U-TENDER</p>
+      </aside>
+
+      <main className="flex items-center justify-center px-5 py-12">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 flex items-center justify-between md:hidden">
+            <Link to="/" className="font-display text-lg font-bold text-navy">
+              U-TENDER
+            </Link>
+            <LanguageSwitcher />
+          </div>
+          <div className="mb-6 hidden justify-end md:flex">
+            <LanguageSwitcher />
+          </div>
+
+          <div className="rounded border border-border bg-white p-8 shadow-sm">
+            <h1 className="font-display text-2xl font-bold text-navy">{t("auth.login.heading")}</h1>
+
+            {location.state?.notice && (
+              <p role="status" className="mb-4 mt-4 rounded border border-blue bg-blue-tint px-3.5 py-2.5 text-sm text-blue">
+                {location.state.notice}
+              </p>
+            )}
+            {error && (
+              <p role="alert" className="mb-4 mt-4 rounded border border-red bg-red-tint px-3.5 py-2.5 text-sm text-red">
+                {error}
+              </p>
+            )}
+
+            <form onSubmit={handleSubmit} className="mt-6 grid gap-5">
+              <div>
+                <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-ink">
+                  {t("auth.login.email")}
+                </label>
+                <input id="login-email" type="email" name="email" autoComplete="email" required className={INPUT} />
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label htmlFor="login-password" className="text-sm font-medium text-ink">
+                    {t("auth.login.password")}
+                  </label>
+                  <Link to="/forgot-password" className="text-xs font-medium text-navy hover:underline">
+                    {t("auth.login.forgotPassword")}
+                  </Link>
+                </div>
+                <input
+                  id="login-password"
+                  type="password"
+                  name="password"
+                  autoComplete="current-password"
+                  required
+                  className={INPUT}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={pending}
+                className="rounded bg-amber px-5 py-3 text-sm font-semibold text-white hover:bg-amber-dark disabled:opacity-60"
+              >
+                {pending ? t("auth.login.submitting") : t("auth.login.submit")}
+              </button>
+            </form>
+          </div>
+
+          <p className="mt-6 text-center text-sm text-steel">
+            {t("auth.login.noAccount")}{" "}
+            <Link to="/signup" className="font-semibold text-navy hover:underline">
+              {t("auth.login.signupLink")}
+            </Link>
+          </p>
+        </div>
+      </main>
+    </div>
   );
 }

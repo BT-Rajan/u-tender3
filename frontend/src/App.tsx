@@ -34,6 +34,7 @@ import { AdminOffersPage } from "@/pages/admin/Offers";
 import { AdminProjectsPage } from "@/pages/admin/Projects";
 import { AdminProjectDetailPage } from "@/pages/admin/ProjectDetail";
 import { AdminCmsPage } from "@/pages/admin/Cms";
+import { AdminUserHistoryPage } from "@/pages/admin/UserHistory";
 
 function AppRoutes() {
   const { pathname } = useLocation();
@@ -149,6 +150,7 @@ function AppRoutes() {
           <Route path="projects" element={<AdminProjectsPage />} />
           <Route path="projects/:id" element={<AdminProjectDetailPage />} />
           <Route path="cms" element={<AdminCmsPage />} />
+          <Route path="users/:userId/history" element={<AdminUserHistoryPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

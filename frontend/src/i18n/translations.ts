@@ -3,7 +3,8 @@ export interface Dictionary {
   whatsapp: { title: string; body: string; cta: string };
   errors: { notFoundTitle: string; notFoundBody: string; goHome: string; crashTitle: string; crashBody: string; reload: string };
   brand: { tagline: string };
-  home: { login: string; signup: string };
+  history: { title: string; empty: string; back: string; action: string; by: string; when: string; reason: string; changed: string; link: string; system: string; loadError: string };
+  home: { login: string; signup: string; heroTitle: string; heroBody: string; statOpen: string; statContractors: string; statAwarded: string; featuresTitle: string; feature1Title: string; feature1Body: string; feature2Title: string; feature2Body: string; feature3Title: string; feature3Body: string; howTitle: string; step1: string; step2: string; step3: string; whatsappTitle: string; whatsappBody: string; qrAlt: string };
   header: { logOut: string; account: string };
   language: { label: string; en: string; ar: string };
   auth: {
@@ -543,9 +544,41 @@ export const en: Dictionary = {
   brand: {
     tagline: "Drawings in. Offers out.",
   },
+  history: {
+    title: "Account history",
+    empty: "Nothing has been recorded for this account yet.",
+    back: "Back",
+    action: "Action",
+    by: "By",
+    when: "When",
+    reason: "Reason",
+    changed: "Changed",
+    link: "History",
+    system: "System",
+    loadError: "The history could not be loaded.",
+  },
   home: {
     login: "Log in",
     signup: "Sign up",
+    heroTitle: "Tenders, drawings and offers in one place",
+    heroBody: "U-Tender connects building owners with verified contractors. Post a tender, share drawings and receive offers, from the website or from WhatsApp.",
+    statOpen: "Open tenders",
+    statContractors: "Verified contractors",
+    statAwarded: "Projects awarded",
+    featuresTitle: "Built for trust",
+    feature1Title: "Verified contractors",
+    feature1Body: "Every contractor's documents are reviewed before they can bid.",
+    feature2Title: "Sealed or open bidding",
+    feature2Body: "Owners choose whether bidders can see each other's offers.",
+    feature3Title: "Works on WhatsApp",
+    feature3Body: "Owners and contractors can post, browse and bid from a WhatsApp chat.",
+    howTitle: "How it works",
+    step1: "Create your account",
+    step2: "Post a tender or bid",
+    step3: "Award and track",
+    whatsappTitle: "Use U-Tender on WhatsApp",
+    whatsappBody: "Scan the code with your phone's camera. It opens a chat with U-Tender. Send the word utender to start.",
+    qrAlt: "QR code to open U-Tender on WhatsApp",
   },
   header: {
     logOut: "Log out",
@@ -1105,9 +1138,41 @@ export const ar: Dictionary = {
   brand: {
     tagline: "المخططات تدخل، والعروض تخرج.",
   },
+  history: {
+    title: "سجل الحساب",
+    empty: "لم يُسجَّل أي نشاط لهذا الحساب بعد.",
+    back: "رجوع",
+    action: "الإجراء",
+    by: "بواسطة",
+    when: "التاريخ",
+    reason: "السبب",
+    changed: "التغيير",
+    link: "السجل",
+    system: "النظام",
+    loadError: "تعذر تحميل السجل.",
+  },
   home: {
     login: "تسجيل الدخول",
     signup: "إنشاء حساب",
+    heroTitle: "Ø§Ù„Ù…Ù†Ø§Ù‚ØµØ§Øª ÙˆØ§Ù„Ù…Ø®Ø·Ø·Ø§Øª ÙˆØ§Ù„Ø¹Ø±ÙˆØ¶ ÙÙŠ Ù…ÙƒØ§Ù† ÙˆØ§Ø­Ø¯",
+    heroBody: "ÙŠØ±Ø¨Ø· U-Tender Ø£ØµØ­Ø§Ø¨ Ø§Ù„Ù…Ø¨Ø§Ù†ÙŠ Ø¨Ø§Ù„Ù…Ù‚Ø§ÙˆÙ„ÙŠÙ† Ø§Ù„Ù…Ø¹ØªÙ…Ø¯ÙŠÙ†. Ø§Ù†Ø´Ø± Ø§Ù„Ù…Ù†Ø§Ù‚ØµØ© ÙˆØ´Ø§Ø±Ùƒ Ø§Ù„Ù…Ø®Ø·Ø·Ø§Øª ÙˆØ§Ø³ØªÙ‚Ø¨Ù„ Ø§Ù„Ø¹Ø±ÙˆØ¶ØŒ Ù…Ù† Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø£Ùˆ Ù…Ù† ÙˆØ§ØªØ³Ø§Ø¨.",
+    statOpen: "Ù…Ù†Ø§Ù‚ØµØ§Øª Ù…ÙØªÙˆØ­Ø©",
+    statContractors: "Ù…Ù‚Ø§ÙˆÙ„ÙˆÙ† Ù…Ø¹ØªÙ…Ø¯ÙˆÙ†",
+    statAwarded: "Ù…Ø´Ø§Ø±ÙŠØ¹ ØªÙ…Øª ØªØ±Ø³ÙŠØªÙ‡Ø§",
+    featuresTitle: "Ù…Ø¨Ù†ÙŠ Ø¹Ù„Ù‰ Ø§Ù„Ø«Ù‚Ø©",
+    feature1Title: "Ù…Ù‚Ø§ÙˆÙ„ÙˆÙ† Ù…Ø¹ØªÙ…Ø¯ÙˆÙ†",
+    feature1Body: "ØªÙØ±Ø§Ø¬Ø¹ ÙˆØ«Ø§Ø¦Ù‚ ÙƒÙ„ Ù…Ù‚Ø§ÙˆÙ„ Ù‚Ø¨Ù„ Ø£Ù† ÙŠØªÙ…ÙƒÙ† Ù…Ù† ØªÙ‚Ø¯ÙŠÙ… Ø§Ù„Ø¹Ø±ÙˆØ¶.",
+    feature2Title: "Ø¹Ø±ÙˆØ¶ Ù…ØºÙ„Ù‚Ø© Ø£Ùˆ Ù…ÙØªÙˆØ­Ø©",
+    feature2Body: "ÙŠØ®ØªØ§Ø± Ø§Ù„Ù…Ø§Ù„Ùƒ Ù…Ø§ Ø¥Ø°Ø§ ÙƒØ§Ù† Ø§Ù„Ù…ØªÙ‚Ø¯Ù…ÙˆÙ† ÙŠØ±ÙˆÙ† Ø¹Ø±ÙˆØ¶ Ø¨Ø¹Ø¶Ù‡Ù….",
+    feature3Title: "ÙŠØ¹Ù…Ù„ Ø¹Ù„Ù‰ ÙˆØ§ØªØ³Ø§Ø¨",
+    feature3Body: "ÙŠÙ…ÙƒÙ† Ù„Ù„Ù…Ù„Ø§Ùƒ ÙˆØ§Ù„Ù…Ù‚Ø§ÙˆÙ„ÙŠÙ† Ø§Ù„Ù†Ø´Ø± ÙˆØ§Ù„ØªØµÙØ­ ÙˆØªÙ‚Ø¯ÙŠÙ… Ø§Ù„Ø¹Ø±ÙˆØ¶ Ù…Ù† Ù…Ø­Ø§Ø¯Ø«Ø© ÙˆØ§ØªØ³Ø§Ø¨.",
+    howTitle: "ÙƒÙŠÙ ÙŠØ¹Ù…Ù„",
+    step1: "Ø£Ù†Ø´Ø¦ Ø­Ø³Ø§Ø¨Ùƒ",
+    step2: "Ø§Ù†Ø´Ø± Ù…Ù†Ø§Ù‚ØµØ© Ø£Ùˆ Ù‚Ø¯Ù‘Ù… Ø¹Ø±Ø¶Ù‹Ø§",
+    step3: "Ø§Ù…Ù†Ø­ Ø§Ù„ØªØ±Ø³ÙŠØ© ÙˆØªØ§Ø¨Ø¹",
+    whatsappTitle: "Ø§Ø³ØªØ®Ø¯Ù… U-Tender Ø¹Ù„Ù‰ ÙˆØ§ØªØ³Ø§Ø¨",
+    whatsappBody: "Ø§Ù…Ø³Ø­ Ø§Ù„Ø±Ù…Ø² Ø¨ÙƒØ§Ù…ÙŠØ±Ø§ Ù‡Ø§ØªÙÙƒ. ØªÙØªØ­ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø© Ù…Ø¹ U-Tender. Ø£Ø±Ø³Ù„ ÙƒÙ„Ù…Ø© utender Ù„Ù„Ø¨Ø¯Ø¡.",
+    qrAlt: "Ø±Ù…Ø² QR Ù„ÙØªØ­ U-Tender Ø¹Ù„Ù‰ ÙˆØ§ØªØ³Ø§Ø¨",
   },
   header: {
     logOut: "تسجيل الخروج",

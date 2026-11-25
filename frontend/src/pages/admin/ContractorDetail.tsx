@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError } from "@/api/client";
 import type { AuditLogEntry, ContractorProfile, PaymentOverrideRecord } from "@/api/types";
@@ -172,6 +172,7 @@ function ActivityLogPanel({ contractorId }: { contractorId: string }) {
 
 export function AdminContractorDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -236,6 +237,9 @@ export function AdminContractorDetailPage() {
       <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-semibold text-navy mb-1">{contractor.company_name}</h1>
+          <Link to={`/admin/users/${id}/history`} className="text-sm font-semibold text-navy hover:underline">
+            {t("history.link")}
+          </Link>
           <p className="text-[13.5px] text-steel">
             <span className="text-amber">{stars(Number(contractor.avg_rating))}</span>{" "}
             <span className="font-mono text-steel">({contractor.review_count} reviews)</span>

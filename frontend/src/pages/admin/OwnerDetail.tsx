@@ -88,6 +88,9 @@ export function AdminOwnerDetailPage() {
           <h1 className="font-display text-2xl font-semibold text-navy mb-1">{owner.full_name || owner.email}</h1>
           <p className="text-[13.5px] text-steel">{owner.email}</p>
         </div>
+        <Link to={`/admin/users/${id}/history`} className="self-center text-sm font-semibold text-navy hover:underline">
+          {t("history.link")}
+        </Link>
         {owner.is_suspended && <span className="font-mono text-[10px] uppercase px-2.5 py-1 rounded-full bg-red-tint text-red">{t("admin.ownerDetail.suspended")}</span>}
       </div>
 
