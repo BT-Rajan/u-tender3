@@ -109,7 +109,7 @@ def _fresh(db, cls, key):
 # --- gates ----------------------------------------------------------------------
 
 
-def test_an_unverified_contractor_is_turned_back_from_browsing(client, monkeypatch, db):
+def test_an_unverified_contractor_can_browse_projects(client, monkeypatch, db):
     _, public_pem = enable_whatsapp(monkeypatch)
     sender = RecordingSender()
     _contractor(db, "96522220002", verified=False)
@@ -117,8 +117,21 @@ def test_an_unverified_contractor_is_turned_back_from_browsing(client, monkeypat
 
     reply = _send(client, public_pem, token, "MENU", {"choice": "browse_projects"})
 
+    assert reply["screen"] == "PROJECT_LIST"
+
+
+def test_a_suspended_contractor_is_turned_back_from_browsing(client, monkeypatch, db):
+    _, public_pem = enable_whatsapp(monkeypatch)
+    sender = RecordingSender()
+    contractor = _contractor(db, "96522220006", verified=True)
+    db.get(ContractorProfile, contractor.id).is_suspended = True
+    db.commit()
+    token = _open_dashboard(client, monkeypatch, sender, "96522220006", "V")
+
+    reply = _send(client, public_pem, token, "MENU", {"choice": "browse_projects"})
+
     assert reply["screen"] == "MENU"
-    assert "verified" in reply["data"]["error_message"]
+    assert "suspended" in reply["data"]["error_message"]
 
 
 def test_a_verified_but_unpaid_contractor_can_browse_but_not_bid(setup):
@@ -155,7 +168,7 @@ def test_a_verified_but_unpaid_contractor_cannot_see_drawings(setup):
     assert "subscription" in reply["data"]["error_message"].lower()
 
 
-def test_an_unverified_contractor_cannot_search(client, monkeypatch, db):
+def test_an_unverified_contractor_can_search(client, monkeypatch, db):
     _, public_pem = enable_whatsapp(monkeypatch)
     sender = RecordingSender()
     _contractor(db, "96522220005", verified=False)
@@ -163,7 +176,7 @@ def test_an_unverified_contractor_cannot_search(client, monkeypatch, db):
 
     reply = _send(client, public_pem, token, "MENU", {"choice": "search_projects"})
 
-    assert reply["screen"] == "MENU"
+    assert reply["screen"] == "SEARCH"
 
 
 # --- browse, search and filter ---------------------------------------------------

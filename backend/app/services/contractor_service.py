@@ -74,9 +74,11 @@ def feed(
     trade: str | None = None,
     sort: str = "deadline",
     now: datetime,
+    verified_required: bool = True,
 ) -> list[dict[str, Any]]:
     """Open tenders, filtered and sorted as the web feed does. Verification is enough to browse."""
-    require_approved(db, user)
+    if verified_required:
+        require_approved(db, user)
     query = db.query(Project).filter(Project.status == ProjectStatus.open, Project.is_suspended.is_(False))
     if trade and trade.strip():
         query = query.filter(Project.trade.ilike(f"%{trade.strip()}%"))

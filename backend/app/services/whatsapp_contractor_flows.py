@@ -69,24 +69,31 @@ def _project_line(project: Project, offer_count: int) -> str:
     return f"{project.title} | {STATUS_LABEL.get(project.status, project.status.value)} | closes {deadline} | {offer_count} offer(s)"
 
 
+def _not_suspended(db: Session, user: User) -> None:
+    """Browsing and search are open to every registered contractor. Only a suspended account is kept out."""
+    profile = db.get(ContractorProfile, user.id)
+    if profile is not None and profile.is_suspended:
+        raise TenderError("not_approved", "Your account is suspended. Contact support.")
+
+
 def open_browse(db: Session, user: User, *, now: datetime) -> dict[str, Any]:
     try:
-        require_approved(db, user)
-    except TenderError:
-        return _menu_error(db, user, "Your account must be verified before you can browse projects.")
+        _not_suspended(db, user)
+    except TenderError as error:
+        return _menu_error(db, user, error.message)
     return _feed_screen(db, user, heading="Open projects", now=now)
 
 
 def open_search(db: Session, user: User) -> dict[str, Any]:
     try:
-        require_approved(db, user)
-    except TenderError:
-        return _menu_error(db, user, "Your account must be verified before you can search projects.")
+        _not_suspended(db, user)
+    except TenderError as error:
+        return _menu_error(db, user, error.message)
     return {"screen": "SEARCH", "data": {"search": "", "trade": "", "sort": "deadline", "error_message": ""}}
 
 
 def _feed_screen(db: Session, user: User, *, heading: str, now: datetime, search: str | None = None, trade: str | None = None, sort: str = "deadline") -> dict[str, Any]:
-    rows = contractor_service.feed(db, user, search=search, trade=trade, sort=sort, now=now)
+    rows = contractor_service.feed(db, user, search=search, trade=trade, sort=sort, now=now, verified_required=False)
     options = []
     for row in rows:
         project = row["project"]
