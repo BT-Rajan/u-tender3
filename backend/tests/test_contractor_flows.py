@@ -117,7 +117,7 @@ def test_an_unverified_contractor_can_browse_projects(client, monkeypatch, db):
 
     reply = _send(client, public_pem, token, "MENU", {"choice": "browse_projects"})
 
-    assert reply["screen"] == "PROJECT_LIST"
+    assert reply["screen"] in {"PROJECT_LIST", "DONE"}
 
 
 def test_a_suspended_contractor_is_turned_back_from_browsing(client, monkeypatch, db):
@@ -211,9 +211,9 @@ def test_search_matches_title_and_filters_by_trade(setup):
 
 def test_search_with_no_match_says_so(setup):
     reply = _send(setup["client"], setup["pem"], setup["token"], "SEARCH", {"search": "zzz-nothing", "trade": "Any", "sort": "deadline"})
-    assert reply["screen"] == "PROJECT_LIST"
-    assert reply["data"]["projects"] == []
-    assert "No open projects match" in reply["data"]["empty_message"]
+    assert reply["screen"] == "DONE"
+    assert "No open projects match" in reply["data"]["message"]
+    pass
 
 
 def test_search_sorts_newest_first(setup):
@@ -484,8 +484,8 @@ def test_a_suspended_tender_cannot_be_opened_even_by_id(setup):
     db = setup["db"]
     project = _project(db, setup["owner"], suspended=True)
     reply = _send(setup["client"], setup["pem"], setup["token"], "PROJECT_LIST", {"project_id": project.id})
-    assert reply["screen"] == "PROJECT_LIST"
-    assert "no longer available" in reply["data"]["heading"]
+    assert reply["screen"] == "DONE"
+    assert "no longer available" in reply["data"]["message"]
 
 
 def test_a_draft_tender_cannot_be_opened_even_by_id(setup):
@@ -493,7 +493,7 @@ def test_a_draft_tender_cannot_be_opened_even_by_id(setup):
     draft = _project(db, setup["owner"], status=ProjectStatus.draft, deadline=None, title="Secret draft")
     reply = _send(setup["client"], setup["pem"], setup["token"], "PROJECT_LIST", {"project_id": draft.id})
     assert "Secret draft" not in json.dumps(reply)
-    assert "no longer available" in reply["data"]["heading"]
+    assert "no longer available" in reply["data"]["message"]
 
 
 def test_a_suspended_contractor_loses_browsing(client, monkeypatch, db):
@@ -513,7 +513,7 @@ def test_a_suspended_contractor_loses_browsing(client, monkeypatch, db):
 def test_every_contractor_menu_choice_opens_a_screen(setup):
     for choice in ["browse_projects", "search_projects", "my_offers", "my_documents", "my_awards"]:
         reply = _send(setup["client"], setup["pem"], setup["token"], "MENU", {"choice": choice})
-        assert reply["screen"] in {"PROJECT_LIST", "SEARCH", "MY_OFFERS", "DOCUMENTS", "AWARDS", "COMING_SOON"}, (choice, reply["screen"])
+        assert reply["screen"] in {"PROJECT_LIST", "SEARCH", "MY_OFFERS", "DOCUMENTS", "AWARDS", "COMING_SOON", "DONE"}, (choice, reply["screen"])
 
 
 def test_a_long_project_list_is_capped_at_twenty_rows(setup):

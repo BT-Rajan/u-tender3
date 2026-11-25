@@ -99,7 +99,11 @@ def _feed_screen(db: Session, user: User, *, heading: str, now: datetime, search
         project = row["project"]
         status_tag = f"[{row['my_offer_status'].value}] " if row["my_offer_status"] else ""
         options.append(_option(f"{status_tag}{project.title}", project.id))
-    empty = "" if options else "No open projects match. Try a different search."
+    if not options:
+        # WhatsApp cannot show a choice list with no rows, so an empty list is a message instead.
+        note = "No open projects match. Try a different search." if (search or trade) else "There are no open projects right now."
+        return {"screen": "DONE", "data": {"heading": "", "message": note if heading == "Open projects" else f"{heading}. {note}"}}
+    empty = ""
     return {"screen": "PROJECT_LIST", "data": {"heading": heading, "projects": options[:MAX_OPTIONS], "empty_message": empty, "error_message": ""}}
 
 
@@ -253,7 +257,10 @@ def _done(message: str) -> dict[str, Any]:
 def _my_offers_screen(db: Session, user: User) -> dict[str, Any]:
     rows = contractor_service.my_offers(db, user)
     options = [_option(f"[{OFFER_LABEL[offer.status]}] {project.title}", project.id) for offer, project in rows]
-    empty = "" if options else "You have not placed any offers yet. Browse projects to find one."
+    if not options:
+        # WhatsApp cannot show a choice list with no rows, so an empty list is a message instead.
+        return {"screen": "DONE", "data": {"heading": "", "message": "You have not placed any offers yet. Browse projects to find one."}}
+    empty = ""
     return {"screen": "MY_OFFERS", "data": {"heading": "My offers", "offers": options[:MAX_OPTIONS], "empty_message": empty, "error_message": ""}}
 
 

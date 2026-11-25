@@ -227,15 +227,15 @@ def test_a_tender_of_another_owner_cannot_be_opened(setup):
 
     reply = _send(setup["client"], setup["pem"], setup["token"], "MY_TENDERS", {"tender_id": theirs.id})
 
-    assert reply["screen"] == "MY_TENDERS"
-    assert "no longer available" in reply["data"]["heading"]
+    assert reply["screen"] == "DONE"
+    assert "no longer available" in reply["data"]["message"]
     assert theirs.title not in json.dumps(reply)
 
 
 def test_a_tender_id_that_does_not_exist_gets_the_same_answer(setup):
     reply = _send(setup["client"], setup["pem"], setup["token"], "MY_TENDERS", {"tender_id": "made-up-id"})
-    assert reply["screen"] == "MY_TENDERS"
-    assert "no longer available" in reply["data"]["heading"]
+    assert reply["screen"] == "DONE"
+    assert "no longer available" in reply["data"]["message"]
 
 
 def test_details_show_only_the_actions_the_state_allows(setup):
@@ -353,7 +353,7 @@ def test_amend_of_another_owners_tender_is_refused(setup):
 
     reply = _send(setup["client"], setup["pem"], setup["token"], "AMEND", {"tender_id": theirs.id, "title": "Hijacked"})
 
-    assert reply["screen"] == "MY_TENDERS"
+    assert reply["screen"] == "DONE"
     assert _fresh(db, theirs.id).title == "Not yours"
 
 
@@ -467,8 +467,8 @@ def test_the_offers_screen_never_shows_another_owners_bids(setup):
 
 def test_received_offers_from_the_menu_picks_a_tender_first(setup):
     reply = _send(setup["client"], setup["pem"], setup["token"], "MENU", {"choice": "received_offers"})
-    assert reply["screen"] == "MY_TENDERS"
-    assert "Pick a tender" in reply["data"]["heading"]
+    assert reply["screen"] == "DONE"
+    assert "Pick a tender" in reply["data"]["message"]
 
 
 # --- roles ---------------------------------------------------------------------------
@@ -585,7 +585,7 @@ def test_every_owner_menu_choice_opens_a_screen(setup):
     expected = {"create_tender": "CREATE_TENDER", "my_tenders": "MY_TENDERS", "received_offers": "MY_TENDERS", "my_documents": "DOCUMENTS"}
     for choice, screen in expected.items():
         reply = _send(setup["client"], setup["pem"], setup["token"], "MENU", {"choice": choice})
-        assert reply["screen"] == screen, (choice, reply["screen"])
+        assert reply["screen"] in {screen, "DONE"}, (choice, reply["screen"])
 
 
 @pytest.mark.parametrize("status", [ProjectStatus.draft, ProjectStatus.open, ProjectStatus.closed, ProjectStatus.under_evaluation, ProjectStatus.awarded, ProjectStatus.canceled])

@@ -229,7 +229,11 @@ def _blank_create_form() -> dict[str, Any]:
 
 def open_my_tenders(db: Session, owner: User, *, now: datetime, heading: str = "Your tenders") -> dict[str, Any]:
     tenders = _tender_list(db, owner, now=now)
-    empty = "" if tenders else "You have no tenders yet. Create one from the menu."
+    if not tenders:
+        # WhatsApp cannot show a choice list with no rows, so an empty list is a message instead.
+        note = "You have no tenders yet. Create one from the menu."
+        return {"screen": "DONE", "data": {"heading": "", "message": note if heading == "Your tenders" else f"{heading}. {note}"}}
+    empty = ""
     return {"screen": "MY_TENDERS", "data": {"heading": heading, "tenders": tenders, "empty_message": empty, "error_message": ""}}
 
 

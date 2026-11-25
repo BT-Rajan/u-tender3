@@ -49,6 +49,10 @@ def check_reply(flow_name: str, reply: dict[str, Any]) -> None:
     for key, declared in (screen.get("data") or {}).items():
         if key in data:
             _check_value(f"{reply['screen']}.{key}", declared, data[key])
+    bound = set(re.findall(r'"data-source": "\$\{data\.([A-Za-z_]+)\}"', json.dumps(screen, ensure_ascii=False)))
+    for key in bound:
+        if key in data:
+            assert data[key], f"{reply['screen']}.{key} is an empty list; WhatsApp cannot show a choice list with no rows"
     for key, value in data.items():
         if isinstance(value, list) and value and all(isinstance(item, dict) and "id" in item and "title" in item for item in value):
             assert len(value) <= MAX_LIST_ROWS, f"{reply['screen']}.{key} has {len(value)} rows; WhatsApp allows {MAX_LIST_ROWS}"
