@@ -50,8 +50,8 @@ export function ContractorFeedPage() {
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">{t("contractor.feed.eyebrow")}</span>
-        <h1 className="font-display text-2xl font-semibold text-navy mb-1">{t("contractor.feed.heading")}</h1>
+        <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("contractor.feed.eyebrow")}</span>
+        <h1 className="font-display text-3xl font-bold text-navy mb-1">{t("contractor.feed.heading")}</h1>
         <p className="text-[13.5px] text-steel">{sort === "newest" ? t("contractor.feed.sortedNewest") : t("contractor.feed.sortedClosest")}</p>
       </div>
 
@@ -100,7 +100,7 @@ export function ContractorFeedPage() {
       {isError && <QueryError onRetry={() => refetch()} />}
 
       {!isError && !projects?.length && (
-        <div className="border border-dashed border-border rounded p-10 text-center text-sm text-steel">
+        <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">
           {filtersActive ? t("contractor.feed.noMatch") : t("contractor.feed.noOpenProjects")}
         </div>
       )}
@@ -115,7 +115,7 @@ export function ContractorFeedPage() {
                   <p className="text-[12.5px] text-steel mb-3">{p.address}</p>
                 </div>
                 {p.my_offer_status && (
-                  <span className="font-mono text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-green-tint text-green whitespace-nowrap">
+                  <span className="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-green-tint text-green whitespace-nowrap">
                     {p.my_offer_status === "submitted" ? t("contractor.feed.bidPlaced") : p.my_offer_status}
                   </span>
                 )}

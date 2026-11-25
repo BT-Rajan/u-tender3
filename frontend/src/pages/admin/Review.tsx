@@ -105,8 +105,8 @@ export function AdminReviewPage() {
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">Admin · Applications</span>
-        <h1 className="font-display text-2xl font-semibold text-navy mb-1">Contractor applications</h1>
+        <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">Admin · Applications</span>
+        <h1 className="font-display text-3xl font-bold text-navy mb-1">Contractor applications</h1>
         <p className="text-[13.5px] text-steel">{queue?.length ?? 0} pending review{queue?.length === 1 ? "" : "s"}.</p>
       </div>
 
@@ -115,7 +115,7 @@ export function AdminReviewPage() {
       {queueError ? (
         <QueryError onRetry={() => refetchQueue()} />
       ) : !queue?.length ? (
-        <div className="border border-dashed border-border rounded p-10 text-center text-sm text-steel">No applications waiting on review.</div>
+        <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">No applications waiting on review.</div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[.9fr_1.6fr] gap-5 items-start">
           <div className="space-y-2.5">

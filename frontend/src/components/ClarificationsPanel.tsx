@@ -57,8 +57,8 @@ export function ClarificationsPanel({
   });
 
   return (
-    <div className="bg-white border border-border rounded px-5 py-4.5">
-      <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">{t("clarifications.heading")}</h3>
+    <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">{t("clarifications.heading")}</h3>
 
       {error && <p className="text-xs bg-red-tint text-red border border-red rounded px-3 py-2 mb-3">{error}</p>}
 
@@ -112,7 +112,7 @@ export function ClarificationsPanel({
             onChange={(e) => setQuestion(e.target.value)}
             rows={2}
             placeholder={t("clarifications.askPlaceholder")}
-            className="w-full border border-border rounded px-3 py-2 text-sm resize-y mb-2"
+            className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 resize-y mb-2"
           />
           <div className="flex items-center justify-between gap-2">
             <label className="flex items-center gap-1.5 text-[11.5px] text-steel">

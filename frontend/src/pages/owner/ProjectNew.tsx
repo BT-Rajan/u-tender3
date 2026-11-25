@@ -44,8 +44,8 @@ export function OwnerProjectNewPage() {
 
   return (
     <main className="max-w-4xl mx-auto px-5 py-8">
-      <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">{t("owner.projectNew.eyebrow")}</span>
-      <h1 className="font-display text-2xl font-semibold text-navy mb-1">{t("owner.projectNew.heading")}</h1>
+      <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("owner.projectNew.eyebrow")}</span>
+      <h1 className="font-display text-3xl font-bold text-navy mb-1">{t("owner.projectNew.heading")}</h1>
       <p className="text-[13.5px] text-steel mb-6">{t("owner.projectNew.description")}</p>
 
       {error && <p className="text-xs bg-red-tint text-red border border-red rounded px-3 py-2.5 mb-5 max-w-2xl">{error}</p>}
@@ -60,7 +60,7 @@ export function OwnerProjectNewPage() {
           className="grid gap-[18px]"
         >
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.tenderType")}</label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.tenderType")}</label>
             <div className="flex border border-navy rounded overflow-hidden w-fit">
               <button
                 type="button"
@@ -82,33 +82,33 @@ export function OwnerProjectNewPage() {
             </p>
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.title")}</label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.title")}</label>
             <input
               name="title"
               required
               placeholder={t("owner.projectNew.titlePlaceholder")}
-              className="w-full border border-border rounded px-3 py-2.5 text-sm"
+              className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
             />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.address")}</label>
-            <input name="address" required placeholder={t("owner.projectNew.addressPlaceholder")} className="w-full border border-border rounded px-3 py-2.5 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.address")}</label>
+            <input name="address" required placeholder={t("owner.projectNew.addressPlaceholder")} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.trade")}</label>
-            <input name="trade" placeholder={t("owner.projectNew.tradePlaceholder")} className="w-full border border-border rounded px-3 py-2.5 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.trade")}</label>
+            <input name="trade" placeholder={t("owner.projectNew.tradePlaceholder")} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.scope")}</label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.scope")}</label>
             <textarea
               name="description"
               rows={4}
               placeholder={t("owner.projectNew.scopePlaceholder")}
-              className="w-full border border-border rounded px-3 py-2.5 text-sm resize-y"
+              className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 resize-y"
             />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.drawings")}</label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.drawings")}</label>
             <div className="border border-dashed border-blue bg-blue-tint rounded px-4 py-6 text-center">
               <input type="file" name="drawings" multiple accept=".pdf,.dwg,.jpg,.jpeg,.png,.zip" className="text-xs mx-auto" />
               <p className="text-[11px] text-blue mt-2">{t("owner.projectNew.drawingsHint")}</p>
@@ -116,7 +116,7 @@ export function OwnerProjectNewPage() {
             <p className="text-xs text-steel-light mt-1.5">{t("owner.projectNew.drawingsAccessNote")}</p>
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.deadline")}</label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.deadline")}</label>
             <input
               type="datetime-local"
               name="bid_deadline"
@@ -146,7 +146,7 @@ export function OwnerProjectNewPage() {
           <p className="text-xs text-steel-light -mt-2.5">{t("owner.projectNew.draftNote")}</p>
         </form>
 
-        <div className="bg-white border border-border rounded px-4.5 py-4">
+        <div className="bg-white border border-border rounded-lg shadow-sm px-4.5 py-4">
           <h3 className="font-mono text-[13px] uppercase tracking-wide text-navy mb-2">{t("owner.projectNew.sidebarHeading")}</h3>
           <ul className="text-[13px] text-steel leading-[1.7] list-disc pl-[18px]">
             <li>{t("owner.projectNew.tip1")}</li>

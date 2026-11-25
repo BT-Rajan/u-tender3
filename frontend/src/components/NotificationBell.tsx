@@ -75,9 +75,9 @@ export function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute end-0 mt-2 w-80 max-w-[calc(100vw-2.5rem)] max-h-96 overflow-y-auto bg-white border border-border rounded shadow-lg z-20">
+          <div className="absolute end-0 mt-2 w-80 max-w-[calc(100vw-2.5rem)] max-h-96 overflow-y-auto bg-white border border-border rounded-lg shadow-sm shadow-lg z-20">
             <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border">
-              <span className="font-mono text-[10px] uppercase tracking-wide text-steel">Notifications</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-steel">Notifications</span>
               {count > 0 && (
                 <button type="button" onClick={() => markAllReadMutation.mutate()} className="text-[11px] text-navy underline">
                   Mark all read

@@ -36,7 +36,7 @@ export function ResetPasswordPage() {
         <LanguageSwitcher />
       </div>
 
-      <h1 className="font-display text-xl font-semibold text-navy mb-6">{t("auth.resetPassword.heading")}</h1>
+      <h1 className="font-display text-2xl font-bold text-navy mb-6">{t("auth.resetPassword.heading")}</h1>
 
       {success ? (
         <>
@@ -56,7 +56,7 @@ export function ResetPasswordPage() {
           {token && (
             <form onSubmit={handleSubmit} className="grid gap-4">
               <div>
-                <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">
                   {t("auth.resetPassword.newPassword")}
                 </label>
                 <input
@@ -64,7 +64,7 @@ export function ResetPasswordPage() {
                   name="new_password"
                   required
                   minLength={8}
-                  className="w-full border border-border rounded px-3 py-2.5 text-sm"
+                  className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
                 />
               </div>
               <button

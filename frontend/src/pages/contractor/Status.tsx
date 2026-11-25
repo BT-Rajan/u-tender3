@@ -62,8 +62,8 @@ export function ContractorStatusPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-5 py-8">
-      <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">{t("contractor.status.eyebrow")}</span>
-      <h1 className="font-display text-2xl font-semibold text-navy mb-1">{t("contractor.status.heading")}</h1>
+      <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("contractor.status.eyebrow")}</span>
+      <h1 className="font-display text-3xl font-bold text-navy mb-1">{t("contractor.status.heading")}</h1>
       <p className="text-[13.5px] text-steel mb-6">{profile.company_name}</p>
 
       <div className={`bg-white border border-l-4 rounded px-5 py-4 mb-6 flex items-center justify-between flex-wrap gap-3 ${bannerClasses}`}>
@@ -82,9 +82,9 @@ export function ContractorStatusPage() {
       <table className="w-full border-collapse">
         <thead>
           <tr>
-            <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2">{t("contractor.status.document")}</th>
-            <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2">{t("contractor.status.statusCol")}</th>
-            <th className="border-b-2 border-navy py-2"></th>
+            <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2">{t("contractor.status.document")}</th>
+            <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2">{t("contractor.status.statusCol")}</th>
+            <th className="border-b border-border py-2"></th>
           </tr>
         </thead>
         <tbody>
@@ -106,7 +106,7 @@ export function ContractorStatusPage() {
               </td>
               <td className="py-3.5">
                 {(d.status === "not_submitted" || d.status === "rejected") && (
-                  <a href="/contractor/verify" className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded px-3 py-1.5">
+                  <a href="/contractor/verify" className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-3 py-1.5">
                     {d.status === "rejected" ? t("contractor.status.reupload") : t("contractor.status.upload")}
                   </a>
                 )}

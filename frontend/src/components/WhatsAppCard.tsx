@@ -17,7 +17,7 @@ export function WhatsAppCard() {
   if (!href) return null;
 
   return (
-    <section className="bg-white border border-border rounded px-5 py-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <section className="bg-white border border-border rounded-lg shadow-sm px-5 py-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
         <h2 className="font-display text-base font-semibold text-navy mb-1">{t("whatsapp.title")}</h2>
         <p className="text-[13px] text-steel leading-relaxed">{t("whatsapp.body")}</p>

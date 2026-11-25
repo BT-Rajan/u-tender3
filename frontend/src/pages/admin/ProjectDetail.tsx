@@ -71,15 +71,15 @@ function OfferRow({ offer, projectId, t }: { offer: AdminOffer; projectId: strin
           {error && <div className="text-[11.5px] text-red mb-2">{error}</div>}
           <div className="grid sm:grid-cols-3 gap-2 mb-2">
             <div>
-              <label className="block font-mono text-[10px] uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.amountFieldLabel")}</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.amountFieldLabel")}</label>
               <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" step="0.01" min="0.01" className="w-full border border-border rounded px-2.5 py-1.5 text-sm" />
             </div>
             <div>
-              <label className="block font-mono text-[10px] uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.timelineFieldLabel")}</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.timelineFieldLabel")}</label>
               <input value={timeline} onChange={(e) => setTimeline(e.target.value)} className="w-full border border-border rounded px-2.5 py-1.5 text-sm" />
             </div>
             <div>
-              <label className="block font-mono text-[10px] uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.messageFieldLabel")}</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.messageFieldLabel")}</label>
               <input value={message} onChange={(e) => setMessage(e.target.value)} className="w-full border border-border rounded px-2.5 py-1.5 text-sm" />
             </div>
           </div>
@@ -225,10 +225,10 @@ export function AdminProjectDetailPage() {
 
   return (
     <main className="max-w-4xl mx-auto px-5 py-8">
-      <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">{t("admin.projectDetail.eyebrow")}</span>
+      <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("admin.projectDetail.eyebrow")}</span>
       <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-navy mb-1">{project.title}</h1>
+          <h1 className="font-display text-3xl font-bold text-navy mb-1">{project.title}</h1>
           <p className="text-[13.5px] text-steel">
             {project.owner_name || project.owner_email} · {project.address}
           </p>
@@ -244,36 +244,36 @@ export function AdminProjectDetailPage() {
             e.preventDefault();
             editMutation.mutate();
           }}
-          className="grid gap-4 bg-white border border-border rounded px-5 py-4.5"
+          className="grid gap-4 bg-white border border-border rounded-lg shadow-sm px-5 py-4.5"
         >
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy -mb-1">{t("admin.projectDetail.editHeading")}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy -mb-1">{t("admin.projectDetail.editHeading")}</h3>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.titleLabel")}</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full border border-border rounded px-3 py-2 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.titleLabel")}</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.addressLabel")}</label>
-            <input value={address} onChange={(e) => setAddress(e.target.value)} required className="w-full border border-border rounded px-3 py-2 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.addressLabel")}</label>
+            <input value={address} onChange={(e) => setAddress(e.target.value)} required className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.descriptionLabel")}</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full border border-border rounded px-3 py-2 text-sm resize-y" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.descriptionLabel")}</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 resize-y" />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.tradeLabel")}</label>
-            <input value={trade} onChange={(e) => setTrade(e.target.value)} className="w-full border border-border rounded px-3 py-2 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.tradeLabel")}</label>
+            <input value={trade} onChange={(e) => setTrade(e.target.value)} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.deadlineLabel")}</label>
-            <input value={bidDeadline} onChange={(e) => setBidDeadline(e.target.value)} type="datetime-local" required className="w-full border border-border rounded px-3 py-2 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("admin.projectDetail.deadlineLabel")}</label>
+            <input value={bidDeadline} onChange={(e) => setBidDeadline(e.target.value)} type="datetime-local" required className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <button type="submit" disabled={editMutation.isPending} className="bg-navy hover:bg-navy-deep disabled:opacity-40 text-white font-semibold text-sm rounded px-4 py-2 w-fit">
             {t("admin.projectDetail.saveChanges")}
           </button>
         </form>
 
-        <div className="bg-white border border-border rounded px-5 py-4.5">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">{t("admin.projectDetail.accessHeading")}</h3>
+        <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">{t("admin.projectDetail.accessHeading")}</h3>
           <button
             type="button"
             onClick={() => suspendMutation.mutate()}
@@ -287,8 +287,8 @@ export function AdminProjectDetailPage() {
           </p>
         </div>
 
-        <div className="bg-white border border-border rounded px-5 py-4.5">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">
+        <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">
             {t("admin.projectDetail.offersHeading")} ({offers.length})
           </h3>
           {!offers.length ? (
@@ -298,11 +298,11 @@ export function AdminProjectDetailPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2 px-2.5">{t("admin.projectDetail.contractorCol")}</th>
-                    <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2 px-2.5">{t("admin.projectDetail.amountCol")}</th>
-                    <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2 px-2.5">{t("admin.projectDetail.timelineCol")}</th>
-                    <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2 px-2.5">{t("admin.projectDetail.statusCol")}</th>
-                    <th className="border-b-2 border-navy py-2 px-2.5"></th>
+                    <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2 px-2.5">{t("admin.projectDetail.contractorCol")}</th>
+                    <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2 px-2.5">{t("admin.projectDetail.amountCol")}</th>
+                    <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2 px-2.5">{t("admin.projectDetail.timelineCol")}</th>
+                    <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2 px-2.5">{t("admin.projectDetail.statusCol")}</th>
+                    <th className="border-b border-border py-2 px-2.5"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -316,7 +316,7 @@ export function AdminProjectDetailPage() {
         </div>
 
         <div className="bg-white border border-red/30 rounded px-5 py-4.5">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-red mb-3">{t("admin.projectDetail.dangerZone")}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-red mb-3">{t("admin.projectDetail.dangerZone")}</h3>
           <p className="text-[11.5px] text-steel-light mb-3">
             {offers.length > 0 ? t("admin.projectDetail.deleteBlockedNote") : t("admin.projectDetail.deleteNote")}
           </p>

@@ -55,28 +55,28 @@ export function ContractorVerifyPage() {
 
   return (
     <main className="max-w-4xl mx-auto px-5 py-10">
-      <span className="font-mono text-[11px] uppercase tracking-widest text-amber-dark block mb-2">{t("contractor.verify.eyebrow")}</span>
-      <h1 className="font-display text-2xl font-semibold text-navy mb-2">{t("contractor.verify.heading")}</h1>
+      <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-2">{t("contractor.verify.eyebrow")}</span>
+      <h1 className="font-display text-3xl font-bold text-navy mb-2">{t("contractor.verify.heading")}</h1>
       <p className="text-sm text-steel mb-8">{t("contractor.verify.description")}</p>
 
       <ErrorBanner message={error} />
 
       <form onSubmit={handleSubmit} className="mb-10 grid gap-4 max-w-md">
         <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">{t("contractor.verify.companyName")}</label>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("contractor.verify.companyName")}</label>
           <input
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
             required
-            className="w-full border border-border rounded px-3 py-2 text-sm"
+            className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
           />
         </div>
         <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">{t("contractor.verify.licenseNumber")}</label>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">{t("contractor.verify.licenseNumber")}</label>
           <input
             value={licenseNumber}
             onChange={(e) => setLicenseNumber(e.target.value)}
-            className="w-full border border-border rounded px-3 py-2 text-sm"
+            className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
           />
         </div>
 
@@ -84,9 +84,9 @@ export function ContractorVerifyPage() {
         <table className="w-full border-collapse mt-4">
           <thead>
             <tr className="text-left">
-              <th className="font-mono text-[10px] uppercase text-steel border-b-2 border-navy py-2">{t("contractor.verify.document")}</th>
-              <th className="font-mono text-[10px] uppercase text-steel border-b-2 border-navy py-2">{t("contractor.verify.statusCol")}</th>
-              <th className="border-b-2 border-navy py-2"></th>
+              <th className="font-mono text-[10px] uppercase text-steel border-b border-border py-2">{t("contractor.verify.document")}</th>
+              <th className="font-mono text-[10px] uppercase text-steel border-b border-border py-2">{t("contractor.verify.statusCol")}</th>
+              <th className="border-b border-border py-2"></th>
             </tr>
           </thead>
           <tbody>

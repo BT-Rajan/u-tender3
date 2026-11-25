@@ -42,8 +42,8 @@ function statusFilters(t: (key: string) => string): { value: ProjectStatus | "al
 function KpiCard({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
   return (
     <div className={`border rounded px-4 py-3 ${highlight ? "border-amber bg-amber/10" : "border-border bg-white"}`}>
-      <div className="font-display text-2xl font-semibold text-navy leading-none">{value}</div>
-      <div className="font-mono text-[10px] uppercase tracking-wide text-steel mt-1">{label}</div>
+      <div className="font-display text-3xl font-bold text-navy leading-none">{value}</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{label}</div>
     </div>
   );
 }
@@ -90,10 +90,10 @@ export function OwnerDashboardPage() {
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
         <div>
-          <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">
+          <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">
             {t("owner.dashboard.eyebrow")}
           </span>
-          <h1 className="font-display text-2xl font-semibold text-navy">{t("owner.dashboard.heading")}</h1>
+          <h1 className="font-display text-3xl font-bold text-navy">{t("owner.dashboard.heading")}</h1>
         </div>
         <Link to="/owner/projects/new" className="bg-amber hover:bg-amber-dark text-white font-semibold text-sm rounded px-5 py-2.5">
           {t("owner.dashboard.newProject")}
@@ -113,7 +113,7 @@ export function OwnerDashboardPage() {
       {isError && <QueryError onRetry={() => refetch()} />}
 
       {!isError && !projects?.length && (
-        <div className="border border-dashed border-border rounded p-10 text-center text-sm text-steel">
+        <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">
           {t("owner.dashboard.emptyStatePrefix")}{" "}
           <Link to="/owner/projects/new" className="text-navy underline">
             {t("owner.dashboard.emptyStateLink")}
@@ -154,7 +154,7 @@ export function OwnerDashboardPage() {
       )}
 
       {!isError && projects?.length && !filtered.length && (
-        <div className="border border-dashed border-border rounded p-10 text-center text-sm text-steel">
+        <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">
           {filtersActive ? t("owner.dashboard.noMatch") : t("owner.dashboard.nothingHere")}
         </div>
       )}
@@ -169,7 +169,7 @@ export function OwnerDashboardPage() {
                   <p className="text-[12.5px] text-steel mb-3">{p.address}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <span className={`font-mono text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full ${badgeClasses(p.status)}`}>
+                  <span className={`text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${badgeClasses(p.status)}`}>
                     {p.status.replace(/_/g, " ")}
                   </span>
                   {p.tender_type === "sealed" && (

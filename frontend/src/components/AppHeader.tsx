@@ -15,32 +15,34 @@ export function AppHeader({ roleLabel, homeHref }: { roleLabel: string; homeHref
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-5 pt-6">
-      <div className="flex items-center justify-between flex-wrap gap-y-3 border-b-2 border-navy pb-4">
-        <Link to={homeHref} className="flex items-center gap-2.5">
-          <div className="w-7 h-7 border-2 border-navy flex items-center justify-center font-display font-bold text-sm text-navy shrink-0">
+    <header className="sticky top-0 z-20 border-b border-border bg-white/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5">
+        <Link to={homeHref} className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-navy font-display text-lg font-bold text-white">
             U
           </div>
           <div>
-            <div className="font-display font-bold text-lg text-navy leading-none">U-TENDER</div>
-            <div className="hidden sm:block text-[10px] text-steel uppercase tracking-widest">{t("brand.tagline")}</div>
+            <div className="font-display text-base font-bold leading-none text-navy">U-TENDER</div>
+            <div className="mt-1 hidden text-[10px] uppercase tracking-widest text-steel sm:block">{t("brand.tagline")}</div>
           </div>
         </Link>
 
-        <div className="flex items-center flex-wrap gap-x-3 gap-y-2 justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
           <NotificationBell />
           <LanguageSwitcher />
-          <span className="font-mono text-[11px] uppercase tracking-wide text-steel border border-border rounded-full px-2.5 py-1 whitespace-nowrap">
-            {roleLabel}
-          </span>
-          <Link to="/account" className="text-xs text-steel hover:text-navy underline whitespace-nowrap">
+          <span className="whitespace-nowrap rounded-full bg-paper px-3 py-1 text-xs font-semibold text-steel">{roleLabel}</span>
+          <Link to="/account" className="whitespace-nowrap text-sm font-medium text-navy hover:underline">
             {t("header.account")}
           </Link>
-          <button type="button" onClick={() => handleLogout()} className="text-xs text-steel hover:text-navy underline whitespace-nowrap">
+          <button
+            type="button"
+            onClick={() => handleLogout()}
+            className="whitespace-nowrap text-sm font-medium text-steel hover:text-navy hover:underline"
+          >
             {t("header.logOut")}
           </button>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

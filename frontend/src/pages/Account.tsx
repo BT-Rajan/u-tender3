@@ -82,18 +82,18 @@ function ChangePasswordForm() {
       )}
       <form onSubmit={handleSubmit} className="grid gap-4 max-w-sm">
         <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">
             {t("auth.changePassword.currentPassword")}
           </label>
           <input
             type="password"
             name="current_password"
             required
-            className="w-full border border-border rounded px-3 py-2.5 text-sm"
+            className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
           />
         </div>
         <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">
             {t("auth.changePassword.newPassword")}
           </label>
           <input
@@ -101,7 +101,7 @@ function ChangePasswordForm() {
             name="new_password"
             required
             minLength={8}
-            className="w-full border border-border rounded px-3 py-2.5 text-sm"
+            className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
           />
         </div>
         <button

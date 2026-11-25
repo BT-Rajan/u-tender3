@@ -123,21 +123,21 @@ export function ContractorOfferPage() {
             {project.address} · {t("contractor.offer.deadlineLabel")} {formatDeadline(project.bid_deadline, language)}
           </div>
         </div>
-        <span className="font-mono text-[10px] uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/15">
+        <span className="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/15">
           {biddingClosed ? t("contractor.offer.closed") : timeRemaining(project.bid_deadline, language)}
         </span>
       </div>
 
       {project.description && (
         <div className="mb-6 text-sm text-steel">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-1">{t("contractor.offer.scope")}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-1">{t("contractor.offer.scope")}</h3>
           {project.description}
         </div>
       )}
 
       <div className="mb-6">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy">{t("contractor.offer.drawings")}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy">{t("contractor.offer.drawings")}</h3>
           {project.drawings.length > 1 && (
             <a href={`${API_URL}/projects/${project.id}/drawings-zip`} className="font-mono text-[11px] text-blue underline">
               {t("contractor.offer.downloadZip")}
@@ -171,7 +171,7 @@ export function ContractorOfferPage() {
       <ErrorBanner message={error} />
 
       {biddingClosed ? (
-        <div className="border border-dashed border-border rounded p-6 text-sm text-steel">
+        <div className="border border-dashed border-border rounded-lg bg-white p-6 text-sm text-steel">
           {t("contractor.offer.biddingClosedNotice")}
           {existingOffer && (
             <div className="mt-3 font-mono text-xs text-navy">
@@ -187,32 +187,32 @@ export function ContractorOfferPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
           <form onSubmit={handleSubmit} className="grid gap-[18px]">
             <div>
-              <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("contractor.offer.bidAmount")}</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("contractor.offer.bidAmount")}</label>
               <input
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
                 placeholder="8,400"
-                className="w-full border border-border rounded px-3 py-2.5 text-sm font-mono"
+                className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 font-mono"
               />
             </div>
             <div>
-              <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("contractor.offer.timeline")}</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("contractor.offer.timeline")}</label>
               <input
                 value={timeline}
                 onChange={(e) => setTimeline(e.target.value)}
                 placeholder={t("contractor.offer.timelinePlaceholder")}
-                className="w-full border border-border rounded px-3 py-2.5 text-sm"
+                className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
               />
             </div>
             <div>
-              <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">{t("contractor.offer.messageToOwner")}</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("contractor.offer.messageToOwner")}</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={4}
                 placeholder={t("contractor.offer.messagePlaceholder")}
-                className="w-full border border-border rounded px-3 py-2.5 text-sm resize-y"
+                className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 resize-y"
               />
             </div>
             <div className="flex items-center gap-3">
@@ -236,7 +236,7 @@ export function ContractorOfferPage() {
             </div>
           </form>
 
-          <div className="bg-white border border-border rounded px-4.5 py-4">
+          <div className="bg-white border border-border rounded-lg shadow-sm px-4.5 py-4">
             <h3 className="font-mono text-[13px] uppercase tracking-wide text-navy mb-2">{t("contractor.offer.tipsHeading")}</h3>
             <ul className="text-[13px] text-steel leading-[1.7] list-disc pl-[18px]">
               <li>{t("contractor.offer.tip1")}</li>

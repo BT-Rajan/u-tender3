@@ -65,15 +65,15 @@ export function AdminOffersPage() {
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">{t("admin.offers.eyebrow")}</span>
-        <h1 className="font-display text-2xl font-semibold text-navy mb-1">{t("admin.offers.heading")}</h1>
+        <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("admin.offers.eyebrow")}</span>
+        <h1 className="font-display text-3xl font-bold text-navy mb-1">{t("admin.offers.heading")}</h1>
         <p className="text-[13.5px] text-steel">{offers?.length ?? 0} {t("admin.offers.total")}</p>
       </div>
 
       {isError ? (
         <QueryError onRetry={() => refetch()} />
       ) : !offers?.length ? (
-        <div className="border border-dashed border-border rounded p-10 text-center text-sm text-steel">{t("admin.offers.empty")}</div>
+        <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">{t("admin.offers.empty")}</div>
       ) : (
         <div className="grid gap-2.5">
           {groups.map((g) => {
@@ -113,10 +113,10 @@ export function AdminOffersPage() {
                     <table className="w-full border-collapse">
                       <thead>
                         <tr>
-                          <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left py-2 px-4">{t("admin.offers.contractor")}</th>
-                          <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left py-2 px-2.5">{t("admin.offers.amount")}</th>
-                          <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left py-2 px-2.5">{t("admin.offers.status")}</th>
-                          <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left py-2 px-2.5">{t("admin.offers.submitted")}</th>
+                          <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left py-2 px-4">{t("admin.offers.contractor")}</th>
+                          <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left py-2 px-2.5">{t("admin.offers.amount")}</th>
+                          <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left py-2 px-2.5">{t("admin.offers.status")}</th>
+                          <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left py-2 px-2.5">{t("admin.offers.submitted")}</th>
                         </tr>
                       </thead>
                       <tbody>

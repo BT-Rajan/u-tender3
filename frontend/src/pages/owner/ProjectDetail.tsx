@@ -35,17 +35,17 @@ function EvaluationSummary({ offers, t }: { offers: Offer[]; t: (key: string) =>
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
       <div className="border border-border bg-white rounded px-3 py-2.5">
         <div className="font-display text-lg font-semibold text-green leading-none">${low.toLocaleString()}</div>
-        <div className="font-mono text-[9.5px] uppercase tracking-wide text-steel mt-1">{t("owner.projectDetail.lowestBid")}</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{t("owner.projectDetail.lowestBid")}</div>
       </div>
       <div className="border border-border bg-white rounded px-3 py-2.5">
         <div className="font-display text-lg font-semibold text-navy leading-none">
           ${Math.round(avg).toLocaleString()}
         </div>
-        <div className="font-mono text-[9.5px] uppercase tracking-wide text-steel mt-1">{t("owner.projectDetail.averageBid")}</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{t("owner.projectDetail.averageBid")}</div>
       </div>
       <div className="border border-border bg-white rounded px-3 py-2.5">
         <div className="font-display text-lg font-semibold text-steel leading-none">${high.toLocaleString()}</div>
-        <div className="font-mono text-[9.5px] uppercase tracking-wide text-steel mt-1">{t("owner.projectDetail.highestBid")}</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{t("owner.projectDetail.highestBid")}</div>
       </div>
     </div>
   );
@@ -102,7 +102,7 @@ function OfferDetails({ projectId, offer, t }: { projectId: string; offer: Offer
     <div className="text-sm">
       <div className="font-display font-semibold text-navy text-[13px] mb-1">{t("owner.projectDetail.contractorReply")}</div>
       <p className="whitespace-pre-wrap text-navy mb-4">{offer.message || t("owner.projectDetail.noReply")}</p>
-      <div className="font-mono text-[10px] uppercase tracking-wide text-steel mb-2">{t("owner.projectDetail.revisionHistory")}</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-steel mb-2">{t("owner.projectDetail.revisionHistory")}</div>
       {isLoading ? (
         <p className="text-steel">…</p>
       ) : (
@@ -206,15 +206,15 @@ export function OwnerProjectDetailPage() {
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
         <div>
-          <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">{project.title}</span>
-          <h1 className="font-display text-2xl font-semibold text-navy mb-1">{t("owner.projectDetail.reviewOffers")}</h1>
+          <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{project.title}</span>
+          <h1 className="font-display text-3xl font-bold text-navy mb-1">{t("owner.projectDetail.reviewOffers")}</h1>
           <p className="text-[13.5px] text-steel">{project.address}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-wide px-2.5 py-1 rounded-full bg-blue-tint text-steel">
+          <span className="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-blue-tint text-steel">
             {project.tender_type === "sealed" ? t("owner.projectDetail.sealedBadge") : t("owner.projectDetail.ownerVisibleBadge")}
           </span>
-          <span className={`font-mono text-[10px] uppercase tracking-wide px-2.5 py-1 rounded-full ${statusBadgeClasses(project.status)}`}>
+          <span className={`text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${statusBadgeClasses(project.status)}`}>
             {project.status.replace(/_/g, " ")}
           </span>
         </div>
@@ -326,7 +326,7 @@ export function OwnerProjectDetailPage() {
             <input type="file" name="drawings" multiple accept=".pdf,.dwg,.jpg,.jpeg,.png,.zip" className="text-[11px] flex-1" />
             <button
               type="submit"
-              className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded px-3 py-1.5 whitespace-nowrap"
+              className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-3 py-1.5 whitespace-nowrap"
             >
               {t("owner.projectDetail.addDrawings")}
             </button>
@@ -341,7 +341,7 @@ export function OwnerProjectDetailPage() {
           </div>
           {project.description && (
             <div className="mt-4 text-sm text-steel">
-              <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-1">{t("owner.projectDetail.scope")}</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-1">{t("owner.projectDetail.scope")}</h3>
               {project.description}
             </div>
           )}
@@ -352,7 +352,7 @@ export function OwnerProjectDetailPage() {
 
         <div>
           {!offers?.length ? (
-            <div className="border border-dashed border-border rounded p-8 text-center text-sm text-steel">
+            <div className="border border-dashed border-border rounded-lg bg-white p-8 text-center text-sm text-steel">
               {t("owner.projectDetail.noOffersYet")}
             </div>
           ) : offers[0]?.sealed ? (
@@ -370,11 +370,11 @@ export function OwnerProjectDetailPage() {
               <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2 px-2.5">{t("owner.projectDetail.contractorCol")}</th>
-                  <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2 px-2.5">{t("owner.projectDetail.ratingCol")}</th>
-                  <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2 px-2.5">{t("owner.projectDetail.bidCol")}</th>
-                  <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2 px-2.5">{t("owner.projectDetail.timelineCol")}</th>
-                  <th className="border-b-2 border-navy py-2 px-2.5"></th>
+                  <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2 px-2.5">{t("owner.projectDetail.contractorCol")}</th>
+                  <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2 px-2.5">{t("owner.projectDetail.ratingCol")}</th>
+                  <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2 px-2.5">{t("owner.projectDetail.bidCol")}</th>
+                  <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2 px-2.5">{t("owner.projectDetail.timelineCol")}</th>
+                  <th className="border-b border-border py-2 px-2.5"></th>
                 </tr>
               </thead>
               <tbody>
@@ -450,11 +450,11 @@ export function OwnerProjectDetailPage() {
 
       {approvedOffer && (
         <div className="mt-8 max-w-xl">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-2">
             {t("owner.projectDetail.rateContractor")} {approvedOffer.contractor_company_name ?? t("owner.projectDetail.theContractor")}
           </h3>
           {existingReview ? (
-            <div className="bg-white border border-border rounded px-4.5 py-4">
+            <div className="bg-white border border-border rounded-lg shadow-sm px-4.5 py-4">
               <span className="text-amber text-lg tracking-tight">{stars(existingReview.rating)}</span>
               {existingReview.comment && <p className="text-sm text-steel mt-2">{existingReview.comment}</p>}
               <p className="font-mono text-[10.5px] text-steel-light mt-2">
@@ -467,7 +467,7 @@ export function OwnerProjectDetailPage() {
                 e.preventDefault();
                 reviewMutation.mutate();
               }}
-              className="bg-white border border-border rounded px-4.5 py-4 grid gap-3.5"
+              className="bg-white border border-border rounded-lg shadow-sm px-4.5 py-4 grid gap-3.5"
             >
               <RatingInput value={rating} onChange={setRating} />
               <textarea
@@ -475,7 +475,7 @@ export function OwnerProjectDetailPage() {
                 onChange={(e) => setComment(e.target.value)}
                 rows={3}
                 placeholder={t("owner.projectDetail.ratingPlaceholder")}
-                className="w-full border border-border rounded px-3 py-2.5 text-sm resize-y"
+                className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 resize-y"
               />
               <button
                 type="submit"

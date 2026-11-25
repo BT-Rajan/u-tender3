@@ -16,7 +16,7 @@ function RoleFields({
   return (
     <>
       <div>
-        <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1.5">
+        <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">
           {t("auth.signup.iAmA")}
         </label>
         <div className="flex border border-navy rounded overflow-hidden w-fit">
@@ -39,10 +39,10 @@ function RoleFields({
 
       {role === "contractor" && (
         <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">
             {t("auth.signup.companyName")}
           </label>
-          <input name="company_name" required className="w-full border border-border rounded px-3 py-2.5 text-sm" />
+          <input name="company_name" required className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           <p className="text-xs text-steel-light mt-1">{t("auth.signup.companyNameHint")}</p>
         </div>
       )}
@@ -94,7 +94,7 @@ export function SignupPage() {
         <LanguageSwitcher />
       </div>
 
-      <h1 className="font-display text-xl font-semibold text-navy mb-6">{t("auth.signup.heading")}</h1>
+      <h1 className="font-display text-2xl font-bold text-navy mb-6">{t("auth.signup.heading")}</h1>
 
       {error && <p className="text-xs bg-red-tint text-red border border-red rounded px-3 py-2.5 mb-4">{error}</p>}
 
@@ -102,19 +102,19 @@ export function SignupPage() {
         <RoleFields role={role} setRole={setRole} />
 
         <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">
             {t("auth.signup.fullName")}
           </label>
-          <input name="full_name" required className="w-full border border-border rounded px-3 py-2.5 text-sm" />
+          <input name="full_name" required className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
         </div>
         <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">
             {t("auth.signup.email")}
           </label>
-          <input type="email" name="email" required className="w-full border border-border rounded px-3 py-2.5 text-sm" />
+          <input type="email" name="email" required className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
         </div>
         <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">
             {t("auth.signup.password")}
           </label>
           <input
@@ -122,7 +122,7 @@ export function SignupPage() {
             name="password"
             required
             minLength={8}
-            className="w-full border border-border rounded px-3 py-2.5 text-sm"
+            className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
           />
         </div>
 

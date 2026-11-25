@@ -53,8 +53,8 @@ export function OwnerVerifyPage() {
 
   return (
     <main className="max-w-4xl mx-auto px-5 py-10">
-      <span className="font-mono text-[11px] uppercase tracking-widest text-amber-dark block mb-2">{t("owner.verify.eyebrow")}</span>
-      <h1 className="font-display text-2xl font-semibold text-navy mb-2">{t("owner.verify.heading")}</h1>
+      <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-2">{t("owner.verify.eyebrow")}</span>
+      <h1 className="font-display text-3xl font-bold text-navy mb-2">{t("owner.verify.heading")}</h1>
       <p className="text-sm text-steel mb-8">{t("owner.verify.description")}</p>
 
       <ErrorBanner message={error} />
@@ -64,9 +64,9 @@ export function OwnerVerifyPage() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="text-left">
-              <th className="font-mono text-[10px] uppercase text-steel border-b-2 border-navy py-2">{t("owner.verify.document")}</th>
-              <th className="font-mono text-[10px] uppercase text-steel border-b-2 border-navy py-2">{t("owner.verify.statusCol")}</th>
-              <th className="border-b-2 border-navy py-2"></th>
+              <th className="font-mono text-[10px] uppercase text-steel border-b border-border py-2">{t("owner.verify.document")}</th>
+              <th className="font-mono text-[10px] uppercase text-steel border-b border-border py-2">{t("owner.verify.statusCol")}</th>
+              <th className="border-b border-border py-2"></th>
             </tr>
           </thead>
           <tbody>

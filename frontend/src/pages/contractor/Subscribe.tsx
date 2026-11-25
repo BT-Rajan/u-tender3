@@ -111,8 +111,8 @@ export function ContractorSubscribePage() {
 
   return (
     <main className="max-w-3xl mx-auto px-5 py-8">
-      <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">{t("contractor.subscribe.eyebrow")}</span>
-      <h1 className="font-display text-2xl font-semibold text-navy mb-1">
+      <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("contractor.subscribe.eyebrow")}</span>
+      <h1 className="font-display text-3xl font-bold text-navy mb-1">
         {isActive ? t("contractor.subscribe.headingActive") : t("contractor.subscribe.headingInactive")}
       </h1>
       <p className="text-[13.5px] text-steel mb-7">

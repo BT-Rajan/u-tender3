@@ -110,8 +110,8 @@ export function ContractorDashboardPage() {
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">{t("contractor.roleLabel")}</span>
-        <h1 className="font-display text-2xl font-semibold text-navy mb-1">{profile.company_name}</h1>
+        <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("contractor.roleLabel")}</span>
+        <h1 className="font-display text-3xl font-bold text-navy mb-1">{profile.company_name}</h1>
       </div>
 
       {banner && (
@@ -135,28 +135,28 @@ export function ContractorDashboardPage() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
             <div className="border border-border bg-white rounded px-4 py-3">
-              <div className="font-display text-2xl font-semibold text-navy leading-none">{activeBids}</div>
-              <div className="font-mono text-[10px] uppercase tracking-wide text-steel mt-1">{t("contractor.dashboard.kpiActiveBids")}</div>
+              <div className="font-display text-3xl font-bold text-navy leading-none">{activeBids}</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{t("contractor.dashboard.kpiActiveBids")}</div>
             </div>
             <div className="border border-border bg-white rounded px-4 py-3">
               <div className="font-display text-2xl font-semibold text-green leading-none">{won}</div>
-              <div className="font-mono text-[10px] uppercase tracking-wide text-steel mt-1">{t("contractor.dashboard.kpiProjectsWon")}</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{t("contractor.dashboard.kpiProjectsWon")}</div>
             </div>
             <div className="border border-border bg-white rounded px-4 py-3">
-              <div className="font-display text-2xl font-semibold text-navy leading-none">{totalBids}</div>
-              <div className="font-mono text-[10px] uppercase tracking-wide text-steel mt-1">{t("contractor.dashboard.kpiTotalBids")}</div>
+              <div className="font-display text-3xl font-bold text-navy leading-none">{totalBids}</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{t("contractor.dashboard.kpiTotalBids")}</div>
             </div>
           </div>
 
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-mono text-[11px] uppercase tracking-wide text-navy">{t("contractor.dashboard.myBids")}</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-navy">{t("contractor.dashboard.myBids")}</h2>
             <Link to="/contractor/feed" className="text-xs text-navy underline">
               {t("contractor.dashboard.browseOpenProjects")}
             </Link>
           </div>
 
           {!bids?.length ? (
-            <div className="border border-dashed border-border rounded p-10 text-center text-sm text-steel">
+            <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">
               {t("contractor.dashboard.noBidsYetPrefix")}{" "}
               <Link to="/contractor/feed" className="text-navy underline">
                 {t("contractor.dashboard.browseOpenProjects")}

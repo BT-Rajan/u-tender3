@@ -82,10 +82,10 @@ export function AdminOwnerDetailPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-5 py-8">
-      <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">{t("admin.owners.eyebrow")}</span>
+      <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("admin.owners.eyebrow")}</span>
       <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-navy mb-1">{owner.full_name || owner.email}</h1>
+          <h1 className="font-display text-3xl font-bold text-navy mb-1">{owner.full_name || owner.email}</h1>
           <p className="text-[13.5px] text-steel">{owner.email}</p>
         </div>
         <Link to={`/admin/users/${id}/history`} className="self-center text-sm font-semibold text-navy hover:underline">
@@ -97,15 +97,15 @@ export function AdminOwnerDetailPage() {
       <ErrorBanner message={error} />
 
       <div className="grid gap-4">
-        <div className="bg-white border border-border rounded px-5 py-4.5">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">{t("admin.ownerDetail.documentsHeading")}</h3>
+        <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">{t("admin.ownerDetail.documentsHeading")}</h3>
           <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2">{t("admin.ownerDetail.document")}</th>
-                <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2">{t("admin.ownerDetail.statusCol")}</th>
-                <th className="border-b-2 border-navy py-2"></th>
+                <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2">{t("admin.ownerDetail.document")}</th>
+                <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2">{t("admin.ownerDetail.statusCol")}</th>
+                <th className="border-b border-border py-2"></th>
               </tr>
             </thead>
             <tbody>
@@ -147,8 +147,8 @@ export function AdminOwnerDetailPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-border rounded px-5 py-4.5">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">{t("admin.ownerDetail.applicationHeading")}</h3>
+        <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">{t("admin.ownerDetail.applicationHeading")}</h3>
           <p className="text-[11.5px] text-steel-light mb-3">
             {t("admin.ownerDetail.currentStatus")}: <span className="font-mono uppercase">{owner.verification_status.replace("_", " ")}</span>
           </p>
@@ -172,8 +172,8 @@ export function AdminOwnerDetailPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-border rounded px-5 py-4.5">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">{t("admin.ownerDetail.accessHeading")}</h3>
+        <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">{t("admin.ownerDetail.accessHeading")}</h3>
           <button
             type="button"
             onClick={() => suspendMutation.mutate()}
@@ -186,8 +186,8 @@ export function AdminOwnerDetailPage() {
           </p>
         </div>
 
-        <div className="bg-white border border-border rounded px-5 py-4.5">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">{t("admin.ownerDetail.projectsHeading")}</h3>
+        <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">{t("admin.ownerDetail.projectsHeading")}</h3>
           {!projects?.length ? (
             <p className="text-[12.5px] text-steel-light">{t("admin.ownerDetail.noProjects")}</p>
           ) : (
@@ -195,10 +195,10 @@ export function AdminOwnerDetailPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2">{t("admin.ownerDetail.projectTitleCol")}</th>
-                    <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2">{t("admin.ownerDetail.projectStatusCol")}</th>
-                    <th className="font-mono text-[10px] uppercase tracking-wide text-steel text-left border-b-2 border-navy py-2">{t("admin.ownerDetail.projectOffersCol")}</th>
-                    <th className="border-b-2 border-navy py-2"></th>
+                    <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2">{t("admin.ownerDetail.projectTitleCol")}</th>
+                    <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2">{t("admin.ownerDetail.projectStatusCol")}</th>
+                    <th className="text-xs font-semibold uppercase tracking-wide text-steel text-left border-b border-border py-2">{t("admin.ownerDetail.projectOffersCol")}</th>
+                    <th className="border-b border-border py-2"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -211,7 +211,7 @@ export function AdminOwnerDetailPage() {
                       <td className="py-2.5 font-mono text-[11px] uppercase text-steel">{p.status.replace(/_/g, " ")}</td>
                       <td className="py-2.5 font-mono text-sm text-navy">{p.offer_count}</td>
                       <td className="py-2.5">
-                        <Link to={`/admin/projects/${p.id}`} className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded px-2.5 py-1">
+                        <Link to={`/admin/projects/${p.id}`} className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-2.5 py-1">
                           {t("admin.ownerDetail.viewProject")}
                         </Link>
                       </td>
@@ -224,7 +224,7 @@ export function AdminOwnerDetailPage() {
         </div>
 
         <div className="bg-white border border-red/30 rounded px-5 py-4.5">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-red mb-3">{t("admin.ownerDetail.dangerZone")}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-red mb-3">{t("admin.ownerDetail.dangerZone")}</h3>
           <p className="text-[11.5px] text-steel-light mb-3">
             {owner.project_count > 0 ? t("admin.ownerDetail.deleteBlockedNote") : t("admin.ownerDetail.deleteNote")}
           </p>

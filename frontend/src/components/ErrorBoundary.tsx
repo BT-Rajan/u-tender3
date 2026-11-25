@@ -42,7 +42,7 @@ function ErrorFallback() {
   const { t } = useI18n();
   return (
     <main className="max-w-md mx-auto px-5 py-20 text-center">
-      <h1 className="font-display text-2xl font-semibold text-navy mb-2">{t("errors.crashTitle")}</h1>
+      <h1 className="font-display text-3xl font-bold text-navy mb-2">{t("errors.crashTitle")}</h1>
       <p className="text-sm text-steel mb-6">{t("errors.crashBody")}</p>
       <button
         type="button"

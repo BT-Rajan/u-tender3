@@ -51,19 +51,19 @@ function CmsRow({ entry }: { entry: CmsEntry }) {
   });
 
   return (
-    <div className="bg-white border border-border rounded px-5 py-4.5">
+    <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
       <h3 className="font-display font-semibold text-sm text-navy mb-3">{KEY_LABELS[entry.key] ?? entry.key}</h3>
       <ErrorBanner message={error} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block font-mono text-[10px] uppercase tracking-wide text-steel mb-1">English</label>
-          <textarea value={en} onChange={(e) => setEn(e.target.value)} rows={3} className="w-full border border-border rounded px-3 py-2 text-sm resize-y" />
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">English</label>
+          <textarea value={en} onChange={(e) => setEn(e.target.value)} rows={3} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 resize-y" />
           <div className="flex gap-2 mt-1.5">
             <button
               type="button"
               onClick={() => saveMutation.mutate("en")}
               disabled={saveMutation.isPending}
-              className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded px-3 py-1.5"
+              className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-3 py-1.5"
             >
               Save
             </button>
@@ -73,14 +73,14 @@ function CmsRow({ entry }: { entry: CmsEntry }) {
           </div>
         </div>
         <div dir="rtl">
-          <label className="block font-mono text-[10px] uppercase tracking-wide text-steel mb-1 text-right">العربية</label>
-          <textarea value={ar} onChange={(e) => setAr(e.target.value)} rows={3} className="w-full border border-border rounded px-3 py-2 text-sm resize-y text-right" />
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1 text-right">العربية</label>
+          <textarea value={ar} onChange={(e) => setAr(e.target.value)} rows={3} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 resize-y text-right" />
           <div className="flex gap-2 mt-1.5 justify-end">
             <button
               type="button"
               onClick={() => saveMutation.mutate("ar")}
               disabled={saveMutation.isPending}
-              className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded px-3 py-1.5"
+              className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-3 py-1.5"
             >
               حفظ
             </button>
@@ -107,8 +107,8 @@ export function AdminCmsPage() {
   return (
     <main className="max-w-4xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">Admin · Public site</span>
-        <h1 className="font-display text-2xl font-semibold text-navy mb-1">Website content</h1>
+        <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">Admin · Public site</span>
+        <h1 className="font-display text-3xl font-bold text-navy mb-1">Website content</h1>
         <p className="text-[13.5px] text-steel">Edit the public homepage copy in both English and Arabic. Live statistics below are not editable — they're always the real numbers.</p>
       </div>
 

@@ -72,8 +72,8 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
   const badge = MARKETPLACE_STATUS_BADGE[contractor.marketplace_status] ?? "bg-blue-tint text-steel";
 
   return (
-    <div className="bg-white border border-border rounded px-5 py-4.5">
-      <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">Marketplace access</h3>
+    <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">Marketplace access</h3>
       <div className="flex items-center gap-2 mb-3">
         <span className={`font-mono text-[10px] uppercase px-2.5 py-1 rounded-full ${badge}`}>{label}</span>
         {contractor.payment_override_active && (
@@ -88,7 +88,7 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
 
       <ErrorBanner message={error} />
 
-      <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">
+      <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">
         {contractor.payment_override_active ? "Revoke reason (optional)" : "Override reason (required)"}
       </label>
       <textarea
@@ -96,7 +96,7 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
         onChange={(e) => setReason(e.target.value)}
         rows={2}
         placeholder="Why is this override needed? This is recorded permanently."
-        className="w-full border border-border rounded px-3 py-2 text-sm mb-2 resize-y"
+        className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 mb-2 resize-y"
       />
       {contractor.payment_override_active ? (
         <button
@@ -112,7 +112,7 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
           type="button"
           onClick={() => grantMutation.mutate()}
           disabled={grantMutation.isPending || !reason.trim()}
-          className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded px-4 py-2 disabled:opacity-40"
+          className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-4 py-2 disabled:opacity-40"
         >
           Grant payment override
         </button>
@@ -120,7 +120,7 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
 
       {!!overrides?.length && (
         <div className="mt-4 border-t border-border pt-3">
-          <h4 className="font-mono text-[10px] uppercase tracking-wide text-steel mb-2">Override history</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-steel mb-2">Override history</h4>
           <ul className="space-y-2">
             {overrides.map((o) => (
               <li key={o.id} className="text-[11.5px] text-steel">
@@ -147,8 +147,8 @@ function ActivityLogPanel({ contractorId }: { contractorId: string }) {
   if (!entries?.length) return null;
 
   return (
-    <div className="bg-white border border-border rounded px-5 py-4.5">
-      <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">Activity log</h3>
+    <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">Activity log</h3>
       <ul className="space-y-2 max-h-64 overflow-y-auto">
         {entries.map((e) => (
           <li key={e.id} className="text-[11.5px] text-steel border-b border-border pb-2 last:border-0">
@@ -233,10 +233,10 @@ export function AdminContractorDetailPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-5 py-8">
-      <span className="font-mono text-[10.5px] uppercase tracking-widest text-amber-dark block mb-1">Admin · Contractors</span>
+      <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">Admin · Contractors</span>
       <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-navy mb-1">{contractor.company_name}</h1>
+          <h1 className="font-display text-3xl font-bold text-navy mb-1">{contractor.company_name}</h1>
           <Link to={`/admin/users/${id}/history`} className="text-sm font-semibold text-navy hover:underline">
             {t("history.link")}
           </Link>
@@ -256,24 +256,24 @@ export function AdminContractorDetailPage() {
             e.preventDefault();
             updateMutation.mutate();
           }}
-          className="grid gap-4 bg-white border border-border rounded px-5 py-4.5"
+          className="grid gap-4 bg-white border border-border rounded-lg shadow-sm px-5 py-4.5"
         >
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy -mb-1">Company details</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-navy -mb-1">Company details</h3>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">Company name</label>
-            <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} required className="w-full border border-border rounded px-3 py-2 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">Company name</label>
+            <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} required className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">License number</label>
-            <input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} className="w-full border border-border rounded px-3 py-2 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">License number</label>
+            <input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">Primary trade</label>
-            <input value={primaryTrade} onChange={(e) => setPrimaryTrade(e.target.value)} className="w-full border border-border rounded px-3 py-2 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">Primary trade</label>
+            <input value={primaryTrade} onChange={(e) => setPrimaryTrade(e.target.value)} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wide text-steel mb-1">Service area</label>
-            <input value={serviceArea} onChange={(e) => setServiceArea(e.target.value)} className="w-full border border-border rounded px-3 py-2 text-sm" />
+            <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">Service area</label>
+            <input value={serviceArea} onChange={(e) => setServiceArea(e.target.value)} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <button type="submit" className="bg-navy hover:bg-navy-deep text-white font-semibold text-sm rounded px-4 py-2 w-fit">
             Save changes
@@ -281,10 +281,10 @@ export function AdminContractorDetailPage() {
         </form>
 
         <div className="grid gap-4">
-          <div className="bg-white border border-border rounded px-5 py-4.5">
-            <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">Verification status</h3>
+          <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">Verification status</h3>
             <div className="flex items-center gap-2">
-              <select value={statusValue} onChange={(e) => setStatusValue(e.target.value)} className="border border-border rounded px-2.5 py-2 text-sm flex-1">
+              <select value={statusValue} onChange={(e) => setStatusValue(e.target.value)} className="rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 flex-1">
                 {STATUS_OPTIONS.map((s) => (
                   <option key={s} value={s}>
                     {s.replace("_", " ")}
@@ -294,7 +294,7 @@ export function AdminContractorDetailPage() {
               <button
                 type="button"
                 onClick={() => statusMutation.mutate()}
-                className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded px-3 py-2"
+                className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-3 py-2"
               >
                 Update
               </button>
@@ -304,8 +304,8 @@ export function AdminContractorDetailPage() {
 
           <MarketplaceAccessPanel contractorId={contractor.user_id} contractor={contractor} />
 
-          <div className="bg-white border border-border rounded px-5 py-4.5">
-            <h3 className="font-mono text-[11px] uppercase tracking-wide text-navy mb-3">Account access</h3>
+          <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">Account access</h3>
             <button
               type="button"
               onClick={() => suspendMutation.mutate()}
@@ -323,7 +323,7 @@ export function AdminContractorDetailPage() {
           <ActivityLogPanel contractorId={contractor.user_id} />
 
           <div className="bg-white border border-red/30 rounded px-5 py-4.5">
-            <h3 className="font-mono text-[11px] uppercase tracking-wide text-red mb-3">Danger zone</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-red mb-3">Danger zone</h3>
             <DeleteContractorForm
               contractorId={contractor.user_id}
               companyName={contractor.company_name}
