@@ -49,7 +49,7 @@ def test_new_owner_registers_on_whatsapp_then_sees_the_owner_dashboard(monkeypat
     _, public_pem = enable_whatsapp(monkeypatch)
     sender = RecordingSender()
 
-    _deliver(client, monkeypatch, sender, text_message("wamid.E2E1", WA_ID, "utender"))
+    _deliver(client, monkeypatch, sender, text_message("wamid.E2E1", WA_ID, "hi"))
     flow = sender.flows()[0]
     assert flow["flow_id"] == "flow-registration"
     assert flow["screen"] == "WELCOME"
@@ -67,7 +67,7 @@ def test_new_owner_registers_on_whatsapp_then_sees_the_owner_dashboard(monkeypat
 
     # The next message from the same number opens the dashboard for the new account.
     sender.sent.clear()
-    _deliver(client, monkeypatch, sender, text_message("wamid.E2E2", WA_ID, "utender"))
+    _deliver(client, monkeypatch, sender, text_message("wamid.E2E2", WA_ID, "menu"))
     dashboard = sender.flows()[0]
     assert dashboard["flow_id"] == "flow-owner"
     menu_token = dashboard["flow_token"]
@@ -87,21 +87,22 @@ def test_new_contractor_registers_then_sees_the_contractor_dashboard(monkeypatch
     _, public_pem = enable_whatsapp(monkeypatch)
     sender = RecordingSender()
 
-    _deliver(client, monkeypatch, sender, text_message("wamid.E2E3", WA_ID, "utender"))
+    _deliver(client, monkeypatch, sender, text_message("wamid.E2E3", WA_ID, "hi"))
     token = sender.flows()[0]["flow_token"]
 
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "contractor", "language": "ar"})
     reply, _ = flow_request(
         client,
         public_pem,
         token=token,
         action="data_exchange",
-        screen="REGISTER",
-        data={"full_name": "Omar Haddad", "address": "Block 9, Jabriya, Kuwait", "role": "contractor"},
+        screen="CONTRACTOR_DETAILS",
+        data={"contact_name": "Omar Haddad", "company_name": "Haddad Builders", "primary_trade": "Plumbing"},
     )
-    assert reply["screen"] == "RESULT_OK"
+    assert reply["screen"] == "SUCCESS"
 
     sender.sent.clear()
-    _deliver(client, monkeypatch, sender, text_message("wamid.E2E4", WA_ID, "utender"))
+    _deliver(client, monkeypatch, sender, text_message("wamid.E2E4", WA_ID, "menu"))
     assert sender.flows()[0]["flow_id"] == "flow-contractor"
 
 
@@ -109,12 +110,13 @@ def test_an_interrupted_registration_resumes_where_it_stopped(monkeypatch, clien
     _, public_pem = enable_whatsapp(monkeypatch)
     sender = RecordingSender()
 
-    _deliver(client, monkeypatch, sender, text_message("wamid.INT1", WA_ID, "utender"))
+    _deliver(client, monkeypatch, sender, text_message("wamid.INT1", WA_ID, "hi"))
     first_token = sender.flows()[0]["flow_token"]
-    # The customer closes the Flow here, before submitting the form. Nothing was saved yet.
+    flow_request(client, public_pem, token=first_token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "ar"})
+    # The customer closes the Flow here. Nothing was submitted for OWNER_DETAILS.
 
     sender.sent.clear()
-    _deliver(client, monkeypatch, sender, text_message("wamid.INT2", WA_ID, "utender"))
+    _deliver(client, monkeypatch, sender, text_message("wamid.INT2", WA_ID, "back"))
     resume_token = sender.flows()[0]["flow_token"]
     assert resume_token != first_token
 
@@ -122,25 +124,18 @@ def test_an_interrupted_registration_resumes_where_it_stopped(monkeypatch, clien
     assert reply == {"screen": "EXPIRED", "data": {}}
 
     reply, _ = flow_request(client, public_pem, token=resume_token, action="INIT")
-    assert reply == {"screen": "SPLASH", "data": {}}
+    assert reply == {"screen": "OWNER_DETAILS", "data": {}}
 
-    reply, _ = flow_request(
-        client,
-        public_pem,
-        token=resume_token,
-        action="data_exchange",
-        screen="REGISTER",
-        data={"full_name": "Layla Al-Sabah", "address": "Block 4, Street 12, Salmiya", "role": "owner"},
-    )
-    assert reply["screen"] == "RESULT_OK"
+    reply, _ = flow_request(client, public_pem, token=resume_token, action="data_exchange", screen="OWNER_DETAILS", data={"full_name": "Layla Al-Sabah"})
+    assert reply["screen"] == "SUCCESS"
     user = db.scalar(select(User).where(User.phone == f"+{WA_ID}"))
-    assert user.address == "Block 4, Street 12, Salmiya"
+    assert user.language.value == "ar"
 
 
 def test_a_duplicate_webhook_does_not_send_a_second_flow(monkeypatch, client, db):
     enable_whatsapp(monkeypatch)
     sender = RecordingSender()
-    message = text_message("wamid.DUPE1", WA_ID, "utender")
+    message = text_message("wamid.DUPE1", WA_ID, "hi")
 
     _deliver(client, monkeypatch, sender, message)
     _deliver(client, monkeypatch, sender, message)
@@ -159,7 +154,7 @@ def test_a_failed_send_is_left_in_the_outbox_for_the_cron_to_retry(monkeypatch, 
 
             raise WhatsAppSendError("network down", transient=True)
 
-    _deliver(client, monkeypatch, BrokenSender(), text_message("wamid.RETRY1", WA_ID, "utender"))
+    _deliver(client, monkeypatch, BrokenSender(), text_message("wamid.RETRY1", WA_ID, "hi"))
 
     row = db.query(WhatsAppOutbox).one()
     assert row.status == "pending"
@@ -171,7 +166,7 @@ def test_a_failed_send_is_left_in_the_outbox_for_the_cron_to_retry(monkeypatch, 
 def test_the_flow_token_is_removed_from_the_outbox_after_a_successful_send(monkeypatch, client, db):
     enable_whatsapp(monkeypatch)
     sender = RecordingSender()
-    _deliver(client, monkeypatch, sender, text_message("wamid.SECRET1", WA_ID, "utender"))
+    _deliver(client, monkeypatch, sender, text_message("wamid.SECRET1", WA_ID, "hi"))
 
     row = db.query(WhatsAppOutbox).one()
     assert row.status == "sent"

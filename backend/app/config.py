@@ -63,22 +63,12 @@ class Settings(BaseSettings):
     whatsapp_enabled: bool = False
     whatsapp_app_secret: str | None = None  # signs webhooks and Flow requests
     whatsapp_verify_token: str | None = None  # GET subscription handshake
-    # Shared with Cogzi, which forwards messages that start with the trigger word
-    # from the shared Karkathar number. Signs /whatsapp/forward requests.
-    whatsapp_forward_secret: str | None = None
-    # Cogzi's relay endpoint. When set, outgoing messages go through Cogzi, which sends them from the shared number.
-    whatsapp_relay_url: str | None = None
     whatsapp_access_token: str | None = None
     whatsapp_phone_number_id: str | None = None
     whatsapp_api_version: str = "v21.0"
     whatsapp_api_url: str = "https://graph.facebook.com"
     whatsapp_flow_private_key: str | None = None  # PEM, RSA >= 2048 bits; never leaves U-Tender
     whatsapp_outbox_max_attempts: int = 8
-    # Option 1 bridge: Cogzi forwards inbound messages for a number it still owns. This is the
-    # shared secret that signs those forwarded events (Cogzi's outgoing webhook secret).
-    whatsapp_bridge_secret: str | None = None
-    # A forwarded message starts the registration Flow only when its text matches this word exactly.
-    whatsapp_bridge_trigger: str = "utender"
     whatsapp_message_retention_days: int = 30
     # Flow IDs issued by Meta when Cogzi publishes the Flows in
     # backend/whatsapp_flows/. Until these are set, the bot falls back to text.
@@ -102,16 +92,13 @@ class Settings(BaseSettings):
     upload_link_ttl_minutes: int = 20
     upload_link_max_wrong_codes: int = 5
 
-    # An env line left blank (e.g. "S3_ENDPOINT_URL=" copied from .env.example)
-    # must mean "not set". Otherwise an optional value arrives as "" and
-    # libraries such as boto3 try to use it and fail.
     @field_validator("*", mode="before")
     @classmethod
-    def _blank_optional_is_unset(cls, value, info):
-        if isinstance(value, str) and not value.strip():
-            field = cls.model_fields.get(info.field_name)
-            if field is not None and type(None) in typing.get_args(field.annotation):
-                return None
+    def _blank_optional_is_none(cls, value, info):
+        """A blank line such as S3_ENDPOINT_URL= means "not set" for optional settings, not an empty value."""
+        field = cls.model_fields[info.field_name]
+        if isinstance(value, str) and not value.strip() and type(None) in typing.get_args(field.annotation):
+            return None
         return value
 
 

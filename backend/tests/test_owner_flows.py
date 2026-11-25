@@ -48,7 +48,7 @@ def _owner(db, wa_id, *, verified=True, email=None):
 
 def _open_dashboard(client, monkeypatch, sender, wa_id, tag) -> str:
     monkeypatch.setattr(whatsapp_router, "build_whatsapp_sender", lambda: sender)
-    raw = json.dumps(message_envelope(text_message(f"wamid.DASH{tag}", wa_id, "utender"))).encode()
+    raw = json.dumps(message_envelope(text_message(f"wamid.DASH{tag}", wa_id, "menu"))).encode()
     client.post("/whatsapp/webhook", content=raw, headers={"X-Hub-Signature-256": sign(raw), "Content-Type": "application/json"})
     return sender.flows()[-1]["flow_token"]
 

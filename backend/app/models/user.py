@@ -24,7 +24,6 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(Enum(UserRole, native_enum=True), nullable=False, default=UserRole.owner)
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
     language: Mapped[Language] = mapped_column(Enum(Language, native_enum=True), nullable=False, default=Language.en)
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

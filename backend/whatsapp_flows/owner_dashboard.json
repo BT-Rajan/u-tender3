@@ -3,6 +3,7 @@
   "data_api_version": "3.0",
   "routing_model": {
     "MENU": [
+      "MENU",
       "DOCUMENTS",
       "COMING_SOON",
       "EXPIRED",
@@ -10,23 +11,28 @@
       "MY_TENDERS"
     ],
     "DOCUMENTS": [
-      "LINKS_SENT"
+      "LINKS_SENT",
+      "DOCUMENTS"
     ],
     "CREATE_TENDER": [
       "REVIEW",
+      "CREATE_TENDER",
       "MENU"
     ],
     "REVIEW": [
       "DONE",
       "CREATE_TENDER",
+      "REVIEW",
       "MENU",
       "MY_TENDERS"
     ],
     "MY_TENDERS": [
       "TENDER_DETAILS",
+      "MY_TENDERS",
       "MENU"
     ],
     "TENDER_DETAILS": [
+      "TENDER_DETAILS",
       "CREATE_TENDER",
       "AMEND",
       "DONE",
@@ -35,6 +41,7 @@
     ],
     "AMEND": [
       "DONE",
+      "AMEND",
       "MENU",
       "MY_TENDERS"
     ]

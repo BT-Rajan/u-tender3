@@ -37,7 +37,7 @@ def requirements(db):
     db.commit()
 
 
-def _new_session(db, wa_id: str = WA_ID, screen: str = "SPLASH", state=None):
+def _new_session(db, wa_id: str = WA_ID, screen: str = "ROLE", state=None):
     identity = get_or_create_identity(db, wa_id, now=datetime.utcnow())
     session, token = create_flow_session(
         db, identity, flow_name="registration", now=datetime.utcnow(), screen=screen, state=state
@@ -49,164 +49,192 @@ def _user_for(db, wa_id: str = WA_ID) -> User | None:
     return db.scalar(select(User).where(User.phone == f"+{wa_id}"))
 
 
-OWNER_DATA = {"full_name": "Layla Al-Sabah", "address": "Block 4, Street 12, Salmiya", "role": "owner"}
-CONTRACTOR_DATA = {"full_name": "Omar Haddad", "address": "Block 9, Jabriya, Kuwait", "role": "contractor"}
-
-
 def test_owner_registration_creates_a_passwordless_emailless_owner(monkeypatch, client, db, requirements):
     _, public_pem = enable_whatsapp(monkeypatch)
     identity, _, token = _new_session(db)
 
     reply, _ = flow_request(client, public_pem, token=token, action="INIT")
-    assert reply == {"screen": "SPLASH", "data": {}}
+    assert reply == {"screen": "ROLE", "data": {}}
 
-    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="REGISTER", data=OWNER_DATA)
-    assert reply["screen"] == "RESULT_OK"
+    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "ar"})
+    assert reply == {"screen": "OWNER_DETAILS", "data": {}}
+
+    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="OWNER_DETAILS", data={"full_name": "Layla Al-Sabah"})
+    assert reply["screen"] == "SUCCESS"
+
     user = _user_for(db)
     assert user is not None
     assert user.role == UserRole.owner
+    assert user.full_name == "Layla Al-Sabah"
+    assert user.language.value == "ar"
     assert user.email is None
     assert user.password_hash is None
-    assert user.address == "Block 4, Street 12, Salmiya"
-    assert reply["data"]["reference"] == user.id
-    assert "Review offers" in reply["data"]["capabilities"]
+    assert user.email_verified is False
+    assert db.get(OwnerProfile, user.id) is not None
+    assert db.scalar(select(OwnerDocument).where(OwnerDocument.owner_id == user.id)) is not None
 
 
 def test_owner_registration_links_the_identity_and_completes_the_session(monkeypatch, client, db, requirements):
     _, public_pem = enable_whatsapp(monkeypatch)
     identity, session, token = _new_session(db)
 
-    flow_request(client, public_pem, token=token, action="data_exchange", screen="REGISTER", data=OWNER_DATA)
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "en"})
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="OWNER_DETAILS", data={"full_name": "Omar Haddad"})
 
     db.refresh(identity)
     db.refresh(session)
-    assert identity.user_id == _user_for(db).id
-    assert identity.role == UserRole.owner.value
+    user = _user_for(db)
+    assert identity.user_id == user.id
+    assert identity.role == "owner"
     assert session.completed_at is not None
+    assert session.state_json is None
 
 
-def test_contractor_registration_uses_the_name_for_company_and_contact(monkeypatch, client, db, requirements):
+def test_contractor_registration_stores_company_trade_and_contact(monkeypatch, client, db, requirements):
     _, public_pem = enable_whatsapp(monkeypatch)
     _, _, token = _new_session(db)
 
-    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="REGISTER", data=CONTRACTOR_DATA)
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "contractor", "language": "en"})
+    reply, _ = flow_request(
+        client,
+        public_pem,
+        token=token,
+        action="data_exchange",
+        screen="CONTRACTOR_DETAILS",
+        data={"contact_name": "Omar Haddad", "company_name": "Haddad Builders", "primary_trade": "Electrical"},
+    )
 
-    assert reply["screen"] == "RESULT_OK"
-    assert "send offers" in reply["data"]["capabilities"]
+    assert reply["screen"] == "SUCCESS"
     user = _user_for(db)
     assert user.role == UserRole.contractor
     assert user.full_name == "Omar Haddad"
-    assert user.address == "Block 9, Jabriya, Kuwait"
-    profile = db.scalar(select(ContractorProfile).where(ContractorProfile.user_id == user.id))
-    assert profile.company_name == "Omar Haddad"
-    assert profile.primary_trade == "Other"
+    assert user.email is None and user.password_hash is None
+    profile = db.get(ContractorProfile, user.id)
+    assert profile.company_name == "Haddad Builders"
+    assert profile.primary_trade == "Electrical"
+    assert db.scalar(select(ContractorDocument).where(ContractorDocument.contractor_id == user.id)) is not None
 
 
-def test_an_invalid_name_keeps_the_user_on_the_form_and_creates_nothing(monkeypatch, client, db, requirements):
+def test_an_invalid_name_keeps_the_user_on_the_same_screen_and_creates_nothing(monkeypatch, client, db, requirements):
     _, public_pem = enable_whatsapp(monkeypatch)
     _, _, token = _new_session(db)
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "en"})
 
-    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="REGISTER", data={**OWNER_DATA, "full_name": "A"})
+    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="OWNER_DETAILS", data={"full_name": "A"})
 
-    assert reply["screen"] == "REGISTER"
-    assert "Full name" in reply["data"]["error_message"]
+    assert reply["screen"] == "OWNER_DETAILS"
+    assert "error_message" in reply["data"]
     assert _user_for(db) is None
 
 
-def test_an_invalid_address_keeps_the_user_on_the_form(monkeypatch, client, db, requirements):
+def test_an_unlisted_trade_is_refused(monkeypatch, client, db, requirements):
     _, public_pem = enable_whatsapp(monkeypatch)
     _, _, token = _new_session(db)
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "contractor", "language": "en"})
 
-    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="REGISTER", data={**OWNER_DATA, "address": "Ab"})
+    reply, _ = flow_request(
+        client,
+        public_pem,
+        token=token,
+        action="data_exchange",
+        screen="CONTRACTOR_DETAILS",
+        data={"contact_name": "Omar", "company_name": "Haddad Builders", "primary_trade": "Astrology"},
+    )
 
-    assert reply["screen"] == "REGISTER"
-    assert "Address" in reply["data"]["error_message"]
+    assert reply["screen"] == "CONTRACTOR_DETAILS"
+    assert "trade" in reply["data"]["error_message"].lower()
     assert _user_for(db) is None
 
 
-def test_a_missing_role_keeps_the_user_on_the_form(monkeypatch, client, db, requirements):
+def test_an_invalid_role_or_language_is_refused_on_the_first_screen(monkeypatch, client, db, requirements):
     _, public_pem = enable_whatsapp(monkeypatch)
     _, _, token = _new_session(db)
 
-    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="REGISTER", data={**OWNER_DATA, "role": "admin"})
+    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "admin", "language": "en"})
+    assert reply["screen"] == "ROLE"
+    assert "error_message" in reply["data"]
 
-    assert reply["screen"] == "REGISTER"
-    assert _user_for(db) is None
+    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "fr"})
+    assert reply["screen"] == "ROLE"
 
 
 def test_resume_returns_the_saved_screen_and_answers(monkeypatch, client, db, requirements):
     _, public_pem = enable_whatsapp(monkeypatch)
-    _, _, token = _new_session(db, screen="REGISTER", state={"full_name": "Layla Al-Sabah", "address": "Block 4, Salmiya"})
+    _, _, token = _new_session(db)
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "ar"})
 
     reply, _ = flow_request(client, public_pem, token=token, action="INIT")
 
-    assert reply == {"screen": "REGISTER", "data": {"full_name": "Layla Al-Sabah", "address": "Block 4, Salmiya"}}
+    assert reply == {"screen": "OWNER_DETAILS", "data": {}}
 
 
 def test_a_completed_session_token_no_longer_works(monkeypatch, client, db, requirements):
     _, public_pem = enable_whatsapp(monkeypatch)
     _, _, token = _new_session(db)
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "en"})
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="OWNER_DETAILS", data={"full_name": "Omar Haddad"})
 
-    flow_request(client, public_pem, token=token, action="data_exchange", screen="REGISTER", data=OWNER_DATA)
-    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="REGISTER", data=OWNER_DATA)
+    reply, _ = flow_request(client, public_pem, token=token, action="INIT")
 
     assert reply == {"screen": "EXPIRED", "data": {}}
 
 
 def test_an_unknown_token_gets_the_expired_screen(monkeypatch, client):
     _, public_pem = enable_whatsapp(monkeypatch)
-    reply, _ = flow_request(client, public_pem, token="not-a-real-token", action="INIT")
+    reply, _ = flow_request(client, public_pem, token="never-issued", action="INIT")
     assert reply == {"screen": "EXPIRED", "data": {}}
 
 
 def test_an_expired_session_gets_the_expired_screen(monkeypatch, client, db):
     _, public_pem = enable_whatsapp(monkeypatch)
-    _, session, token = _new_session(db)
-    session.expires_at = datetime.utcnow() - timedelta(minutes=1)
-    db.commit()
+    identity = get_or_create_identity(db, WA_ID, now=datetime.utcnow())
+    _, token = create_flow_session(
+        db, identity, flow_name="registration", now=datetime(2020, 1, 1), ttl=timedelta(hours=1)
+    )
 
     reply, _ = flow_request(client, public_pem, token=token, action="INIT")
 
     assert reply == {"screen": "EXPIRED", "data": {}}
 
 
-def test_back_returns_to_the_splash_screen(monkeypatch, client, db):
+def test_back_returns_to_the_role_screen(monkeypatch, client, db):
     _, public_pem = enable_whatsapp(monkeypatch)
-    _, _, token = _new_session(db, screen="REGISTER")
-
-    reply, _ = flow_request(client, public_pem, token=token, action="BACK", screen="REGISTER")
-
-    assert reply == {"screen": "SPLASH", "data": {}}
+    _, _, token = _new_session(db)
+    reply, _ = flow_request(client, public_pem, token=token, action="BACK", screen="OWNER_DETAILS")
+    assert reply == {"screen": "ROLE", "data": {}}
 
 
-def test_a_number_already_on_a_web_account_gets_the_error_result_without_linking(monkeypatch, client, db, requirements):
+def test_a_number_already_on_a_web_account_is_refused_without_linking(monkeypatch, client, db, requirements):
     _, public_pem = enable_whatsapp(monkeypatch)
     web_user = User(email="web@example.com", password_hash="hash", role=UserRole.owner, phone="+965 1234 5678")
     db.add(web_user)
     db.commit()
     identity, _, token = _new_session(db)
 
-    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="REGISTER", data=OWNER_DATA)
+    flow_request(client, public_pem, token=token, action="data_exchange", screen="ROLE", data={"role": "owner", "language": "en"})
+    reply, _ = flow_request(client, public_pem, token=token, action="data_exchange", screen="OWNER_DETAILS", data={"full_name": "Omar Haddad"})
 
-    assert reply["screen"] == "RESULT_ERROR"
-    assert reply["data"]["error_message"]
+    assert reply["screen"] == "NOT_COMPLETED"
     db.refresh(identity)
     assert identity.user_id is None
     assert db.query(User).count() == 1
 
 
 def test_a_second_registration_from_the_same_number_is_refused(db, requirements):
-    identity, session, _ = _new_session(db, screen="REGISTER")
-    register_owner(db, identity, session, full_name="Omar Haddad", address="Block 4, Salmiya", language="en", now=datetime.utcnow())
+    identity, session, _ = _new_session(db, screen="OWNER_DETAILS", state={"role": "owner", "language": "en"})
+    register_owner(db, identity, session, full_name="Omar Haddad", language="en", now=datetime.utcnow())
 
-    second_identity = identity
-    second_session, _ = create_flow_session(db, second_identity, flow_name="registration", now=datetime.utcnow(), screen="REGISTER")
-    with pytest.raises(RegistrationError):
-        register_owner(db, second_identity, second_session, full_name="Someone Else", address="Block 9, Jabriya", language="en", now=datetime.utcnow())
+    second_identity = get_or_create_identity(db, WA_ID, now=datetime.utcnow())
+    second_session, _ = create_flow_session(db, second_identity, flow_name="registration", now=datetime.utcnow(), screen="OWNER_DETAILS", state={"role": "owner", "language": "en"})
+    with pytest.raises(RegistrationError) as excinfo:
+        register_owner(db, second_identity, second_session, full_name="Someone Else", language="en", now=datetime.utcnow())
+
+    assert excinfo.value.code == "already_registered"
+    assert db.query(User).filter(User.phone == f"+{WA_ID}").count() == 1
 
 
 def test_a_failure_part_way_through_rolls_back_the_whole_account(db, requirements, monkeypatch):
-    identity, session, _ = _new_session(db, screen="REGISTER")
+    identity, session, _ = _new_session(db, screen="OWNER_DETAILS", state={"role": "owner", "language": "en"})
 
     def boom(*args, **kwargs):
         raise RuntimeError("simulated failure after the user row was written")
@@ -214,7 +242,7 @@ def test_a_failure_part_way_through_rolls_back_the_whole_account(db, requirement
     monkeypatch.setattr(registration_module, "ensure_owner_document_rows", boom)
 
     with pytest.raises(RuntimeError):
-        register_owner(db, identity, session, full_name="Omar Haddad", address="Block 4, Salmiya", language="en", now=datetime.utcnow())
+        register_owner(db, identity, session, full_name="Omar Haddad", language="en", now=datetime.utcnow())
 
     assert _user_for(db) is None
     assert db.query(OwnerProfile).count() == 0
@@ -224,39 +252,18 @@ def test_a_failure_part_way_through_rolls_back_the_whole_account(db, requirement
     assert session.completed_at is None
 
 
-def test_validation_rejects_blank_and_overlong_names_and_addresses(db, requirements):
-    identity, session, _ = _new_session(db, screen="REGISTER")
+def test_validation_rejects_blank_and_overlong_names(db, requirements):
+    identity, session, _ = _new_session(db, screen="OWNER_DETAILS", state={"role": "owner", "language": "en"})
     for bad in ("", " ", "x", "y" * 121):
         with pytest.raises(RegistrationError) as excinfo:
-            register_owner(db, identity, session, full_name=bad, address="Block 4, Salmiya", language="en", now=datetime.utcnow())
+            register_owner(db, identity, session, full_name=bad, language="en", now=datetime.utcnow())
         assert excinfo.value.code == "invalid"
-    with pytest.raises(RegistrationError) as excinfo:
-        register_owner(db, identity, session, full_name="Omar Haddad", address="z" * 256, language="en", now=datetime.utcnow())
-    assert excinfo.value.code == "invalid"
-    assert _user_for(db) is None
-
-
-def test_an_unlisted_trade_is_refused(db, requirements):
-    identity, session, _ = _new_session(db, screen="REGISTER")
-    with pytest.raises(RegistrationError) as excinfo:
-        registration_module.register_contractor(
-            db,
-            identity,
-            session,
-            contact_name="Omar Haddad",
-            company_name="Haddad Builders",
-            primary_trade="Astrology",
-            address="Block 9, Jabriya",
-            language="en",
-            now=datetime.utcnow(),
-        )
-    assert excinfo.value.code == "invalid"
     assert _user_for(db) is None
 
 
 def test_names_are_whitespace_normalised(db, requirements):
-    identity, session, _ = _new_session(db, screen="REGISTER")
-    user = register_owner(db, identity, session, full_name="  Omar    Haddad ", address="Block 4, Salmiya", language="en", now=datetime.utcnow())
+    identity, session, _ = _new_session(db, screen="OWNER_DETAILS", state={"role": "owner", "language": "en"})
+    user = register_owner(db, identity, session, full_name="  Omar    Haddad ", language="en", now=datetime.utcnow())
     assert user.full_name == "Omar Haddad"
 
 

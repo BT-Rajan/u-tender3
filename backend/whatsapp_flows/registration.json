@@ -67,12 +67,8 @@
         "type": "SingleColumnLayout",
         "children": [
           {
-            "type": "Image",
-            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAADAFBMVEUWMk/ohx7///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADSp4RLAAAAPklEQVR42u3NMQoAMAgEQfP/T9uKVUCLBGbqOzYCAHjaqQYbAQEBAQEBAQEBAQEBAYF2viEgICDwYwAAgF0JNUAGWqFjjHwAAAAASUVORK5CYII=",
-            "width": 120,
-            "height": 120,
-            "scale-type": "contain",
-            "alt-text": "U-Tender logo"
+            "type": "TextBody",
+            "text": "Choose how you will use U-Tender. Your role can't be changed later without support."
           },
           {
             "type": "RadioButtonsGroup",
@@ -108,22 +104,21 @@
           },
           {
             "type": "Footer",
-            "label": "Get started",
+            "label": "Continue",
             "on-click-action": {
-              "name": "navigate",
-              "next": {
-                "type": "screen",
-                "name": "REGISTER"
-              },
-              "payload": {}
+              "name": "data_exchange",
+              "payload": {
+                "role": "${form.role}",
+                "language": "${form.language}"
+              }
             }
           }
         ]
       }
     },
     {
-      "id": "REGISTER",
-      "title": "Create your account",
+      "id": "OWNER_DETAILS",
+      "title": "Your details",
       "terminal": false,
       "data": {
         "full_name": {
@@ -144,7 +139,7 @@
           },
           {
             "type": "TextInput",
-            "label": "Name or company",
+            "label": "Full name",
             "name": "full_name",
             "input-type": "text",
             "required": true,
@@ -195,10 +190,31 @@
             "text": "${data.error_message}"
           },
           {
-            "type": "RadioButtonsGroup",
-            "label": "I am a",
-            "name": "role",
+            "type": "TextInput",
+            "label": "Contact name",
+            "name": "contact_name",
+            "input-type": "text",
             "required": true,
+            "min-chars": 2,
+            "max-chars": 120,
+            "init-value": "${data.contact_name}"
+          },
+          {
+            "type": "TextInput",
+            "label": "Company name",
+            "name": "company_name",
+            "input-type": "text",
+            "required": true,
+            "min-chars": 2,
+            "max-chars": 255,
+            "init-value": "${data.company_name}"
+          },
+          {
+            "type": "Dropdown",
+            "label": "Primary trade",
+            "name": "primary_trade",
+            "required": true,
+            "init-value": "${data.primary_trade}",
             "data-source": [
               {
                 "id": "General contracting",
@@ -244,9 +260,9 @@
             "on-click-action": {
               "name": "data_exchange",
               "payload": {
-                "full_name": "${form.full_name}",
-                "address": "${form.address}",
-                "role": "${form.role}"
+                "contact_name": "${form.contact_name}",
+                "company_name": "${form.company_name}",
+                "primary_trade": "${form.primary_trade}"
               }
             }
           }
@@ -254,9 +270,10 @@
       }
     },
     {
-      "id": "RESULT_OK",
-      "title": "Account created",
-      "terminal": false,
+      "id": "SUCCESS",
+      "title": "All set",
+      "terminal": true,
+      "success": true,
       "data": {
         "message": {
           "type": "string",
@@ -268,38 +285,7 @@
         "children": [
           {
             "type": "TextBody",
-            "text": "${data.capabilities}"
-          },
-          {
-            "type": "Footer",
-            "label": "Next",
-            "on-click-action": {
-              "name": "navigate",
-              "next": {
-                "type": "screen",
-                "name": "THANKS"
-              },
-              "payload": {}
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": "THANKS",
-      "title": "Thank you",
-      "terminal": true,
-      "success": true,
-      "layout": {
-        "type": "SingleColumnLayout",
-        "children": [
-          {
-            "type": "TextHeading",
-            "text": "Thank you for joining U-Tender"
-          },
-          {
-            "type": "TextBody",
-            "text": "Send the word utender any time to open your dashboard."
+            "text": "${data.message}"
           },
           {
             "type": "Footer",
@@ -315,8 +301,8 @@
       }
     },
     {
-      "id": "RESULT_ERROR",
-      "title": "Registration not completed",
+      "id": "NOT_COMPLETED",
+      "title": "Account not created",
       "terminal": true,
       "success": false,
       "data": {
@@ -329,12 +315,8 @@
         "type": "SingleColumnLayout",
         "children": [
           {
-            "type": "TextHeading",
-            "text": "Registration not completed"
-          },
-          {
             "type": "TextBody",
-            "text": "${data.error_message}"
+            "text": "${data.message}"
           },
           {
             "type": "Footer",
@@ -359,7 +341,7 @@
         "children": [
           {
             "type": "TextBody",
-            "text": "This form has expired. Send the word utender to start again."
+            "text": "This form has expired. Send any message to U-Tender to start again."
           },
           {
             "type": "Footer",

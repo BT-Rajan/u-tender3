@@ -15,15 +15,16 @@ services:
     environment:
       MYSQL_DATABASE: utender
       MYSQL_USER: utender
-      MYSQL_PASSWORD: ${DB_PASSWORD:-utender}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      # Required. Compose stops with an error if these are not set in the environment or a .env file.
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD}
     command: ["--default-authentication-plugin=mysql_native_password"]
     ports:
       - "3306:3306"
     volumes:
       - db-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD:-root}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -34,7 +35,7 @@ services:
     # These override the values in backend/.env so the containers talk to
     # each other by service name, while the browser still uses localhost.
     environment:
-      DATABASE_URL: mysql+pymysql://utender:${DB_PASSWORD:-utender}@db:3306/utender
+      DATABASE_URL: mysql+pymysql://utender:${DB_PASSWORD:?set DB_PASSWORD}@db:3306/utender
       STORAGE_ROOT: /app/storage
       CORS_ORIGINS: http://localhost:5173
       APP_URL: http://localhost:5173
