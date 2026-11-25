@@ -40,7 +40,7 @@ export function AdminProjectsPage() {
       ) : !projects?.length ? (
         <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">{t("admin.projects.empty")}</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -59,7 +59,7 @@ export function AdminProjectsPage() {
                   <div className="text-[11.5px] text-steel-light">{p.address}</div>
                 </td>
                 <td className="py-3 px-2.5 text-[13px]">
-                  <div>{p.owner_name || p.owner_email || "—"}</div>
+                  <div>{p.owner_name || p.owner_email || "â€”"}</div>
                   {p.owner_name && <div className="text-[11px] text-steel-light">{p.owner_email}</div>}
                 </td>
                 <td className="py-3 px-2.5">

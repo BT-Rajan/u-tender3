@@ -78,7 +78,7 @@ export function ContractorStatusPage() {
         </span>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
       <table className="w-full border-collapse">
         <thead>
           <tr>

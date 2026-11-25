@@ -63,7 +63,7 @@ function DrawingHistory({ projectId, t }: { projectId: string; t: (key: string) 
     <ul className="mt-2 space-y-1 border-t border-white/20 pt-2">
       {history.map((d) => (
         <li key={d.id} className={`font-mono text-[10.5px] ${d.is_current ? "text-white" : "text-white/40"}`}>
-          v{d.revision} · {d.file_name} {d.is_current && t("owner.projectDetail.current")}{" "}
+          v{d.revision} Â· {d.file_name} {d.is_current && t("owner.projectDetail.current")}{" "}
           {d.url && (
             <a href={d.url} target="_blank" rel="noreferrer" className="underline">
               {t("owner.projectDetail.view")}
@@ -104,13 +104,13 @@ function OfferDetails({ projectId, offer, t }: { projectId: string; offer: Offer
       <p className="whitespace-pre-wrap text-navy mb-4">{offer.message || t("owner.projectDetail.noReply")}</p>
       <div className="text-xs font-semibold uppercase tracking-wide text-steel mb-2">{t("owner.projectDetail.revisionHistory")}</div>
       {isLoading ? (
-        <p className="text-steel">…</p>
+        <p className="text-steel">â€¦</p>
       ) : (
         <ul className="space-y-2">
           {history?.map((h) => (
             <li key={h.id} className="border-l-2 border-border pl-3">
               <div className="font-mono text-xs text-navy">
-                #{h.revision_number} · ${Number(h.amount).toLocaleString()} · {h.timeline_estimate || "—"} ·{" "}
+                #{h.revision_number} Â· ${Number(h.amount).toLocaleString()} Â· {h.timeline_estimate || "â€”"} Â·{" "}
                 {formatDateTime(h.recorded_at, language)}
               </div>
               {h.message && <p className="whitespace-pre-wrap text-steel text-[13px]">{h.message}</p>}
@@ -292,7 +292,7 @@ export function OwnerProjectDetailPage() {
                     ) : (
                       <span>{d.file_name}</span>
                     )}
-                    {d.revision > 1 && <span className="text-white/50"> · v{d.revision}</span>}
+                    {d.revision > 1 && <span className="text-white/50"> Â· v{d.revision}</span>}
                   </li>
                 ))}
               </ul>
@@ -337,7 +337,7 @@ export function OwnerProjectDetailPage() {
               deadlinePassed ? "bg-red-tint text-red border-red" : "bg-blue-tint text-blue border-blue"
             }`}
           >
-            ⏱ {timeRemaining(project.bid_deadline, language)} — {formatDateTime(project.bid_deadline, language)}
+            â± {timeRemaining(project.bid_deadline, language)} â€” {formatDateTime(project.bid_deadline, language)}
           </div>
           {project.description && (
             <div className="mt-4 text-sm text-steel">
@@ -357,7 +357,7 @@ export function OwnerProjectDetailPage() {
             </div>
           ) : offers[0]?.sealed ? (
             <div className="border border-dashed border-blue bg-blue-tint rounded p-8 text-center">
-              <div className="text-xl mb-2">🔒</div>
+              <div className="text-xl mb-2">ðŸ”’</div>
               <p className="text-sm text-navy font-semibold mb-1">
                 {offers.length} {t("owner.projectDetail.sealedBidsReceived")}
               </p>
@@ -366,7 +366,7 @@ export function OwnerProjectDetailPage() {
           ) : (
             <>
               <EvaluationSummary offers={offers} t={t} />
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
               <table className="w-full border-collapse">
               <thead>
                 <tr>
@@ -390,7 +390,7 @@ export function OwnerProjectDetailPage() {
                         {o.revision > 1 && (
                           <span className="text-steel-light font-normal">
                             {" "}
-                            · {t("owner.projectDetail.revisedSuffix")}
+                            Â· {t("owner.projectDetail.revisedSuffix")}
                             {o.revision - 1}
                           </span>
                         )}
@@ -402,9 +402,9 @@ export function OwnerProjectDetailPage() {
                       <span className="font-mono text-[11px] text-steel">({o.contractor_review_count ?? 0})</span>
                     </td>
                     <td className="py-3 px-2.5 font-mono font-semibold text-navy text-sm">
-                      {o.amount !== null ? `$${Number(o.amount).toLocaleString()}` : "—"}
+                      {o.amount !== null ? `$${Number(o.amount).toLocaleString()}` : "â€”"}
                     </td>
-                    <td className="py-3 px-2.5 font-mono text-xs">{o.timeline_estimate || "—"}</td>
+                    <td className="py-3 px-2.5 font-mono text-xs">{o.timeline_estimate || "â€”"}</td>
                     <td className="py-3 px-2.5">
                       {project.status === "awarded" || project.status === "no_award" ? (
                         <span

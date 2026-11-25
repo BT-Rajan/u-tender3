@@ -60,7 +60,7 @@ export function OwnerVerifyPage() {
       <ErrorBanner message={error} />
 
       <form onSubmit={handleSubmit} className="mb-10 grid gap-4 max-w-md">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
         <table className="w-full border-collapse">
           <thead>
             <tr className="text-left">

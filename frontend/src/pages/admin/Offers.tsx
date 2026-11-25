@@ -88,7 +88,7 @@ export function AdminOffersPage() {
                   className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-blue-tint/20"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className={`shrink-0 font-mono text-[11px] text-steel transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
+                    <span className={`shrink-0 font-mono text-[11px] text-steel transition-transform ${isOpen ? "rotate-90" : ""}`}>â–¶</span>
                     <span className="font-display font-semibold text-[14px] text-navy truncate">{g.project_title}</span>
                     {anySuspended && (
                       <span className="shrink-0 font-mono text-[10px] uppercase px-2 py-0.5 rounded-full bg-red-tint text-red">
@@ -106,10 +106,10 @@ export function AdminOffersPage() {
                   <div className="border-t border-border">
                     <div className="px-4 pt-2.5">
                       <Link to={`/admin/projects/${g.project_id}`} className="text-[11.5px] text-navy hover:underline">
-                        {t("admin.offers.viewProject")} →
+                        {t("admin.offers.viewProject")} â†’
                       </Link>
                     </div>
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
                     <table className="w-full border-collapse">
                       <thead>
                         <tr>
@@ -123,11 +123,11 @@ export function AdminOffersPage() {
                         {g.offers.map((o) => (
                           <tr key={o.id} className="border-t border-border">
                             <td className="py-2.5 px-4 text-[13px]">
-                              {o.contractor_company_name ?? "—"}
-                              {o.revision > 1 && <span className="text-[11px] text-steel-light"> · {t("admin.offers.revised")} x{o.revision - 1}</span>}
+                              {o.contractor_company_name ?? "â€”"}
+                              {o.revision > 1 && <span className="text-[11px] text-steel-light"> Â· {t("admin.offers.revised")} x{o.revision - 1}</span>}
                             </td>
                             <td className="py-2.5 px-2.5 font-mono font-semibold text-navy text-sm">
-                              {o.amount !== null ? `$${Number(o.amount).toLocaleString()}` : "—"}
+                              {o.amount !== null ? `$${Number(o.amount).toLocaleString()}` : "â€”"}
                             </td>
                             <td className="py-2.5 px-2.5">
                               <div className="flex items-center gap-1.5">

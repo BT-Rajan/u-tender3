@@ -80,7 +80,7 @@ export function ContractorVerifyPage() {
           />
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
         <table className="w-full border-collapse mt-4">
           <thead>
             <tr className="text-left">

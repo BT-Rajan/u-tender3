@@ -37,7 +37,7 @@ export function AdminOwnersPage() {
       ) : !owners?.length ? (
         <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">{t("admin.owners.empty")}</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
         <table className="w-full border-collapse">
           <thead>
             <tr>

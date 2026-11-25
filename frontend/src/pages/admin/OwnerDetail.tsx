@@ -99,7 +99,7 @@ export function AdminOwnerDetailPage() {
       <div className="grid gap-4">
         <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">{t("admin.ownerDetail.documentsHeading")}</h3>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -191,7 +191,7 @@ export function AdminOwnerDetailPage() {
           {!projects?.length ? (
             <p className="text-[12.5px] text-steel-light">{t("admin.ownerDetail.noProjects")}</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
               <table className="w-full border-collapse">
                 <thead>
                   <tr>

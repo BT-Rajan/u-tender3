@@ -66,7 +66,7 @@ function OfferRow({ offer, projectId, t }: { offer: AdminOffer; projectId: strin
       <tr className="border-b border-border bg-blue-tint/30">
         <td colSpan={5} className="py-3 px-2.5">
           <div className="text-[11.5px] font-mono uppercase tracking-wide text-steel mb-2">
-            {t("admin.projectDetail.editOfferHeading")} — {offer.contractor_company_name ?? "—"}
+            {t("admin.projectDetail.editOfferHeading")} â€” {offer.contractor_company_name ?? "â€”"}
           </div>
           {error && <div className="text-[11.5px] text-red mb-2">{error}</div>}
           <div className="grid sm:grid-cols-3 gap-2 mb-2">
@@ -111,15 +111,15 @@ function OfferRow({ offer, projectId, t }: { offer: AdminOffer; projectId: strin
   return (
     <tr className="border-b border-border">
       <td className="py-3 px-2.5">
-        <div className="text-[13px]">{offer.contractor_company_name ?? "—"}</div>
+        <div className="text-[13px]">{offer.contractor_company_name ?? "â€”"}</div>
         {offer.is_suspended && (
           <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded-full bg-red-tint text-red">
             {t("admin.projectDetail.offerSuspendedBadge")}
           </span>
         )}
       </td>
-      <td className="py-3 px-2.5 font-mono font-semibold text-navy text-sm">{offer.amount !== null ? `$${Number(offer.amount).toLocaleString()}` : "—"}</td>
-      <td className="py-3 px-2.5 text-[12.5px] text-steel">{offer.timeline_estimate || "—"}</td>
+      <td className="py-3 px-2.5 font-mono font-semibold text-navy text-sm">{offer.amount !== null ? `$${Number(offer.amount).toLocaleString()}` : "â€”"}</td>
+      <td className="py-3 px-2.5 text-[12.5px] text-steel">{offer.timeline_estimate || "â€”"}</td>
       <td className="py-3 px-2.5">
         <span className={`font-mono text-[10px] uppercase px-2 py-0.5 rounded-full ${OFFER_STATUS_BADGE[offer.status] ?? "bg-blue-tint text-steel"}`}>
           {offer.status}
@@ -230,7 +230,7 @@ export function AdminProjectDetailPage() {
         <div>
           <h1 className="font-display text-3xl font-bold text-navy mb-1">{project.title}</h1>
           <p className="text-[13.5px] text-steel">
-            {project.owner_name || project.owner_email} · {project.address}
+            {project.owner_name || project.owner_email} Â· {project.address}
           </p>
         </div>
         {project.is_suspended && <span className="font-mono text-[10px] uppercase px-2.5 py-1 rounded-full bg-red-tint text-red">{t("admin.projectDetail.suspended")}</span>}
@@ -294,7 +294,7 @@ export function AdminProjectDetailPage() {
           {!offers.length ? (
             <p className="text-[12.5px] text-steel-light">{t("admin.projectDetail.noOffers")}</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
               <table className="w-full border-collapse">
                 <thead>
                   <tr>

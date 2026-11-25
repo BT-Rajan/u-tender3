@@ -41,7 +41,7 @@ export function AdminContractorsPage() {
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">Admin · Contractors</span>
+        <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">Admin Â· Contractors</span>
         <h1 className="font-display text-3xl font-bold text-navy mb-1">All contractors</h1>
         <p className="text-[13.5px] text-steel">{contractors?.length ?? 0} total. Edit details, change verification status, suspend, or delete.</p>
       </div>
@@ -51,7 +51,7 @@ export function AdminContractorsPage() {
       ) : !contractors?.length ? (
         <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">No contractors have signed up yet.</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
         <table className="w-full border-collapse">
           <thead>
             <tr>
