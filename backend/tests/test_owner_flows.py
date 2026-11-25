@@ -504,3 +504,26 @@ def test_the_calendar_date_becomes_the_end_of_that_day(setup):
     local = project.bid_deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(zone)
     assert (local.year, local.month, local.day) == (day.year, day.month, day.day)
     assert (local.hour, local.minute) == (23, 59)
+
+def test_the_calendar_may_send_an_iso_date_or_decimal_milliseconds(setup):
+    from zoneinfo import ZoneInfo
+
+    from app.config import get_settings
+
+    zone = ZoneInfo(get_settings().tender_timezone)
+    day = datetime.now(zone) + timedelta(days=25)
+    midnight = datetime(day.year, day.month, day.day, tzinfo=zone)
+    iso = f"{day.year:04d}-{day.month:02d}-{day.day:02d}"
+
+    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Iso", "address": "Block 3", "bid_deadline": iso})
+    project = setup["db"].query(Project).one()
+    local = project.bid_deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(zone)
+    assert (local.year, local.month, local.day, local.hour, local.minute) == (day.year, day.month, day.day, 23, 59)
+
+    setup["db"].query(Project).delete()
+    setup["db"].commit()
+    millis = f"{int(midnight.timestamp() * 1000)}.0"
+    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Decimal", "address": "Block 3", "bid_deadline": millis})
+    project = setup["db"].query(Project).one()
+    local = project.bid_deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(zone)
+    assert (local.year, local.month, local.day) == (day.year, day.month, day.day)

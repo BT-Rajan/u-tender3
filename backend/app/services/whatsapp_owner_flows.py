@@ -8,6 +8,7 @@ again on submit.
 """
 
 import logging
+import re
 from datetime import datetime
 from typing import Any
 
@@ -122,15 +123,35 @@ def _form(data: dict[str, Any], key: str) -> str:
     return value.strip() if isinstance(value, str) else ""
 
 
+_EPOCH_MILLIS = re.compile(r"-?\d+(\.\d+)?")
+_ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
 def _deadline_from_data(data: dict[str, Any], key: str) -> datetime | None:
-    """The bid end date from the calendar (epoch milliseconds). Typed DD-MM-YYYY text is still accepted."""
+    """The bid end date. The calendar sends epoch milliseconds, or an ISO date; typed DD-MM-YYYY is also accepted."""
     raw = data.get(key)
+    if isinstance(raw, list) and len(raw) == 1:
+        raw = raw[0]
     if raw is None or raw == "":
         return None
-    if isinstance(raw, (int, float)) or (isinstance(raw, str) and raw.strip().isdigit()):
+    if isinstance(raw, bool):
+        _log.warning("Bid end date value not recognised: type=bool")
+        raise TenderError("invalid", "Choose the bid end date from the calendar.")
+    if isinstance(raw, (int, float)):
         return tender_service.deadline_from_calendar(raw)
     if isinstance(raw, str):
-        return tender_service.parse_local_deadline(raw)
+        text = raw.strip()
+        if _EPOCH_MILLIS.fullmatch(text):
+            return tender_service.deadline_from_calendar(text)
+        if _ISO_DATE.match(text):
+            day = datetime.strptime(text[:10], "%Y-%m-%d").strftime("%d-%m-%Y")
+            return tender_service.parse_local_deadline(day)
+        try:
+            return tender_service.parse_local_deadline(text)
+        except TenderError:
+            _log.warning("Bid end date value not recognised: type=str value=%r", text[:40])
+            raise
+    _log.warning("Bid end date value not recognised: type=%s", type(raw).__name__)
     raise TenderError("invalid", "Choose the bid end date from the calendar.")
 
 
