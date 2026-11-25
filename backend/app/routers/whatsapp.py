@@ -126,6 +126,8 @@ def _flow_reply(db: Session, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "ping":
         return {"data": {"status": "active"}}
     if action == "error_notification":
+        # WhatsApp reports here when a Flow screen fails on the customer's phone. Log what it reports.
+        logger.warning("Flow screen failed on the phone: screen=%s details=%s", payload.get("screen"), str(payload.get("data"))[:800])
         return {"data": {"acknowledged": True}}
 
     for handler in list(_flow_handlers):
@@ -162,6 +164,14 @@ async def flow_data_endpoint(request: Request, db: Session = Depends(get_db)) ->
         return PlainTextResponse("Cannot decrypt", status_code=FLOW_CANNOT_DECRYPT_STATUS)
 
     reply = _flow_reply(db, decrypted.payload)
+    request_data = decrypted.payload.get("data") if isinstance(decrypted.payload.get("data"), dict) else {}
+    logger.info(
+        "Flow request action=%s screen=%s fields=%s -> reply screen=%s",
+        decrypted.payload.get("action"),
+        decrypted.payload.get("screen"),
+        sorted(request_data),
+        reply.get("screen") if isinstance(reply, dict) else None,
+    )
     # A sign-up may have just queued its "account created" buttons. Send those now; other queued messages wait for their usual dispatch.
     await run_in_threadpool(dispatch_outbox_now, db, (KIND_BUTTONS,), (TENDER_NUMBER_PREFIX,))
     encrypted = encrypt_response(reply, decrypted.aes_key, decrypted.iv)

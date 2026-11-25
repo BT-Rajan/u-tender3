@@ -1,4 +1,4 @@
-"""Owner WhatsApp journeys, driven through the encrypted Flow endpoint from the dashboard the owner opens.
+﻿"""Owner WhatsApp journeys, driven through the encrypted Flow endpoint from the dashboard the owner opens.
 
 Every request carries the tender id it acts on, and each one is checked for ownership. A tender
 that belongs to someone else is never reachable through these screens.
@@ -565,13 +565,6 @@ def test_the_details_choice_is_read_from_next_step(setup):
     reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": tender_id, "next_step": "edit"})
 
     assert reply["screen"] == "AMEND"
-
-def test_repro_edit_a_draft(setup):
-    tid = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
-    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": tid, "next_step": "edit"})
-    print("EDIT SCREEN", reply["screen"], sorted(reply["data"].keys()))
-    reply2 = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"tender_id": tid, "title": "Villa v2", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})
-    print("SAVE", reply2["screen"])
 
 
 # --- scenario matrix: every owner menu choice, status and review path -----------------

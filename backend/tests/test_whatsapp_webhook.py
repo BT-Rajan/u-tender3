@@ -283,3 +283,14 @@ def test_flow_request_is_not_logged_with_its_decrypted_content(monkeypatch, clie
     body, _, _ = encode_request({"action": "data_exchange", "screen": "X", "data": {"answer": secret_answer}}, public_pem)
     _flow_post(client, body)
     assert secret_answer not in caplog.text
+
+
+def test_a_failure_reported_by_the_phone_is_logged(monkeypatch, client, caplog):
+    _, public_pem = enable_whatsapp(monkeypatch)
+    body, aes_key, iv = encode_request({"action": "error_notification", "screen": "AMEND", "data": {"error": "bad field"}}, public_pem)
+
+    with caplog.at_level("WARNING", logger="utender.whatsapp"):
+        reply = decode_response(_flow_post(client, body).text, aes_key, iv)
+
+    assert reply["data"]["acknowledged"] is True
+    assert "AMEND" in caplog.text and "bad field" in caplog.text
