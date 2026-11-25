@@ -3,7 +3,6 @@
   "data_api_version": "3.0",
   "routing_model": {
     "MENU": [
-      "MENU",
       "DOCUMENTS",
       "COMING_SOON",
       "EXPIRED",
@@ -12,38 +11,32 @@
     ],
     "DOCUMENTS": [
       "LINKS_SENT",
-      "DOCUMENTS"
+      "EXPIRED"
     ],
     "CREATE_TENDER": [
-      "REVIEW",
-      "CREATE_TENDER",
-      "MENU"
+      "REVIEW"
     ],
     "REVIEW": [
       "DONE",
-      "CREATE_TENDER",
-      "REVIEW",
-      "MENU",
       "MY_TENDERS"
     ],
     "MY_TENDERS": [
-      "TENDER_DETAILS",
-      "MY_TENDERS",
-      "MENU"
+      "TENDER_DETAILS"
     ],
     "TENDER_DETAILS": [
-      "TENDER_DETAILS",
-      "CREATE_TENDER",
       "AMEND",
       "DONE",
-      "OFFERS",
-      "MY_TENDERS"
+      "OFFERS"
     ],
     "AMEND": [
-      "DONE",
-      "AMEND",
-      "MENU",
-      "MY_TENDERS"
+      "DONE"
+    ],
+    "EXPIRED": [],
+    "LINKS_SENT": [
+      "EXPIRED"
+    ],
+    "COMING_SOON": [
+      "EXPIRED"
     ]
   },
   "screens": [
@@ -428,7 +421,13 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "",
+              "title": ""
+            }
+          ]
         },
         "error_message": {
           "type": "string",
@@ -488,7 +487,13 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "",
+              "title": ""
+            }
+          ]
         },
         "empty_message": {
           "type": "string",
@@ -563,7 +568,13 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "",
+              "title": ""
+            }
+          ]
         },
         "error_message": {
           "type": "string",

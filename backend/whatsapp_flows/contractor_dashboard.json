@@ -3,7 +3,6 @@
   "data_api_version": "3.0",
   "routing_model": {
     "MENU": [
-      "MENU",
       "DOCUMENTS",
       "COMING_SOON",
       "EXPIRED",
@@ -14,53 +13,38 @@
     ],
     "DOCUMENTS": [
       "LINKS_SENT",
-      "DOCUMENTS"
+      "EXPIRED"
     ],
     "SEARCH": [
-      "PROJECT_LIST",
-      "SEARCH",
-      "MENU"
+      "PROJECT_LIST"
     ],
     "PROJECT_LIST": [
-      "PROJECT_DETAILS",
-      "PROJECT_LIST",
-      "MENU"
+      "PROJECT_DETAILS"
     ],
     "PROJECT_DETAILS": [
-      "PROJECT_DETAILS",
       "SUBMIT_OFFER",
       "OFFER_HISTORY",
-      "DONE",
-      "PROJECT_LIST",
-      "MENU"
+      "DONE"
     ],
     "SUBMIT_OFFER": [
-      "REVIEW_OFFER",
-      "SUBMIT_OFFER",
-      "PROJECT_LIST",
-      "MENU"
+      "REVIEW_OFFER"
     ],
     "REVIEW_OFFER": [
-      "DONE",
-      "SUBMIT_OFFER",
-      "REVIEW_OFFER",
-      "PROJECT_LIST",
-      "MENU"
+      "DONE"
     ],
     "MY_OFFERS": [
-      "OFFER_DETAILS",
-      "MY_OFFERS",
-      "PROJECT_LIST",
-      "MENU"
+      "OFFER_DETAILS"
     ],
     "OFFER_DETAILS": [
-      "OFFER_DETAILS",
-      "SUBMIT_OFFER",
       "OFFER_HISTORY",
-      "DONE",
-      "PROJECT_LIST",
-      "MENU",
-      "MY_OFFERS"
+      "DONE"
+    ],
+    "EXPIRED": [],
+    "LINKS_SENT": [
+      "EXPIRED"
+    ],
+    "COMING_SOON": [
+      "EXPIRED"
     ]
   },
   "screens": [
@@ -400,7 +384,13 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "",
+              "title": ""
+            }
+          ]
         },
         "empty_message": {
           "type": "string",
@@ -475,7 +465,13 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "",
+              "title": ""
+            }
+          ]
         },
         "error_message": {
           "type": "string",
@@ -695,7 +691,13 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "",
+              "title": ""
+            }
+          ]
         },
         "empty_message": {
           "type": "string",
@@ -770,7 +772,13 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "__example__": [
+            {
+              "id": "",
+              "title": ""
+            }
+          ]
         },
         "confirm": {
           "type": "string",

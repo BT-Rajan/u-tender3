@@ -3,21 +3,30 @@
   "data_api_version": "3.0",
   "routing_model": {
     "WELCOME": [
-      "ROLE"
+      "ROLE",
+      "EXPIRED"
     ],
     "ROLE": [
       "OWNER_DETAILS",
-      "CONTRACTOR_DETAILS"
+      "CONTRACTOR_DETAILS",
+      "EXPIRED"
     ],
     "OWNER_DETAILS": [
       "SUCCESS",
       "NOT_COMPLETED",
-      "OWNER_DETAILS"
+      "EXPIRED"
     ],
     "CONTRACTOR_DETAILS": [
       "SUCCESS",
       "NOT_COMPLETED",
-      "CONTRACTOR_DETAILS"
+      "EXPIRED"
+    ],
+    "EXPIRED": [],
+    "SUCCESS": [
+      "EXPIRED"
+    ],
+    "NOT_COMPLETED": [
+      "EXPIRED"
     ]
   },
   "screens": [
