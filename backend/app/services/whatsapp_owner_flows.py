@@ -150,21 +150,11 @@ def _message(message: str) -> dict[str, Any]:
 
 
 def open_create(db: Session, owner: User) -> dict[str, Any]:
-    if not _verified(db, owner):
-        return _menu_error(db, owner, "Your account must be verified before you can post tenders.")
     return {"screen": "CREATE_TENDER", "data": _blank_create_form()}
 
 
 def _blank_create_form() -> dict[str, Any]:
     return {"tender_id": "", "title": "", "address": "", "description": "", "trade": "", "bid_deadline": "", "tender_type": TenderType.owner_visible.value, "error_message": ""}
-
-
-def _verified(db: Session, owner: User) -> bool:
-    try:
-        tender_service.require_verified_owner(db, owner)
-    except TenderError:
-        return False
-    return True
 
 
 def open_my_tenders(db: Session, owner: User, *, now: datetime, heading: str = "Your tenders") -> dict[str, Any]:
@@ -268,9 +258,9 @@ def _submit_create(db: Session, owner: User, data: dict[str, Any], *, now: datet
     tender_id = _form(data, "tender_id")
     if tender_id:
         project = _with_owned(db, owner, tender_id)
-        project = tender_service.update_draft(db, owner, project, fields)
+        project = tender_service.update_draft(db, owner, project, fields, verified_required=False)
     else:
-        project = tender_service.create_draft(db, owner, fields)
+        project = tender_service.create_draft(db, owner, fields, verified_required=False)
     # Saving the form always keeps a draft. A tender that isn't finished yet is still saved.
     return _review_screen(db, project)
 
@@ -279,7 +269,7 @@ def _submit_review(db: Session, owner: User, data: dict[str, Any], *, now: datet
     project = _with_owned(db, owner, _form(data, "tender_id"))
     action = _form(data, "action")
     if action == "publish":
-        project = tender_service.publish(db, owner, project, now)
+        project = tender_service.publish(db, owner, project, now, verified_required=False)
         return _message("Your tender is published. Bidders can now see it and submit offers.")
     if action == "save_draft":
         return _message("Draft saved. You can find it under My tenders.")
@@ -312,7 +302,7 @@ def _submit_details(db: Session, owner: User, data: dict[str, Any], *, now: date
             return {"screen": "CREATE_TENDER", "data": _fields_for_draft(project)}
         return {"screen": "AMEND", "data": _amend_form(project)}
     if action == "publish":
-        tender_service.publish(db, owner, project, now)
+        tender_service.publish(db, owner, project, now, verified_required=False)
         return _message("Your tender is published. Bidders can now see it and submit offers.")
     if action == "close":
         tender_service.close(db, owner, project)
@@ -354,7 +344,7 @@ def _submit_amend(db: Session, owner: User, data: dict[str, Any], *, now: dateti
     )
     if _form(data, "trade") and _form(data, "trade") not in TRADE_OPTIONS:
         raise TenderError("invalid", "Choose a trade from the list.")
-    tender_service.amend(db, owner, project, fields, reason=_form(data, "reason") or None, now=now)
+    tender_service.amend(db, owner, project, fields, reason=_form(data, "reason") or None, now=now, verified_required=False)
     return _message("Changes saved. Bidders with offers have been told about the amendment.")
 
 

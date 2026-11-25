@@ -86,7 +86,7 @@ def setup(client, monkeypatch, db):
 # --- entering the journeys -----------------------------------------------------
 
 
-def test_an_unverified_owner_is_turned_back_from_creating_a_tender(client, monkeypatch, db):
+def test_an_unverified_owner_can_create_a_tender_from_whatsapp(client, monkeypatch, db):
     _, public_pem = enable_whatsapp(monkeypatch)
     sender = RecordingSender()
     _owner(db, "96511110003", verified=False)
@@ -94,8 +94,7 @@ def test_an_unverified_owner_is_turned_back_from_creating_a_tender(client, monke
 
     reply = _send(client, public_pem, token, "MENU", {"choice": "create_tender"})
 
-    assert reply["screen"] == "MENU"
-    assert "verified" in reply["data"]["error_message"]
+    assert reply["screen"] == "CREATE_TENDER"
     assert db.query(Project).count() == 0
 
 
