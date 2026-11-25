@@ -138,6 +138,25 @@ class WhatsAppCloudClient:
             },
         )
 
+    def send_buttons(self, to_wa_id: str, *, body: str, buttons: list[dict[str, str]]) -> str:
+        """An interactive message with up to three reply buttons. Each button tap comes back as a button_reply."""
+        return self._send(
+            to_wa_id,
+            {
+                "type": "interactive",
+                "interactive": {
+                    "type": "button",
+                    "body": {"text": body},
+                    "action": {
+                        "buttons": [
+                            {"type": "reply", "reply": {"id": button["id"], "title": button["title"]}}
+                            for button in buttons
+                        ]
+                    },
+                },
+            },
+        )
+
     def _send(self, to_wa_id: str, body: dict[str, Any]) -> str:
         payload = {"messaging_product": "whatsapp", "recipient_type": "individual", "to": to_wa_id, **body}
         try:

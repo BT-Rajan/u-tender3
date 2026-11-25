@@ -198,3 +198,58 @@ def test_a_repeated_delivery_of_the_same_message_queues_nothing_more(monkeypatch
 
     assert len(_outbox(db)) == 1
     assert len(_sessions(db)) == 1
+
+
+def _button_reply(message_id: str, wa_id: str, button_id: str) -> dict:
+    return {
+        "from": wa_id,
+        "id": message_id,
+        "timestamp": "1700000000",
+        "type": "interactive",
+        "interactive": {"type": "button_reply", "button_reply": {"id": button_id, "title": "x"}},
+    }
+
+
+def test_the_yes_button_opens_the_owner_dashboard(monkeypatch, db):
+    enable_whatsapp(monkeypatch)
+    _account(db, UserRole.owner)
+
+    _deliver(db, _button_reply("wamid.YES1", WA_ID, "continue_yes"))
+
+    row = _outbox(db)[-1]
+    assert row.kind == "flow"
+    assert row.params_json["flow_id"] == "flow-owner"
+    assert _sessions(db)[-1].flow_name == "owner_dashboard"
+
+
+def test_the_no_button_sends_a_text_and_no_dashboard(monkeypatch, db):
+    from app.services.whatsapp_routing import ACCOUNT_NO_TEXT
+
+    enable_whatsapp(monkeypatch)
+    _account(db, UserRole.owner)
+
+    _deliver(db, _button_reply("wamid.NO1", WA_ID, "continue_no"))
+
+    rows = _outbox(db)
+    assert [row.kind for row in rows] == ["text"]
+    assert rows[0].params_json["body"] == ACCOUNT_NO_TEXT["en"]
+
+
+def test_the_account_created_message_has_yes_and_no_buttons_and_is_sent(monkeypatch, db):
+    from app.services.whatsapp_flows import ACCOUNT_CREATED, _queue_account_created
+    from app.services.whatsapp_outbox import dispatch_due
+    from whatsapp_helpers import RecordingSender
+
+    enable_whatsapp(monkeypatch)
+    _account(db, UserRole.owner)
+    identity = get_or_create_identity(db, WA_ID, now=NOW)
+
+    _queue_account_created(db, identity, "en", now=NOW)
+    sender = RecordingSender()
+    dispatch_due(db, sender, now=NOW, max_attempts=3)
+
+    body, yes, no = ACCOUNT_CREATED["en"]
+    assert sender.sent[-1]["kind"] == "buttons"
+    assert sender.sent[-1]["body"] == body
+    assert [button["title"] for button in sender.sent[-1]["buttons"]] == [yes, no]
+    assert [button["id"] for button in sender.sent[-1]["buttons"]] == ["continue_yes", "continue_no"]

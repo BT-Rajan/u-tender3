@@ -131,6 +131,10 @@ class RecordingSender:
         self.sent.append({"kind": "cta_url", "to": to_wa_id, "body": body, "display_text": display_text, "url": url})
         return f"wamid.CTA{len(self.sent)}"
 
+    def send_buttons(self, to_wa_id: str, *, body: str, buttons: list[dict[str, str]]) -> str:
+        self.sent.append({"kind": "buttons", "to": to_wa_id, "body": body, "buttons": buttons})
+        return f"wamid.BTN{len(self.sent)}"
+
     def close(self) -> None:
         pass
 

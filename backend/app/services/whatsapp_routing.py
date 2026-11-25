@@ -13,6 +13,7 @@ from app.services import whatsapp_outbox
 from app.services.whatsapp_events import register_inbound_handler
 from app.services.whatsapp_identity import complete_flow_session, create_flow_session, get_or_create_identity
 from app.services.whatsapp_flows import (
+    BUTTON_CONTINUE_NO,
     FLOW_CONTRACTOR_DASHBOARD,
     FLOW_OWNER_DASHBOARD,
     FLOW_REGISTRATION,
@@ -21,6 +22,10 @@ from app.services.whatsapp_flows import (
 
 REGISTRATION_BODY = "Welcome to U-Tender. Tap below to create your account. It takes under a minute."
 DASHBOARD_BODY = "Open your U-Tender dashboard."
+ACCOUNT_NO_TEXT = {
+    "en": "No problem. Send any message when you want to open your dashboard.",
+    "ar": "لا مشكلة. أرسل أي رسالة عندما تريد فتح لوحة التحكم.",
+}
 ADMIN_TEXT = "Admin accounts are managed on the U-Tender web dashboard."
 SETUP_TEXT = "U-Tender WhatsApp is being set up. Please try again shortly."
 
@@ -29,6 +34,14 @@ def _is_nfm_reply(message: dict[str, Any]) -> bool:
     """A completed Flow. The Flow data endpoint has already acted on it, so the router must not reply to it."""
     interactive = message.get("interactive")
     return message.get("type") == "interactive" and isinstance(interactive, dict) and interactive.get("type") == "nfm_reply"
+
+
+def _button_reply_id(message: dict[str, Any]) -> str | None:
+    interactive = message.get("interactive")
+    if message.get("type") == "interactive" and isinstance(interactive, dict) and interactive.get("type") == "button_reply":
+        reply = interactive.get("button_reply")
+        return reply.get("id") if isinstance(reply, dict) else None
+    return None
 
 
 def _find_resumable_registration(db: Session, identity: WhatsAppIdentity, *, now: datetime) -> WhatsAppFlowSession | None:
@@ -172,6 +185,10 @@ def handle_inbound_message(db: Session, event: WhatsAppMessageEvent, message: di
         return
     if user.role == UserRole.admin:
         _send_text(db, identity, event, ADMIN_TEXT, now=now)
+        return
+    if _button_reply_id(message) == BUTTON_CONTINUE_NO:
+        language = user.language if user.language in ACCOUNT_NO_TEXT else "en"
+        _send_text(db, identity, event, ACCOUNT_NO_TEXT[language], now=now)
         return
     _open_dashboard(db, identity, event, user, now=now)
 

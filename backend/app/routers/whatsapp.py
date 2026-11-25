@@ -20,7 +20,7 @@ from app.services.flow_crypto import (
 )
 from app.services.whatsapp_client import WhatsAppCloudClient, WhatsAppSendError
 from app.services.whatsapp_events import record_events
-from app.services.whatsapp_outbox import dispatch_due
+from app.services.whatsapp_outbox import KIND_BUTTONS, dispatch_due
 from app.services.whatsapp_signature import verify_signature
 
 router = APIRouter(tags=["whatsapp"])
@@ -98,7 +98,7 @@ async def receive_webhook(request: Request, db: Session = Depends(get_db)) -> di
     return {"received": True}
 
 
-def dispatch_outbox_now(db: Session) -> None:
+def dispatch_outbox_now(db: Session, kinds: tuple[str, ...] | None = None) -> None:
     settings = get_settings()
     if not settings.whatsapp_enabled:
         return
@@ -108,7 +108,7 @@ def dispatch_outbox_now(db: Session) -> None:
         logger.error("WhatsApp outbox not dispatched: the sender is not configured")
         return
     try:
-        dispatch_due(db, sender, now=datetime.utcnow(), max_attempts=settings.whatsapp_outbox_max_attempts)
+        dispatch_due(db, sender, now=datetime.utcnow(), max_attempts=settings.whatsapp_outbox_max_attempts, kinds=kinds)
     except Exception:  # noqa: BLE001 - the webhook must still acknowledge Meta
         logger.exception("WhatsApp outbox dispatch failed; the cron will retry")
     finally:
@@ -164,5 +164,7 @@ async def flow_data_endpoint(request: Request, db: Session = Depends(get_db)) ->
         return PlainTextResponse("Cannot decrypt", status_code=FLOW_CANNOT_DECRYPT_STATUS)
 
     reply = _flow_reply(db, decrypted.payload)
+    # A sign-up may have just queued its "account created" buttons. Send those now; other queued messages wait for their usual dispatch.
+    await run_in_threadpool(dispatch_outbox_now, db, (KIND_BUTTONS,))
     encrypted = encrypt_response(reply, decrypted.aes_key, decrypted.iv)
     return Response(content=encrypted, media_type="text/plain")

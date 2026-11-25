@@ -29,6 +29,14 @@ FLOW_REGISTRATION = "registration"
 FLOW_OWNER_DASHBOARD = "owner_dashboard"
 FLOW_CONTRACTOR_DASHBOARD = "contractor_dashboard"
 
+# After a sign-up the customer is asked whether to continue. The button ids come back in the reply.
+BUTTON_CONTINUE_YES = "continue_yes"
+BUTTON_CONTINUE_NO = "continue_no"
+ACCOUNT_CREATED = {
+    "en": ("Your account is created. Do you want to continue?", "Yes", "No"),
+    "ar": ("تم إنشاء حسابك. هل تريد المتابعة؟", "نعم", "لا"),
+}
+
 # Fields each registration screen may carry in its `data`. The Flow JSON
 # declares the same names, and a test keeps the two in step.
 REGISTRATION_SCREEN_FIELDS: dict[str, tuple[str, ...]] = {
@@ -124,6 +132,23 @@ def _language_of(session: WhatsAppFlowSession) -> str:
     return str((session.state_json or {}).get("language", "en"))
 
 
+def _queue_account_created(db: Session, identity: WhatsAppIdentity, language: str, *, now: datetime) -> None:
+    """Queue the "account created, continue?" message with Yes and No buttons. The dispatcher sends it."""
+    body, yes, no = ACCOUNT_CREATED.get(language, ACCOUNT_CREATED["en"])
+    whatsapp_outbox.enqueue(
+        db,
+        dedupe_key=f"account-created:{identity.id}",
+        recipient_wa_id=identity.wa_id,
+        kind=whatsapp_outbox.KIND_BUTTONS,
+        now=now,
+        params={
+            "body": body,
+            "buttons": [{"id": BUTTON_CONTINUE_YES, "title": yes}, {"id": BUTTON_CONTINUE_NO, "title": no}],
+        },
+    )
+    db.commit()
+
+
 def _complete_owner(
     db: Session, session: WhatsAppFlowSession, identity: WhatsAppIdentity, data: dict[str, Any], *, now: datetime
 ) -> dict[str, Any]:
@@ -138,6 +163,7 @@ def _complete_owner(
         )
     except RegistrationError as error:
         return _registration_failure("OWNER_DETAILS", error)
+    _queue_account_created(db, identity, _language_of(session), now=now)
     return {"screen": "SUCCESS", "data": {"message": "Your account is ready. Send any message to open your dashboard."}}
 
 
@@ -157,6 +183,7 @@ def _complete_contractor(
         )
     except RegistrationError as error:
         return _registration_failure("CONTRACTOR_DETAILS", error)
+    _queue_account_created(db, identity, _language_of(session), now=now)
     return {"screen": "SUCCESS", "data": {"message": "Your account is ready. Send any message to open your dashboard."}}
 
 

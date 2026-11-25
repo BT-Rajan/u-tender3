@@ -23,7 +23,8 @@ KIND_TEMPLATE = "template"
 KIND_TEXT = "text"
 KIND_FLOW = "flow"
 KIND_CTA_URL = "cta_url"
-KINDS = (KIND_TEMPLATE, KIND_TEXT, KIND_FLOW, KIND_CTA_URL)
+KIND_BUTTONS = "buttons"
+KINDS = (KIND_TEMPLATE, KIND_TEXT, KIND_FLOW, KIND_CTA_URL, KIND_BUTTONS)
 
 # Params that are bearer credentials (a Flow session token or an upload link). They're removed once the row is finished.
 _SECRET_PARAMS = ("flow_token", "url")
@@ -59,6 +60,8 @@ class MessageSender(Protocol):
 
     def send_cta_url(self, to_wa_id: str, *, body: str, display_text: str, url: str) -> str: ...
 
+    def send_buttons(self, to_wa_id: str, *, body: str, buttons: list[dict[str, str]]) -> str: ...
+
 
 def backoff_seconds(attempts: int) -> int:
     """Exponential backoff: 30s, 60s, 120s, ... capped at one hour."""
@@ -88,6 +91,8 @@ def enqueue(
         raise ValueError("A flow message needs a flow_id and flow_token.")
     if kind == KIND_CTA_URL and not (params and params.get("url") and params.get("display_text")):
         raise ValueError("A cta_url message needs a url and display_text.")
+    if kind == KIND_BUTTONS and not (params and params.get("body") and params.get("buttons")):
+        raise ValueError("A buttons message needs a body and at least one button.")
 
     existing = db.scalar(select(WhatsAppOutbox).where(WhatsAppOutbox.dedupe_key == dedupe_key))
     if existing is not None:
@@ -143,6 +148,12 @@ def _send_row(sender: MessageSender, row: WhatsAppOutbox) -> str:
             display_text=str(params.get("display_text", "Open")),
             url=str(params.get("url", "")),
         )
+    if row.kind == KIND_BUTTONS:
+        return sender.send_buttons(
+            row.recipient_wa_id,
+            body=str(params.get("body", "")),
+            buttons=list(params.get("buttons", [])),
+        )
     return sender.send_text(row.recipient_wa_id, str(params.get("body", "")))
 
 
@@ -172,6 +183,7 @@ def dispatch_due(
     now: datetime,
     max_attempts: int,
     batch_size: int = DEFAULT_BATCH_SIZE,
+    kinds: tuple[str, ...] | None = None,
 ) -> dict[str, int]:
     """Send every pending row whose next_attempt_at has passed.
 
@@ -181,12 +193,10 @@ def dispatch_due(
     permanent error (for example Meta rejecting the template) marks it failed
     straight away, with no retry.
     """
-    due = db.scalars(
-        select(WhatsAppOutbox)
-        .where(WhatsAppOutbox.status == OUTBOX_PENDING, WhatsAppOutbox.next_attempt_at <= now)
-        .order_by(WhatsAppOutbox.next_attempt_at)
-        .limit(batch_size)
-    ).all()
+    statement = select(WhatsAppOutbox).where(WhatsAppOutbox.status == OUTBOX_PENDING, WhatsAppOutbox.next_attempt_at <= now)
+    if kinds is not None:
+        statement = statement.where(WhatsAppOutbox.kind.in_(kinds))
+    due = db.scalars(statement.order_by(WhatsAppOutbox.next_attempt_at).limit(batch_size)).all()
 
     stats = {"sent": 0, "retry": 0, "failed": 0, "dead": 0, "held": 0}
     require_approval = get_settings().whatsapp_require_approved_templates
