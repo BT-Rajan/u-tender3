@@ -10,6 +10,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+MAX_LIST_ROWS = 20
+MAX_OPTION_TITLE = 30
 FLOWS = Path(__file__).resolve().parents[1] / "whatsapp_flows"
 _PYTHON_TYPES: dict[str, Any] = {"string": str, "array": list, "object": dict, "boolean": bool, "number": (int, float), "integer": int}
 
@@ -47,3 +49,8 @@ def check_reply(flow_name: str, reply: dict[str, Any]) -> None:
     for key, declared in (screen.get("data") or {}).items():
         if key in data:
             _check_value(f"{reply['screen']}.{key}", declared, data[key])
+    for key, value in data.items():
+        if isinstance(value, list) and value and all(isinstance(item, dict) and "id" in item and "title" in item for item in value):
+            assert len(value) <= MAX_LIST_ROWS, f"{reply['screen']}.{key} has {len(value)} rows; WhatsApp allows {MAX_LIST_ROWS}"
+            for item in value:
+                assert len(str(item["title"])) <= MAX_OPTION_TITLE, f"{reply['screen']}.{key} title is longer than {MAX_OPTION_TITLE}: {item['title']!r}"

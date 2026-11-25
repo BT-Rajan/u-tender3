@@ -42,6 +42,10 @@ OFFER_LABEL: dict[OfferStatus, str] = {
 MAX_AMOUNT = Decimal("1000000000000")  # matches the Numeric(12, 2) column
 
 
+# WhatsApp shows at most 20 rows in a list. Anything beyond would make the screen fail.
+MAX_OPTIONS = 20
+
+
 def _text(value: object, limit: int) -> str:
     return " ".join(str(value or "").split())[:limit]
 
@@ -89,7 +93,7 @@ def _feed_screen(db: Session, user: User, *, heading: str, now: datetime, search
         status_tag = f"[{row['my_offer_status'].value}] " if row["my_offer_status"] else ""
         options.append(_option(f"{status_tag}{project.title}", project.id))
     empty = "" if options else "No open projects match. Try a different search."
-    return {"screen": "PROJECT_LIST", "data": {"heading": heading, "projects": options, "empty_message": empty, "error_message": ""}}
+    return {"screen": "PROJECT_LIST", "data": {"heading": heading, "projects": options[:MAX_OPTIONS], "empty_message": empty, "error_message": ""}}
 
 
 def _submit_search(db: Session, user: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
@@ -243,7 +247,7 @@ def _my_offers_screen(db: Session, user: User) -> dict[str, Any]:
     rows = contractor_service.my_offers(db, user)
     options = [_option(f"[{OFFER_LABEL[offer.status]}] {project.title}", project.id) for offer, project in rows]
     empty = "" if options else "You have not placed any offers yet. Browse projects to find one."
-    return {"screen": "MY_OFFERS", "data": {"heading": "My offers", "offers": options, "empty_message": empty, "error_message": ""}}
+    return {"screen": "MY_OFFERS", "data": {"heading": "My offers", "offers": options[:MAX_OPTIONS], "empty_message": empty, "error_message": ""}}
 
 
 def _offer_details(db: Session, user: User, project_id: str, *, now: datetime, message: str = "") -> dict[str, Any]:

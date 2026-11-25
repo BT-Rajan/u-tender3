@@ -60,6 +60,10 @@ def _text(value: object, limit: int) -> str:
     return " ".join(str(value or "").split())[:limit]
 
 
+# WhatsApp shows at most 20 rows in a list. Anything beyond would make the screen fail.
+MAX_OPTIONS = 20
+
+
 def _tender_option(project: Project) -> dict[str, str]:
     """One row of the My tenders list. Flow option titles are short, so the title is cut to fit."""
     label = f"[{STATUS_LABEL[project.status]}] {project.title}"
@@ -67,7 +71,7 @@ def _tender_option(project: Project) -> dict[str, str]:
 
 
 def _tender_list(db: Session, owner: User, *, now: datetime) -> list[dict[str, str]]:
-    return [_tender_option(project) for project in tender_service.list_owner_tenders(db, owner, now=now)]
+    return [_tender_option(project) for project in tender_service.list_owner_tenders(db, owner, now=now)[:MAX_OPTIONS]]
 
 
 def _actions_for(project: Project) -> list[dict[str, str]]:
@@ -114,7 +118,7 @@ def _fields_for_draft(project: Project) -> dict[str, Any]:
         "address": project.address if project.address != "Not set" else "",
         "description": project.description or "",
         "trade": project.trade or "",
-        "bid_deadline": tender_service.calendar_value(project.bid_deadline) if project.bid_deadline else "",
+        "bid_deadline": "",
         "tender_type": project.tender_type.value,
         "error_message": "",
     }
@@ -404,7 +408,7 @@ def _amend_form(project: Project) -> dict[str, Any]:
         "title": project.title,
         "description": project.description or "",
         "trade": project.trade or "",
-        "bid_deadline": tender_service.calendar_value(project.bid_deadline) if project.bid_deadline else "",
+        "bid_deadline": "",
         "reason": "",
         "error_message": "",
     }

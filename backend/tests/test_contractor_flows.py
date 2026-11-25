@@ -501,3 +501,13 @@ def test_every_contractor_menu_choice_opens_a_screen(setup):
     for choice in ["browse_projects", "search_projects", "my_offers", "my_documents", "my_awards"]:
         reply = _send(setup["client"], setup["pem"], setup["token"], "MENU", {"choice": choice})
         assert reply["screen"] in {"PROJECT_LIST", "SEARCH", "MY_OFFERS", "DOCUMENTS", "AWARDS", "COMING_SOON"}, (choice, reply["screen"])
+
+
+def test_a_long_project_list_is_capped_at_twenty_rows(setup):
+    for number in range(25):
+        _project(setup["db"], setup["owner"], title=f"Villa project {number} with a long name", status=ProjectStatus.open)
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "MENU", {"choice": "browse_projects"})
+
+    assert reply["screen"] == "PROJECT_LIST"
+    assert len(reply["data"]["projects"]) == 20

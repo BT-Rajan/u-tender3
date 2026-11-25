@@ -627,3 +627,13 @@ def test_a_document_that_is_not_accepted_is_named_on_review(setup):
     assert reply["screen"] == "REVIEW"
     assert "plan.exe" in reply["data"]["error_message"]
     assert _fresh(setup["db"], tender_id).status == ProjectStatus.draft
+
+
+def test_a_long_tender_list_is_capped_at_twenty_rows(setup):
+    for number in range(25):
+        _project(setup["db"], setup["owner"], status=ProjectStatus.draft, title=f"Tender number {number} with a long name")
+
+    reply = _send(setup["client"], setup["pem"], setup["token"], "MY_TENDERS", {})
+
+    assert reply["screen"] == "MY_TENDERS"
+    assert len(reply["data"]["tenders"]) == 20

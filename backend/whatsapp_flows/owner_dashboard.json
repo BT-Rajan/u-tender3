@@ -349,8 +349,7 @@
             "type": "DatePicker",
             "label": "Bid end date (Kuwait time)",
             "name": "bid_deadline",
-            "required": false,
-            "init-value": "${data.bid_deadline}"
+            "required": false
           },
           {
             "type": "RadioButtonsGroup",
@@ -754,8 +753,7 @@
             "type": "DatePicker",
             "label": "Bid end date (Kuwait time)",
             "name": "bid_deadline",
-            "required": false,
-            "init-value": "${data.bid_deadline}"
+            "required": false
           },
           {
             "type": "TextInput",
