@@ -28,6 +28,12 @@ from app.services.notify import notify
 from app.services.tender_service import TenderError
 from app.services.tender_lifecycle import is_sealed_and_open, sync_expired_projects
 
+from fastapi import HTTPException, Response  # noqa: E402
+from app.models.offer_quotation import OfferQuotation  # noqa: E402
+from app.schemas.offer import OfferQuotationRef  # noqa: E402
+from app.services import offer_quotations  # noqa: E402
+from app.services.storage import get_storage  # noqa: E402
+
 router = APIRouter(prefix="/owner", tags=["owner"])
 
 
@@ -61,6 +67,20 @@ def dashboard(user: User = Depends(require_owner), db: Session = Depends(get_db)
 
 @router.get("/projects/{project_id}/offers", response_model=list[OfferOut])
 def list_offers(project_id: str, user: User = Depends(require_owner), db: Session = Depends(get_db)):
+    offers = _list_offers(project_id, user, db)
+    held = {
+        q.offer_id: q
+        for q in db.query(OfferQuotation).filter(
+            OfferQuotation.project_id == project_id, OfferQuotation.offer_id.isnot(None)
+        )
+    }
+    for item in offers:
+        q = held.get(item.id)
+        item.quotation = OfferQuotationRef(id=q.id, file_name=q.file_name) if q else None
+    return offers
+
+
+def _list_offers(project_id: str, user: User, db: Session):
     project = _get_owned_project(project_id, user, db)
     sealed = is_sealed_and_open(project)
 
@@ -490,4 +510,30 @@ def _project_fields(p: Project) -> dict:
         tender_type_locked=p.tender_type_locked,
         is_suspended=p.is_suspended,
         created_at=p.created_at,
+    )
+
+
+@router.get("/projects/{project_id}/quotations/{quotation_id}")
+def download_quotation(project_id: str, quotation_id: str, user: User = Depends(require_owner), db: Session = Depends(get_db)):
+    """A contractor's quotation file. The owner can download it before and after a tender is sealed."""
+    project = _get_owned_project(project_id, user, db)
+    quotation = (
+        db.query(OfferQuotation)
+        .filter(
+            OfferQuotation.id == quotation_id,
+            OfferQuotation.project_id == project.id,
+            OfferQuotation.offer_id.isnot(None),
+        )
+        .first()
+    )
+    if quotation is None:
+        raise HTTPException(status_code=404, detail="Quotation not found.")
+    content = get_storage().download(offer_quotations.BUCKET, quotation.storage_key)
+    if content is None:
+        raise HTTPException(status_code=404, detail="The quotation file is missing.")
+    safe_name = quotation.file_name.replace('"', "")
+    return Response(
+        content=content,
+        media_type=quotation.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}"'},
     )

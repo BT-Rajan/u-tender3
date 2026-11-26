@@ -834,7 +834,7 @@
     {
       "id": "OFFERS",
       "title": "Received offers",
-      "terminal": false,
+      "terminal": true,
       "data": {
         "tender_title": {
           "type": "string",
@@ -862,16 +862,17 @@
           },
           {
             "type": "Footer",
-            "label": "Send quotations",
+            "label": "Close",
             "on-click-action": {
-              "name": "data_exchange",
+              "name": "complete",
               "payload": {
-                "tender_id": "${data.tender_id}"
+                "status": "done"
               }
             }
           }
         ]
-      }
+      },
+      "success": true
     },
     {
       "id": "DONE",

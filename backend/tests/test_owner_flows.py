@@ -706,10 +706,9 @@ def test_the_owner_is_sent_a_link_to_each_quotation(setup):
     db = setup["db"]
     project = _project(db, setup["owner"])
     _quoted_offer(db, project)
-    _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": project.id, "action": "offers"})
-    reply = _send(setup["client"], setup["pem"], setup["token"], "OFFERS", {"tender_id": project.id})
-    assert reply["screen"] == "OFFERS"
-    assert "Sent 1 quotation link" in reply["data"]["offers"]
+    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": project.id, "action": "quotations"})
+    assert reply["screen"] == "DONE"
+    assert "Sent 1 quotation link" in reply["data"]["message"]
     links = _link_messages(db)
     assert len(links) == 1
     assert "/files/offer-quotations/" in links[0].params_json["url"]
@@ -720,18 +719,48 @@ def test_asking_again_in_the_same_hour_does_not_send_the_links_twice(setup):
     db = setup["db"]
     project = _project(db, setup["owner"])
     _quoted_offer(db, project)
-    _send(setup["client"], setup["pem"], setup["token"], "OFFERS", {"tender_id": project.id})
-    _send(setup["client"], setup["pem"], setup["token"], "OFFERS", {"tender_id": project.id})
+    _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": project.id, "action": "quotations"})
+    _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": project.id, "action": "quotations"})
     assert len(_link_messages(db)) == 1
 
 
-def test_quotations_wait_until_a_sealed_tender_closes(setup):
+def test_quotations_are_sent_while_a_sealed_tender_is_open(setup):
     db = setup["db"]
     project = _project(db, setup["owner"], tender_type=TenderType.sealed)
     _quoted_offer(db, project)
-    reply = _send(setup["client"], setup["pem"], setup["token"], "OFFERS", {"tender_id": project.id})
-    assert "once the tender closes" in reply["data"]["offers"]
-    assert _link_messages(db) == []
+    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": project.id, "action": "quotations"})
+    assert reply["screen"] == "DONE"
+    assert len(_link_messages(db)) == 1
+
+
+def _offer_without_quotation(db, project):
+    contractor = User(email=None, password_hash=None, role=UserRole.contractor, full_name="Plain Builders", phone="+96522220002")
+    db.add(contractor)
+    db.flush()
+    db.add(
+        _ContractorProfile(
+            user_id=contractor.id,
+            company_name="Plain Builders",
+            primary_trade="Civil works",
+            verification_status=VerificationStatus.approved,
+            paid_until=NOW + timedelta(days=30),
+        )
+    )
+    db.flush()
+    db.add(_Offer(project_id=project.id, contractor_id=contractor.id, amount=_Decimal("9000"), status=_OfferStatus.submitted))
+    db.commit()
+
+
+def test_an_offer_without_a_quotation_is_marked_on_the_offers_screen(setup):
+    db = setup["db"]
+    project = _project(db, setup["owner"])
+    _quoted_offer(db, project)
+    _offer_without_quotation(db, project)
+    reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": project.id, "action": "offers"})
+    assert reply["screen"] == "OFFERS"
+    assert "quotation: quote.pdf" in reply["data"]["offers"]
+    assert "no quotation attached" in reply["data"]["offers"]
+
 
 
 def test_only_the_tenders_owner_gets_its_quotation_links(setup):

@@ -475,6 +475,7 @@ def received_offers(db: Session, owner: User, project: Project) -> dict[str, Any
         if sealed:
             rows.append(
                 {
+                    "offer_id": offer.id,
                     "label": f"Offer {index}",
                     "status": offer.status.value,
                     "submitted_at": offer.created_at,
@@ -486,6 +487,7 @@ def received_offers(db: Session, owner: User, project: Project) -> dict[str, Any
         else:
             rows.append(
                 {
+                    "offer_id": offer.id,
                     "label": profile.company_name,
                     "status": offer.status.value,
                     "submitted_at": offer.created_at,
@@ -515,4 +517,5 @@ def allowed_actions(project: Project) -> list[str]:
         actions.append("cancel")
     if status != ProjectStatus.draft:
         actions.append("offers")
+        actions.append("quotations")
     return actions

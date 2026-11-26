@@ -58,6 +58,7 @@ export interface Offer {
   contractor_avg_rating?: string | null;
   contractor_review_count?: number | null;
   sealed: boolean;
+  quotation?: { id: string; file_name: string } | null;
 }
 
 export interface OfferRevision {

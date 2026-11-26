@@ -47,6 +47,7 @@ ACTION_TITLE: dict[str, str] = {
     "no_award": "Mark as no award",
     "cancel": "Cancel tender",
     "offers": "View offers",
+    "quotations": "Get quotations",
 }
 
 # Action ids on the details screen that change a tender irreversibly need a second confirmation.
@@ -63,6 +64,10 @@ from app.models.offer_quotation import OfferQuotation  # noqa: E402
 from app.models.whatsapp import WhatsAppIdentity  # noqa: E402
 from app.services import offer_quotations  # noqa: E402
 from app.services.storage import get_storage  # noqa: E402
+
+
+from app.models.offer_quotation import OfferQuotation  # noqa: E402
+from app.services import offer_quotations as _quotation_store  # noqa: E402
 
 
 def _text(value: object, limit: int) -> str:
@@ -273,32 +278,35 @@ def _details_screen(db: Session, owner: User, project: Project, message: str = "
 QUOTATION_LINK_SECONDS = 24 * 60 * 60
 
 
-def _offers_with_note(db: Session, owner: User, project: Project, note: str) -> dict[str, Any]:
-    screen = _offers_screen(db, owner, project)
-    screen["data"]["offers"] = f"{note}\n\n{screen['data']['offers']}"[:3500]
-    return screen
+def _quotation_names(db: Session, project: Project) -> dict[str, str]:
+    """Offer id to the quotation file the contractor attached, for every offer that has one."""
+    rows = db.query(OfferQuotation).filter(OfferQuotation.project_id == project.id, OfferQuotation.offer_id.isnot(None))
+    return {q.offer_id: q.file_name for q in rows.all()}
+
+
+def _quotation_note(row: dict[str, Any], names: dict[str, str]) -> str:
+    name = names.get(row.get("offer_id") or "")
+    return f", quotation: {_text(name, 60)}" if name else ", no quotation attached"
 
 
 def _send_quotation_links(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
-    """Send each offer's quotation to the owner as a link in this chat. The link works for 24 hours."""
+    """Send each offer's quotation to the owner as a link in this chat. Available before and after sealing."""
     project = _with_owned(db, owner, _form(data, "tender_id"))
-    if tender_service.received_offers(db, owner, project)["sealed"]:
-        return _offers_with_note(db, owner, project, "Quotations can be opened once the tender closes.")
     rows = db.execute(
         select(OfferQuotation, Offer, ContractorProfile)
         .join(Offer, OfferQuotation.offer_id == Offer.id)
         .join(ContractorProfile, ContractorProfile.user_id == Offer.contractor_id)
         .where(OfferQuotation.project_id == project.id)
-        .order_by(Offer.amount)
+        .order_by(Offer.created_at.asc())
     ).all()
     if not rows:
-        return _offers_with_note(db, owner, project, "No quotations have been uploaded for this tender yet.")
+        return _message("No offer has a quotation attached yet.")
     identity = db.scalar(select(WhatsAppIdentity).where(WhatsAppIdentity.user_id == owner.id))
     if identity is None:
-        return _offers_with_note(db, owner, project, "Your WhatsApp number is not linked to this account.")
+        return _message("Your WhatsApp number is not linked to this account.")
     storage = get_storage()
     for quotation, offer, profile in rows:
-        url = storage.signed_url(offer_quotations.BUCKET, quotation.storage_key, expires_in=QUOTATION_LINK_SECONDS)
+        url = storage.signed_url(_quotation_store.BUCKET, quotation.storage_key, expires_in=24 * 60 * 60)
         whatsapp_outbox.enqueue(
             db,
             dedupe_key=f"quotation:{quotation.id}:{owner.id}:{now:%Y%m%d%H}",
@@ -312,7 +320,7 @@ def _send_quotation_links(db: Session, owner: User, data: dict[str, Any], *, now
             },
         )
     db.commit()
-    return _offers_with_note(db, owner, project, f"Sent {len(rows)} quotation link(s) to this chat.")
+    return _message(f"Sent {len(rows)} quotation link(s) to this chat. Each link works for 24 hours.")
 
 
 def handle_owner_screen(db: Session, owner: User, screen: str, data: dict[str, Any], *, now: datetime) -> dict[str, Any] | None:
@@ -323,7 +331,6 @@ def handle_owner_screen(db: Session, owner: User, screen: str, data: dict[str, A
         "MY_TENDERS": _pick_tender,
         "TENDER_DETAILS": _submit_details,
         "AMEND": _submit_amend,
-        "OFFERS": _send_quotation_links,
     }
     handler = handlers.get(screen)
     if handler is None:
@@ -455,6 +462,8 @@ def _submit_details(db: Session, owner: User, data: dict[str, Any], *, now: date
         return _details_screen(db, owner, project)
     if action == "offers":
         return _offers_screen(db, owner, project)
+    if action == "quotations":
+        return _send_quotation_links(db, owner, {"tender_id": project.id}, now=now)
     if action == "edit":
         if project.status == ProjectStatus.draft:
             return {"screen": "CREATE_TENDER", "data": _fields_for_draft(project)}
@@ -512,6 +521,7 @@ def _submit_amend(db: Session, owner: User, data: dict[str, Any], *, now: dateti
 def _offers_screen(db: Session, owner: User, project: Project) -> dict[str, Any]:
     view = tender_service.received_offers(db, owner, project)
     rows = view["rows"]
+    names = _quotation_names(db, project)
     if not rows:
         body = "No offers have been received yet."
     elif view["sealed"]:
@@ -519,13 +529,13 @@ def _offers_screen(db: Session, owner: User, project: Project) -> dict[str, Any]
             "This tender is sealed. Bidder names and amounts stay hidden until it closes.",
             f"{len(rows)} offer(s) received.",
         ]
-        lines.extend(f"{row['label']}: received {row['submitted_at']:%d %b %Y %H:%M} UTC, {row['status']}" for row in rows)
+        lines.extend(f"{row['label']}: received {row['submitted_at']:%d %b %Y %H:%M} UTC, {row['status']}{_quotation_note(row, names)}" for row in rows)
         body = "\n".join(lines)
     else:
         lines = [f"{len(rows)} offer(s), lowest amount first."]
         for row in rows:
             timeline = f", {row['timeline']}" if row["timeline"] else ""
-            lines.append(f"{row['company']}: {row['amount']:,.2f}{timeline}, {row['status']}")
+            lines.append(f"{row['company']}: {row['amount']:,.2f}{timeline}, {row['status']}{_quotation_note(row, names)}")
         body = "\n".join(lines)
     return {"screen": "OFFERS", "data": {"tender_title": _text(project.title, 80), "offers": body[:3500], "tender_id": project.id}}
 
