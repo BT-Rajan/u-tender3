@@ -70,7 +70,7 @@ def test_pass16_notifications():
 
 
     # ---------- bid_submitted notification (owner-visible tender) ----------
-    r = owner_client.post("/projects", data={"title": "Roof job", "address": "1 Main St", "bid_deadline": future, "status": "open", "tender_type": "owner_visible"})
+    r = owner_client.post("/projects", data={"title": "Roof job", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open", "tender_type": "owner_visible"})
     project_id = r.json()["id"]
 
     c1.post(f"/projects/{project_id}/offers", json={"amount": "5000.00"})
@@ -98,7 +98,7 @@ def test_pass16_notifications():
 
 
     # ---------- sealed tender: notification never names the contractor ----------
-    r = owner_client.post("/projects", data={"title": "Sealed job", "address": "2 Oak Ave", "bid_deadline": future, "status": "open", "tender_type": "sealed"})
+    r = owner_client.post("/projects", data={"title": "Sealed job", "trade": "Electrical", "address": "2 Oak Ave", "bid_deadline": future, "status": "open", "tender_type": "sealed"})
     sealed_project_id = r.json()["id"]
     c1.post(f"/projects/{sealed_project_id}/offers", json={"amount": "9000.00"})
 
@@ -108,7 +108,7 @@ def test_pass16_notifications():
 
 
     # ---------- award notifications (bilingual: c2 is set to Arabic) ----------
-    r = owner_client.post("/projects", data={"title": "Deck job", "address": "3 Pine Rd", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck job", "trade": "Electrical", "address": "3 Pine Rd", "bid_deadline": future, "status": "open"})
     deck_id = r.json()["id"]
     r = c1.post(f"/projects/{deck_id}/offers", json={"amount": "1000.00"})
     offer1_id = r.json()["id"]
@@ -126,7 +126,7 @@ def test_pass16_notifications():
 
 
     # ---------- clarification notifications ----------
-    r = owner_client.post("/projects", data={"title": "Fence job", "address": "4 Elm St", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Fence job", "trade": "Electrical", "address": "4 Elm St", "bid_deadline": future, "status": "open"})
     fence_id = r.json()["id"]
     r = c1.post(f"/projects/{fence_id}/clarifications", json={"question": "How tall?", "shared_with_all": True})
     q_id = r.json()["id"]
@@ -148,7 +148,7 @@ def test_pass16_notifications():
 
 
     # ---------- no-award / cancel notifications ----------
-    r = owner_client.post("/projects", data={"title": "Gutter job", "address": "5 Birch Ln", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Gutter job", "trade": "Electrical", "address": "5 Birch Ln", "bid_deadline": future, "status": "open"})
     gutter_id = r.json()["id"]
     c1.post(f"/projects/{gutter_id}/offers", json={"amount": "300.00"})
     owner_client.post(f"/owner/projects/{gutter_id}/close")
@@ -156,7 +156,7 @@ def test_pass16_notifications():
     r = c1.get("/notifications")
     check("bidder notified of no-award", any(n["type"] == "tender_no_award" for n in r.json()))
 
-    r = owner_client.post("/projects", data={"title": "Paint job", "address": "6 Cedar St", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Paint job", "trade": "Electrical", "address": "6 Cedar St", "bid_deadline": future, "status": "open"})
     paint_id = r.json()["id"]
     c2.post(f"/projects/{paint_id}/offers", json={"amount": "400.00"})
     owner_client.post(f"/owner/projects/{paint_id}/cancel")

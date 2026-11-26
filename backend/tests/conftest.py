@@ -23,6 +23,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+# The deployment scopes sign-in cookies to its own path (COOKIE_PATH in .env). Tests call the API at
+# the root, so they always use "/".
+os.environ["COOKIE_PATH"] = "/"
+os.environ["API_URL"] = "http://localhost:8000"
+# WhatsApp is off unless a test switches it on, whatever the deployment has set.
+os.environ["WHATSAPP_ENABLED"] = "false"
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -137,3 +144,10 @@ def approve_owner(db_session, owner_id: str) -> None:
     profile = db_session.get(OwnerProfile, owner_id)
     profile.verification_status = VerificationStatus.approved
     db_session.commit()
+
+
+@pytest.fixture(autouse=True)
+def _quotation_media(monkeypatch):
+    """Contractor quotations arrive encrypted from Meta; tests get a fixed PDF back instead."""
+    monkeypatch.setattr("app.services.flow_media.download_cdn_file", lambda url: b"encrypted")
+    monkeypatch.setattr("app.services.flow_media.decrypt_flow_media", lambda blob, meta: b"%PDF-1.4 quotation")

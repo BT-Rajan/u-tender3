@@ -15,6 +15,7 @@ from app.models.award_record import AwardRecord
 from app.models.contractor import ContractorProfile
 from app.models.enums import OfferStatus, ProjectStatus, TenderType, UserRole, VerificationStatus
 from app.models.offer import Offer, OfferRevision
+from app.models.offer_quotation import OfferQuotation
 from app.models.owner import OwnerProfile
 from app.models.project import Project, ProjectDrawing
 from app.models.user import User
@@ -28,6 +29,7 @@ from flow_contract import check_reply
 from whatsapp_helpers import RecordingSender, enable_whatsapp, flow_request, message_envelope, sign, text_message
 
 NOW = datetime.utcnow()
+QUOTE = [{"file_name": "quotation.pdf", "cdn_url": "https://cdn.example/quote", "encryption_metadata": {}}]
 FUTURE = NOW + timedelta(days=10)
 
 
@@ -185,7 +187,7 @@ def test_an_unverified_contractor_can_search(client, monkeypatch, db):
 def test_browse_lists_only_open_unsuspended_tenders(setup):
     db = setup["db"]
     visible = _project(db, setup["owner"], title="Visible tender")
-    _project(db, setup["owner"], title="Draft tender", status=ProjectStatus.draft, deadline=None)
+    _project(db, setup["owner"], title="Draft tender", status=ProjectStatus.draft, deadline=FUTURE)
     _project(db, setup["owner"], title="Closed tender", status=ProjectStatus.closed)
     _project(db, setup["owner"], title="Suspended tender", suspended=True)
 
@@ -245,10 +247,11 @@ def test_submitting_an_offer_goes_through_review_and_is_saved(setup):
     form = _send(setup["client"], setup["pem"], setup["token"], "PROJECT_DETAILS", {"project_id": project.id, "action": "submit"})
     assert form["screen"] == "SUBMIT_OFFER"
 
-    review = _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"project_id": project.id, "amount": "12,500", "timeline": "6 months", "message": "Ready to start"})
+    review = _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": QUOTE, "project_id": project.id, "amount": "12,500", "timeline": "6 months", "message": "Ready to start"})
     assert review["screen"] == "REVIEW_OFFER"
     assert "12,500.00" in review["data"]["summary"]
 
+    _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": QUOTE, "project_id": project.id, "amount": "12500", "timeline": "6 months", "message": "Ready to start"})
     done = _send(setup["client"], setup["pem"], setup["token"], "REVIEW_OFFER", {"project_id": project.id, "amount": "12500", "timeline": "6 months", "message": "Ready to start", "decision": "submit"})
     assert done["screen"] == "DONE"
     offer = db.scalar(select(Offer).where(Offer.project_id == project.id))
@@ -260,7 +263,7 @@ def test_submitting_an_offer_goes_through_review_and_is_saved(setup):
 def test_a_bad_amount_is_refused_on_the_form(setup, amount):
     db = setup["db"]
     project = _project(db, setup["owner"])
-    reply = _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"project_id": project.id, "amount": amount})
+    reply = _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": QUOTE, "project_id": project.id, "amount": amount})
     assert reply["screen"] == "SUBMIT_OFFER"
     assert reply["data"]["error_message"]
     assert db.query(Offer).count() == 0
@@ -287,6 +290,7 @@ def test_a_closed_tender_cannot_be_bid_on(setup):
 
 def _bid(setup, project, amount="10000"):
     _send(setup["client"], setup["pem"], setup["token"], "PROJECT_DETAILS", {"project_id": project.id, "action": "submit"})
+    _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": QUOTE, "project_id": project.id, "amount": amount, "timeline": "4 months", "message": "first"})
     _send(setup["client"], setup["pem"], setup["token"], "REVIEW_OFFER", {"project_id": project.id, "amount": amount, "timeline": "4 months", "message": "first", "decision": "submit"})
 
 
@@ -296,6 +300,7 @@ def test_a_revision_keeps_the_earlier_version_in_history(setup):
     _bid(setup, project, "10000")
 
     _send(setup["client"], setup["pem"], setup["token"], "PROJECT_DETAILS", {"project_id": project.id, "action": "revise"})
+    _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": QUOTE, "project_id": project.id, "amount": "9000", "timeline": "3 months", "message": "better"})
     _send(setup["client"], setup["pem"], setup["token"], "REVIEW_OFFER", {"project_id": project.id, "amount": "9000", "timeline": "3 months", "message": "better", "decision": "submit"})
 
     offer = db.scalar(select(Offer).where(Offer.project_id == project.id))
@@ -343,6 +348,7 @@ def test_a_withdrawn_offer_can_be_submitted_again(setup):
     _bid(setup, project)
     _send(setup["client"], setup["pem"], setup["token"], "OFFER_DETAILS", {"project_id": project.id, "action": "withdraw", "confirm": "yes"})
 
+    _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": QUOTE, "project_id": project.id, "amount": "8000", "timeline": "", "message": "back"})
     _send(setup["client"], setup["pem"], setup["token"], "REVIEW_OFFER", {"project_id": project.id, "amount": "8000", "timeline": "", "message": "back", "decision": "submit"})
 
     db.expire_all()
@@ -490,7 +496,7 @@ def test_a_suspended_tender_cannot_be_opened_even_by_id(setup):
 
 def test_a_draft_tender_cannot_be_opened_even_by_id(setup):
     db = setup["db"]
-    draft = _project(db, setup["owner"], status=ProjectStatus.draft, deadline=None, title="Secret draft")
+    draft = _project(db, setup["owner"], status=ProjectStatus.draft, deadline=FUTURE, title="Secret draft")
     reply = _send(setup["client"], setup["pem"], setup["token"], "PROJECT_LIST", {"project_id": draft.id})
     assert "Secret draft" not in json.dumps(reply)
     assert "no longer available" in reply["data"]["message"]
@@ -524,3 +530,52 @@ def test_a_long_project_list_is_capped_at_twenty_rows(setup):
 
     assert reply["screen"] == "PROJECT_LIST"
     assert len(reply["data"]["projects"]) == 20
+
+
+@pytest.fixture(autouse=True)
+def _quotation_media(monkeypatch):
+    """The quotation is downloaded from Meta and decrypted; tests return a fixed PDF instead."""
+    monkeypatch.setattr("app.services.flow_media.download_cdn_file", lambda url: b"encrypted")
+    monkeypatch.setattr("app.services.flow_media.decrypt_flow_media", lambda blob, meta: b"%PDF-1.4 quotation")
+
+
+def test_an_offer_without_a_quotation_is_refused_on_the_form(setup):
+    db = setup["db"]
+    project = _project(db, setup["owner"])
+    reply = _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": [], "project_id": project.id, "amount": "12500", "timeline": "6 months", "message": ""})
+    assert reply["screen"] == "SUBMIT_OFFER"
+    assert "quotation" in reply["data"]["error_message"].lower()
+    assert db.query(Offer).count() == 0
+
+
+def test_the_quotation_is_linked_to_the_submitted_offer(setup):
+    db = setup["db"]
+    project = _project(db, setup["owner"])
+    review = _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": QUOTE, "project_id": project.id, "amount": "12500", "timeline": "6 months", "message": ""})
+    assert review["screen"] == "REVIEW_OFFER"
+    assert "quotation.pdf" in review["data"]["summary"]
+    _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": QUOTE, "project_id": project.id, "amount": "12500", "timeline": "6 months", "message": ""})
+    done = _send(setup["client"], setup["pem"], setup["token"], "REVIEW_OFFER", {"project_id": project.id, "amount": "12500", "timeline": "6 months", "message": "", "decision": "submit"})
+    assert done["screen"] == "DONE"
+    offer = db.scalar(select(Offer).where(Offer.project_id == project.id))
+    quotation = db.scalar(select(OfferQuotation).where(OfferQuotation.project_id == project.id))
+    assert quotation.offer_id == offer.id
+    assert quotation.file_name == "quotation.pdf"
+    assert quotation.storage_key
+
+
+def test_a_quotation_in_a_disallowed_format_is_refused(setup):
+    db = setup["db"]
+    project = _project(db, setup["owner"])
+    bad = [{"file_name": "quotation.exe", "cdn_url": "https://cdn.example/quote", "encryption_metadata": {}}]
+    reply = _send(setup["client"], setup["pem"], setup["token"], "SUBMIT_OFFER", {"quotation": bad, "project_id": project.id, "amount": "12500", "timeline": "", "message": ""})
+    assert reply["screen"] == "SUBMIT_OFFER"
+    assert "not accepted" in reply["data"]["error_message"]
+    assert db.query(OfferQuotation).count() == 0
+
+
+def test_submitting_without_a_held_quotation_creates_no_offer(setup):
+    db = setup["db"]
+    project = _project(db, setup["owner"])
+    _send(setup["client"], setup["pem"], setup["token"], "REVIEW_OFFER", {"project_id": project.id, "amount": "12500", "timeline": "", "message": "", "decision": "submit"})
+    assert db.query(Offer).count() == 0

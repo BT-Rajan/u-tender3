@@ -79,8 +79,16 @@ def handle_flow_request(db: Session, payload: dict[str, Any], *, now: datetime) 
     if session.flow_name == FLOW_REGISTRATION:
         return _registration_reply(db, session, payload, now=now)
     if session.flow_name in (FLOW_OWNER_DASHBOARD, FLOW_CONTRACTOR_DASHBOARD):
-        return _dashboard_reply(db, session, payload, now=now)
+        return _with_min_date(_dashboard_reply(db, session, payload, now=now), now)
     return None
+
+
+def _with_min_date(reply: dict[str, Any] | None, now: datetime) -> dict[str, Any] | None:
+    """Tender forms carry the earliest bid end date, so the calendar cannot pick a past day."""
+    from app.services import tender_service  # local import: avoids an import cycle
+    if reply and reply.get("screen") in ("CREATE_TENDER", "AMEND"):
+        reply.setdefault("data", {})["min_date"] = str(tender_service.earliest_bid_date_ms(now))
+    return reply
 
 
 def _saved_fields(session: WhatsAppFlowSession, screen: str) -> dict[str, Any]:

@@ -45,8 +45,8 @@ def _set_auth_cookies(response: Response, user_id: str) -> None:
     # enough since frontend and backend are same-site in production
     # deployments (reverse-proxied together) — see README for the local-dev
     # cross-origin case, which needs SameSite=None + secure over https.
-    response.set_cookie("access_token", access_token, httponly=True, samesite="lax", max_age=ACCESS_TTL_SECONDS)
-    response.set_cookie("refresh_token", refresh_token, httponly=True, samesite="lax", max_age=REFRESH_TTL_SECONDS)
+    response.set_cookie("access_token", access_token, httponly=True, samesite="lax", max_age=ACCESS_TTL_SECONDS, path=settings.cookie_path)
+    response.set_cookie("refresh_token", refresh_token, httponly=True, samesite="lax", max_age=REFRESH_TTL_SECONDS, path=settings.cookie_path)
 
 
 def _revoke_refresh_token(db: Session, refresh_token: str | None) -> None:
@@ -155,8 +155,8 @@ def refresh(response: Response, refresh_token: str | None = Cookie(default=None)
 @router.post("/logout")
 def logout(response: Response, refresh_token: str | None = Cookie(default=None), db: Session = Depends(get_db)):
     _revoke_refresh_token(db, refresh_token)
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    response.delete_cookie("access_token", path=settings.cookie_path)
+    response.delete_cookie("refresh_token", path=settings.cookie_path)
     return {"ok": True}
 
 

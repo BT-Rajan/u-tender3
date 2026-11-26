@@ -68,7 +68,7 @@ def _fresh(db, project_id):
 
 
 def _project(db, owner, *, status=ProjectStatus.open, title="Villa renovation", tender_type=TenderType.owner_visible, deadline=None):
-    if deadline is None and status != ProjectStatus.draft:
+    if deadline is None:
         deadline = NOW + timedelta(days=10)
     project = Project(owner_id=owner.id, title=title, address="Block 3, Salmiya", trade="Civil works", bid_deadline=deadline, status=status, tender_type=tender_type)
     db.add(project)
@@ -111,15 +111,13 @@ def test_create_tender_opens_a_blank_form(setup):
 # --- create and review ---------------------------------------------------------
 
 
-def test_a_title_alone_is_saved_as_a_draft_and_reaches_review(setup):
+def test_a_title_alone_is_refused_until_the_standard_is_met(setup):
     db = setup["db"]
     reply = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa renovation", "tender_type": "owner_visible"})
 
-    assert reply["screen"] == "REVIEW"
-    project = db.scalar(select(Project).where(Project.owner_id == setup["owner"].id))
-    assert project.status == ProjectStatus.draft
-    assert project.bid_deadline is None
-    assert reply["data"]["tender_id"] == project.id
+    assert reply["screen"] == "CREATE_TENDER"
+    assert reply["data"]["error_message"]
+    assert db.query(Project).count() == 0
 
 
 def test_a_full_tender_can_be_published_from_review(setup):
@@ -141,15 +139,17 @@ def test_a_full_tender_can_be_published_from_review(setup):
     assert project.bid_deadline > NOW
 
 
-def test_publishing_without_a_deadline_stays_on_review_with_a_message(setup):
+def test_publishing_after_the_bid_end_date_has_passed_stays_on_review_with_a_message(setup):
     db = setup["db"]
-    reply = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3"})
-    tender_id = reply["data"]["tender_id"]
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "trade": "Civil works", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
+    project = db.get(Project, tender_id)
+    project.bid_deadline = NOW - timedelta(days=1)
+    db.commit()
 
     again = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "publish"})
 
     assert again["screen"] == "REVIEW"
-    assert "deadline" in again["data"]["error_message"].lower()
+    assert "bid end date" in again["data"]["error_message"].lower()
     assert _fresh(db, tender_id).status == ProjectStatus.draft
 
 
@@ -176,7 +176,7 @@ def test_a_trade_outside_the_list_is_refused(setup):
 
 def test_save_as_draft_keeps_the_tender_and_says_so(setup):
     db = setup["db"]
-    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa"})["data"]["tender_id"]
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "trade": "Civil works", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
 
     done = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "save_draft"})
 
@@ -186,7 +186,7 @@ def test_save_as_draft_keeps_the_tender_and_says_so(setup):
 
 
 def test_edit_from_review_reopens_the_form_with_the_saved_values(setup):
-    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3"})["data"]["tender_id"]
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "trade": "Civil works", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
 
     form = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "action": "edit"})
 
@@ -194,13 +194,14 @@ def test_edit_from_review_reopens_the_form_with_the_saved_values(setup):
     assert form["data"]["tender_id"] == tender_id
     assert form["data"]["title"] == "Villa"
     assert form["data"]["address"] == "Block 3"
+    assert form["data"]["trade"] == "Civil works"
 
 
 def test_editing_an_existing_draft_updates_it_rather_than_creating_another(setup):
     db = setup["db"]
-    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa"})["data"]["tender_id"]
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "trade": "Civil works", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
 
-    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"tender_id": tender_id, "title": "Villa v2"})
+    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"tender_id": tender_id, "title": "Villa v2", "address": "Block 3", "trade": "Civil works", "bid_deadline": FUTURE_LOCAL})
 
     assert db.query(Project).count() == 1
     assert _fresh(db, tender_id).title == "Villa v2"
@@ -340,7 +341,7 @@ def test_amend_cannot_move_the_deadline_earlier_after_bids(setup):
 
     reply = _send(
         setup["client"], setup["pem"], setup["token"], "AMEND",
-        {"tender_id": project.id, "title": "Villa renovation", "bid_deadline": earlier},
+        {"tender_id": project.id, "title": "Villa renovation", "trade": "Civil works", "bid_deadline": earlier},
     )
 
     assert reply["screen"] == "AMEND"
@@ -503,7 +504,7 @@ def test_the_calendar_date_becomes_the_end_of_that_day(setup):
     midnight = datetime(day.year, day.month, day.day, tzinfo=zone)
     millis = int(midnight.timestamp() * 1000)
 
-    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "bid_deadline": millis})
+    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "trade": "Electrical", "address": "Block 3", "bid_deadline": millis})
 
     project = setup["db"].query(Project).one()
     local = project.bid_deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(zone)
@@ -520,7 +521,7 @@ def test_the_calendar_may_send_an_iso_date_or_decimal_milliseconds(setup):
     midnight = datetime(day.year, day.month, day.day, tzinfo=zone)
     iso = f"{day.year:04d}-{day.month:02d}-{day.day:02d}"
 
-    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Iso", "address": "Block 3", "bid_deadline": iso})
+    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Iso", "trade": "Electrical", "address": "Block 3", "bid_deadline": iso})
     project = setup["db"].query(Project).one()
     local = project.bid_deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(zone)
     assert (local.year, local.month, local.day, local.hour, local.minute) == (day.year, day.month, day.day, 23, 59)
@@ -528,7 +529,7 @@ def test_the_calendar_may_send_an_iso_date_or_decimal_milliseconds(setup):
     setup["db"].query(Project).delete()
     setup["db"].commit()
     millis = f"{int(midnight.timestamp() * 1000)}.0"
-    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Decimal", "address": "Block 3", "bid_deadline": millis})
+    _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Decimal", "trade": "Electrical", "address": "Block 3", "bid_deadline": millis})
     project = setup["db"].query(Project).one()
     local = project.bid_deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(zone)
     assert (local.year, local.month, local.day) == (day.year, day.month, day.day)
@@ -536,7 +537,7 @@ def test_the_calendar_may_send_an_iso_date_or_decimal_milliseconds(setup):
 def test_publishing_also_sends_the_tender_number_in_chat(setup):
     from app.models.whatsapp import WhatsAppOutbox
 
-    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "trade": "Electrical", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
 
     reply = _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "next_step": "publish"})
 
@@ -549,7 +550,7 @@ def test_publishing_also_sends_the_tender_number_in_chat(setup):
     assert project.reference_code in rows[0].params_json["body"]
 
 def test_a_draft_is_not_offered_close_or_view_offers(setup):
-    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3"})["data"]["tender_id"]
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "trade": "Civil works", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
 
     reply = _send(setup["client"], setup["pem"], setup["token"], "MY_TENDERS", {"tender_id": tender_id})
 
@@ -559,7 +560,7 @@ def test_a_draft_is_not_offered_close_or_view_offers(setup):
 
 
 def test_the_details_choice_is_read_from_next_step(setup):
-    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
+    tender_id = _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": "Villa", "trade": "Electrical", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
     _send(setup["client"], setup["pem"], setup["token"], "REVIEW", {"tender_id": tender_id, "next_step": "publish"})
 
     reply = _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": tender_id, "next_step": "edit"})
@@ -571,7 +572,7 @@ def test_the_details_choice_is_read_from_next_step(setup):
 
 
 def _draft_with_deadline(setup, title="Villa"):
-    return _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": title, "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
+    return _send(setup["client"], setup["pem"], setup["token"], "CREATE_TENDER", {"title": title, "trade": "Electrical", "address": "Block 3", "bid_deadline": FUTURE_LOCAL})["data"]["tender_id"]
 
 
 def test_every_owner_menu_choice_opens_a_screen(setup):
@@ -646,3 +647,97 @@ def test_editing_a_draft_sends_saved_text_within_each_box(setup, tender_type):
     assert "\n" not in reply["data"]["address"]
     assert len(reply["data"]["description"]) <= 1000
     assert reply["data"]["tender_type"] == tender_type.value
+
+
+# --- quotations for the owner ----------------------------------------------------
+
+from decimal import Decimal as _Decimal  # noqa: E402
+
+from app.models.contractor import ContractorProfile as _ContractorProfile  # noqa: E402
+from app.models.enums import OfferStatus as _OfferStatus  # noqa: E402
+from app.models.offer import Offer as _Offer  # noqa: E402
+from app.models.offer_quotation import OfferQuotation as _OfferQuotation  # noqa: E402
+from app.models.whatsapp import WhatsAppOutbox as _WhatsAppOutbox  # noqa: E402
+from app.services import offer_quotations as _offer_quotations  # noqa: E402
+from app.services import whatsapp_outbox as _whatsapp_outbox  # noqa: E402
+from app.services.storage import get_storage as _get_storage  # noqa: E402
+from app.services.tender_service import TenderError as _TenderError  # noqa: E402
+from app.services.whatsapp_owner_flows import _send_quotation_links  # noqa: E402
+
+
+def _quoted_offer(db, project, *, amount="10000", company="Haddad Builders"):
+    contractor = User(email=None, password_hash=None, role=UserRole.contractor, full_name="Omar Haddad", phone="+96522220001")
+    db.add(contractor)
+    db.flush()
+    db.add(
+        _ContractorProfile(
+            user_id=contractor.id,
+            company_name=company,
+            primary_trade="Civil works",
+            verification_status=VerificationStatus.approved,
+            paid_until=NOW + timedelta(days=30),
+        )
+    )
+    db.flush()
+    offer = _Offer(project_id=project.id, contractor_id=contractor.id, amount=_Decimal(amount), status=_OfferStatus.submitted)
+    db.add(offer)
+    db.flush()
+    key = f"{project.id}/{contractor.id}/quote.pdf"
+    _get_storage().save(_offer_quotations.BUCKET, key, b"%PDF-1.4 quotation", "application/pdf")
+    db.add(
+        _OfferQuotation(
+            offer_id=offer.id,
+            project_id=project.id,
+            contractor_id=contractor.id,
+            file_name="quote.pdf",
+            content_type="application/pdf",
+            storage_key=key,
+        )
+    )
+    db.commit()
+    return offer
+
+
+def _link_messages(db):
+    return db.query(_WhatsAppOutbox).filter(_WhatsAppOutbox.kind == _whatsapp_outbox.KIND_CTA_URL).all()
+
+
+def test_the_owner_is_sent_a_link_to_each_quotation(setup):
+    db = setup["db"]
+    project = _project(db, setup["owner"])
+    _quoted_offer(db, project)
+    _send(setup["client"], setup["pem"], setup["token"], "TENDER_DETAILS", {"tender_id": project.id, "action": "offers"})
+    reply = _send(setup["client"], setup["pem"], setup["token"], "OFFERS", {"tender_id": project.id})
+    assert reply["screen"] == "OFFERS"
+    assert "Sent 1 quotation link" in reply["data"]["offers"]
+    links = _link_messages(db)
+    assert len(links) == 1
+    assert "/files/offer-quotations/" in links[0].params_json["url"]
+    assert "Haddad Builders" in links[0].params_json["body"]
+
+
+def test_asking_again_in_the_same_hour_does_not_send_the_links_twice(setup):
+    db = setup["db"]
+    project = _project(db, setup["owner"])
+    _quoted_offer(db, project)
+    _send(setup["client"], setup["pem"], setup["token"], "OFFERS", {"tender_id": project.id})
+    _send(setup["client"], setup["pem"], setup["token"], "OFFERS", {"tender_id": project.id})
+    assert len(_link_messages(db)) == 1
+
+
+def test_quotations_wait_until_a_sealed_tender_closes(setup):
+    db = setup["db"]
+    project = _project(db, setup["owner"], tender_type=TenderType.sealed)
+    _quoted_offer(db, project)
+    reply = _send(setup["client"], setup["pem"], setup["token"], "OFFERS", {"tender_id": project.id})
+    assert "once the tender closes" in reply["data"]["offers"]
+    assert _link_messages(db) == []
+
+
+def test_only_the_tenders_owner_gets_its_quotation_links(setup):
+    db = setup["db"]
+    project = _project(db, setup["owner"])
+    _quoted_offer(db, project)
+    with pytest.raises(_TenderError):
+        _send_quotation_links(db, setup["stranger"], {"tender_id": project.id}, now=NOW)
+    assert _link_messages(db) == []

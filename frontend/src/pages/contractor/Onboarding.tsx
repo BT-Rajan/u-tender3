@@ -7,20 +7,10 @@ import { ErrorBanner } from "@/components/ErrorBanner";
 import { PageLoading } from "@/components/PageLoading";
 import { useI18n } from "@/i18n/I18nContext";
 import { errorText } from "@/lib/errors";
+import { TRADE_OPTIONS } from "@/lib/trades";
+export { TRADE_OPTIONS };
 
 // Must match TRADE_OPTIONS in backend/app/services/registration.py.
-export const TRADE_OPTIONS = [
-  "General contracting",
-  "Electrical",
-  "Plumbing",
-  "HVAC",
-  "Civil works",
-  "Finishing",
-  "Fire safety",
-  "Landscaping",
-  "Other",
-] as const;
-
 const INPUT =
   "w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20";
 

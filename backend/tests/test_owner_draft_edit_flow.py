@@ -1,3 +1,4 @@
+# Drafts meet the standard: every draft has a trade and a future deadline.
 """An owner edits a saved draft on WhatsApp and submits the form again. The Flow sends back every field on the
 form, so these tests send the full set, for each shape a saved draft can have. Every reply is checked against
 the Flow's declared screen (flow_contract), so a reply WhatsApp would show as "Something went wrong" fails here."""
@@ -69,8 +70,8 @@ def _draft(db, owner, **fields) -> Project:
         title=fields.pop("title", "Half-written villa"),
         address=fields.pop("address", "Block 3, Salmiya"),
         description=fields.pop("description", None),
-        trade=fields.pop("trade", None),
-        bid_deadline=fields.pop("bid_deadline", None),
+        trade=fields.pop("trade", "Electrical"),
+        bid_deadline=fields.pop("bid_deadline", NOW + timedelta(days=10)),
         status=ProjectStatus.draft,
         tender_type=fields.pop("tender_type", TenderType.owner_visible),
     )
@@ -80,7 +81,7 @@ def _draft(db, owner, **fields) -> Project:
 
 
 SHAPES = {
-    "no trade, no description, no deadline": {},
+    "no description": {"description": None},
     "trade outside the list": {"trade": "Carpentry"},
     "trade in the list": {"trade": "Electrical"},
     "address not set": {"address": "Not set"},
@@ -125,9 +126,9 @@ def test_review_submitted_without_a_choice_keeps_the_summary_and_says_what_to_pi
     assert "Publish now" in reply["data"]["error_message"]
 
 
-def test_publishing_a_draft_without_a_deadline_keeps_the_summary_on_review(owner_flow):
+def test_publishing_a_draft_whose_deadline_has_passed_keeps_the_summary_on_review(owner_flow):
     db = owner_flow["db"]
-    draft = _draft(db, owner_flow["owner"], title="Villa", address="Block 3")
+    draft = _draft(db, owner_flow["owner"], title="Villa", address="Block 3", bid_deadline=NOW - timedelta(days=1))
 
     reply = _send(owner_flow["client"], owner_flow["pem"], owner_flow["token"], "REVIEW", {"tender_id": draft.id, "next_step": "publish"})
 

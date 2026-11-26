@@ -1,3 +1,4 @@
+import { withBase } from "@/lib/base";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
 import type { OwnerDocument, OwnerProfile } from "@/api/types";
@@ -106,7 +107,7 @@ export function OwnerStatusPage() {
               </td>
               <td className="py-3.5">
                 {(d.status === "not_submitted" || d.status === "rejected") && (
-                  <a href="/owner/verify" className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-3 py-1.5">
+                  <a href={withBase("/owner/verify")} className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-3 py-1.5">
                     {d.status === "rejected" ? t("owner.status.reupload") : t("owner.status.upload")}
                   </a>
                 )}

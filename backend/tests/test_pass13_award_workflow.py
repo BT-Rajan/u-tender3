@@ -58,7 +58,7 @@ def test_pass13_award_workflow():
 
     future = (datetime.utcnow() + timedelta(days=7)).isoformat()
 
-    r = owner_client.post("/projects", data={"title": "Deck build", "address": "1 Main St", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck build", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"})
     project_id = r.json()["id"]
 
     r = c1.post(f"/projects/{project_id}/offers", json={"amount": "5000.00"})
@@ -118,7 +118,7 @@ def test_pass13_award_workflow():
     check("re-approving after already awarded is rejected", r.status_code == 400)
 
     # approving an already-withdrawn offer is rejected outright
-    r2 = owner_client.post("/projects", data={"title": "Second job", "address": "2 Oak Ave", "bid_deadline": future, "status": "open"})
+    r2 = owner_client.post("/projects", data={"title": "Second job", "trade": "Electrical", "address": "2 Oak Ave", "bid_deadline": future, "status": "open"})
     project2_id = r2.json()["id"]
     r = c1.post(f"/projects/{project2_id}/offers", json={"amount": "1000.00"})
     offer2_id = r.json()["id"]
@@ -128,14 +128,14 @@ def test_pass13_award_workflow():
     check("approving a withdrawn offer is rejected outright", r.status_code == 400)
 
     # no-award and cancel are audited too
-    r3 = owner_client.post("/projects", data={"title": "Third job", "address": "3 Pine Rd", "bid_deadline": future, "status": "open"})
+    r3 = owner_client.post("/projects", data={"title": "Third job", "trade": "Electrical", "address": "3 Pine Rd", "bid_deadline": future, "status": "open"})
     project3_id = r3.json()["id"]
     owner_client.post(f"/owner/projects/{project3_id}/close")
     owner_client.post(f"/owner/projects/{project3_id}/no-award")
     no_award_audit = db.query(AuditLog).filter_by(action="project.no_award", target_id=project3_id).first()
     check("no-award action is audited", no_award_audit is not None)
 
-    r4 = owner_client.post("/projects", data={"title": "Fourth job", "address": "4 Elm St", "bid_deadline": future, "status": "open"})
+    r4 = owner_client.post("/projects", data={"title": "Fourth job", "trade": "Electrical", "address": "4 Elm St", "bid_deadline": future, "status": "open"})
     project4_id = r4.json()["id"]
     owner_client.post(f"/owner/projects/{project4_id}/cancel")
     cancel_audit = db.query(AuditLog).filter_by(action="project.cancel", target_id=project4_id).first()

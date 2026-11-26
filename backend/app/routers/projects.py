@@ -69,8 +69,13 @@ async def create_project(
     status_value = ProjectStatus(status)
 
     deadline = to_utc_naive(bid_deadline)
-    if status_value == ProjectStatus.open and deadline <= datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Bid deadline must be in the future.")
+    try:
+        tender_service.check_tender_values(
+            title=title, address=address, trade=trade, description=description,
+            bid_deadline=deadline, tender_type=tender_type_value, now=datetime.utcnow(),
+        )
+    except tender_service.TenderError as error:
+        raise HTTPException(status_code=400, detail=error.message)
 
     project = Project(
         owner_id=user.id,

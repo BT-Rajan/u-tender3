@@ -49,9 +49,9 @@ def test_pass10_feed_discovery():
 
     future = (datetime.utcnow() + timedelta(days=7)).isoformat()
 
-    owner_client.post("/projects", data={"title": "Roof replacement on Maple St", "address": "1 Maple St", "trade": "Roofing", "bid_deadline": future, "status": "open"})
-    owner_client.post("/projects", data={"title": "Kitchen remodel", "address": "2 Oak Ave", "trade": "Carpentry", "bid_deadline": future, "status": "open"})
-    owner_client.post("/projects", data={"title": "Fence repair", "address": "3 Pine Rd", "trade": "Fencing", "description": "Replace 40ft of cedar fence", "bid_deadline": future, "status": "open"})
+    owner_client.post("/projects", data={"title": "Roof replacement on Maple St", "address": "1 Maple St", "trade": "Civil works", "bid_deadline": future, "status": "open"})
+    owner_client.post("/projects", data={"title": "Kitchen remodel", "address": "2 Oak Ave", "trade": "Finishing", "bid_deadline": future, "status": "open"})
+    owner_client.post("/projects", data={"title": "Fence repair", "address": "3 Pine Rd", "trade": "Landscaping", "description": "Replace 40ft of cedar fence", "bid_deadline": future, "status": "open"})
 
     # created_at has second-level granularity (true of MySQL DATETIME too,
     # not just SQLite) — three inserts in the same test process can land in
@@ -67,8 +67,8 @@ def test_pass10_feed_discovery():
     r = contractor_client.get("/contractor/feed")
     check("unfiltered feed returns all 3 open projects", len(r.json()) == 3)
 
-    r = contractor_client.get("/contractor/feed", params={"trade": "roof"})
-    check("trade filter (partial, case-insensitive) matches Roofing", len(r.json()) == 1 and r.json()[0]["trade"] == "Roofing")
+    r = contractor_client.get("/contractor/feed", params={"trade": "civil"})
+    check("trade filter (partial, case-insensitive) matches Civil works", len(r.json()) == 1 and r.json()[0]["trade"] == "Civil works")
 
     r = contractor_client.get("/contractor/feed", params={"trade": "electrical"})
     check("trade filter with no matches returns empty list", len(r.json()) == 0)
@@ -90,7 +90,7 @@ def test_pass10_feed_discovery():
 
     r = contractor_client.get("/contractor/feed/trades")
     check("distinct trades endpoint returns 200", r.status_code == 200)
-    check("distinct trades returns all 3 trades sorted", r.json() == sorted(["Roofing", "Carpentry", "Fencing"]))
+    check("distinct trades returns all 3 trades sorted", r.json() == sorted(["Civil works", "Finishing", "Landscaping"]))
 
     # unauthenticated / wrong-role access rejected
     r = owner_client.get("/contractor/feed/trades")

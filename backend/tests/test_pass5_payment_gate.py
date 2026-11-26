@@ -63,6 +63,7 @@ def test_pass5_payment_gate():
         "/projects",
         data={
             "title": "Kitchen remodel",
+            "trade": "Electrical",
             "address": "123 Main St",
             "bid_deadline": (datetime.utcnow() + timedelta(days=7)).isoformat(),
         },

@@ -56,7 +56,7 @@ def test_pass9_clarifications_amendments():
 
     future = (datetime.utcnow() + timedelta(days=7)).isoformat()
 
-    r = owner_client.post("/projects", data={"title": "Roof job", "address": "1 Main St", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Roof job", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"})
     project_id = r.json()["id"]
 
 
@@ -157,7 +157,7 @@ def test_pass9_clarifications_amendments():
     check("second amendment recorded", len(r.json()) == 2)
 
     # amending a terminal-state project is rejected
-    r2 = owner_client.post("/projects", data={"title": "Fence", "address": "2 Oak Ave", "bid_deadline": future, "status": "open"})
+    r2 = owner_client.post("/projects", data={"title": "Fence", "trade": "Electrical", "address": "2 Oak Ave", "bid_deadline": future, "status": "open"})
     project2_id = r2.json()["id"]
     owner_client.post(f"/owner/projects/{project2_id}/cancel")
     r = owner_client.patch(f"/projects/{project2_id}", json={"title": "New title"})

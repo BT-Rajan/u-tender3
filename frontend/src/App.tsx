@@ -1,3 +1,4 @@
+import { APP_BASE } from "@/lib/base";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NotFoundPage } from "@/pages/NotFound";
@@ -206,7 +207,7 @@ function AppRoutes() {
 
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={APP_BASE || undefined}>
       <AppRoutes />
     </BrowserRouter>
   );

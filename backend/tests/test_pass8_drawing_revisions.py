@@ -25,7 +25,7 @@ def test_pass8_drawing_revisions():
 
     r = owner_client.post(
         "/projects",
-        data={"title": "Roof job", "address": "1 Main St", "bid_deadline": future, "status": "open"},
+        data={"title": "Roof job", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"},
         files={"drawings": ("plan.pdf", b"version one content", "application/pdf")},
     )
     check("project created with one drawing", r.status_code == 201 and len(r.json()["drawings"]) == 1)

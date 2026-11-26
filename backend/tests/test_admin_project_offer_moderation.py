@@ -64,7 +64,7 @@ def test_admin_lists_all_projects_and_drills_into_owner_projects():
     admin_client = _signup_admin(db)
     owner_client, owner_id = _make_approved_owner(db)
 
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
     project_id = r.json()["id"]
 
     r = admin_client.get("/admin/projects")
@@ -91,7 +91,7 @@ def test_admin_project_detail_shows_offers_unredacted_even_when_sealed():
 
     r = owner_client.post(
         "/projects",
-        data={"title": "Sealed job", "address": "1 Main St", "bid_deadline": _future(), "status": "open", "tender_type": "sealed"},
+        data={"title": "Sealed job", "trade": "Electrical", "address": "1 Main St", "bid_deadline": _future(), "status": "open", "tender_type": "sealed"},
     )
     project_id = r.json()["id"]
     c1.post(f"/projects/{project_id}/offers", json={"amount": "5000.00"})
@@ -111,7 +111,7 @@ def test_admin_edit_project_fields():
     admin_client = _signup_admin(db)
     owner_client, owner_id = _make_approved_owner(db)
 
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
     project_id = r.json()["id"]
 
     r = admin_client.patch(f"/admin/projects/{project_id}", json={"title": "Deck (corrected)", "trade": "Carpentry"})
@@ -135,7 +135,7 @@ def test_admin_suspend_project_hides_from_feed_and_blocks_bidding():
     owner_client, owner_id = _make_approved_owner(db)
     c1, c1_id = _make_active_contractor(db, admin_client, "c1@example.com", "Acme")
 
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
     project_id = r.json()["id"]
 
     r = c1.get("/contractor/feed")
@@ -175,7 +175,7 @@ def test_admin_delete_project_guard_and_success():
     owner_client, owner_id = _make_approved_owner(db)
     c1, c1_id = _make_active_contractor(db, admin_client, "c1@example.com", "Acme")
 
-    r = owner_client.post("/projects", data={"title": "Has offer", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Has offer", "trade": "Electrical", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
     project_with_offer = r.json()["id"]
     c1.post(f"/projects/{project_with_offer}/offers", json={"amount": "5000.00"})
 
@@ -183,7 +183,7 @@ def test_admin_delete_project_guard_and_success():
     assert r.status_code == 400
     assert "Suspend" in r.json()["detail"]
 
-    r = owner_client.post("/projects", data={"title": "No offers", "address": "2 Oak Ave", "bid_deadline": _future(), "status": "open"})
+    r = owner_client.post("/projects", data={"title": "No offers", "trade": "Electrical", "address": "2 Oak Ave", "bid_deadline": _future(), "status": "open"})
     empty_project_id = r.json()["id"]
 
     r = admin_client.delete(f"/admin/projects/{empty_project_id}")
@@ -199,7 +199,7 @@ def test_admin_edit_offer_snapshots_revision():
     owner_client, owner_id = _make_approved_owner(db)
     c1, c1_id = _make_active_contractor(db, admin_client, "c1@example.com", "Acme")
 
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
     project_id = r.json()["id"]
     r = c1.post(f"/projects/{project_id}/offers", json={"amount": "5000.00", "message": "original"})
     offer_id = r.json()["id"]
@@ -229,7 +229,7 @@ def test_admin_suspend_offer_hides_from_owner_evaluation_and_blocks_award():
     c1, c1_id = _make_active_contractor(db, admin_client, "c1@example.com", "Acme")
     c2, c2_id = _make_active_contractor(db, admin_client, "c2@example.com", "BuildCo")
 
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
     project_id = r.json()["id"]
     r = c1.post(f"/projects/{project_id}/offers", json={"amount": "5000.00"})
     offer1_id = r.json()["id"]
@@ -270,7 +270,7 @@ def test_admin_delete_offer_guard_and_success():
     c1, c1_id = _make_active_contractor(db, admin_client, "c1@example.com", "Acme")
     c2, c2_id = _make_active_contractor(db, admin_client, "c2@example.com", "BuildCo")
 
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
     project_id = r.json()["id"]
     r = c1.post(f"/projects/{project_id}/offers", json={"amount": "5000.00"})
     winning_offer_id = r.json()["id"]
@@ -294,7 +294,7 @@ def test_admin_delete_offer_guard_and_success():
 def test_non_admin_cannot_reach_project_offer_moderation_endpoints():
     db = db_module.SessionLocal()
     owner_client, owner_id = _make_approved_owner(db)
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": _future(), "status": "open"})
     project_id = r.json()["id"]
 
     assert owner_client.get("/admin/projects").status_code == 403

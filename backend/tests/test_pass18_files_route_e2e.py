@@ -28,7 +28,7 @@ def test_pass18_files_route_e2e():
     future = (datetime.utcnow() + timedelta(days=7)).isoformat()
     r = owner_client.post(
         "/projects",
-        data={"title": "Real file round trip", "address": "1 Main St", "bid_deadline": future, "status": "open"},
+        data={"title": "Real file round trip", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"},
         files={"drawings": ("plan.pdf", b"real PDF bytes here", "application/pdf")},
     )
     check("project with a drawing created", r.status_code == 201)

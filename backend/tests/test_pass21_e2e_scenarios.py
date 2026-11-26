@@ -71,7 +71,7 @@ def test_pass21_e2e_scenarios():
         return {n["type"] for n in r.json()}
 
 
-    c1, c1_id = make_active_contractor("c1@example.com", "Acme Roofing")
+    c1, c1_id = make_active_contractor("c1@example.com", "Acme Civil works")
     c2, c2_id = make_active_contractor("c2@example.com", "BuildCo")
     c3, c3_id = make_active_contractor("c3@example.com", "ThirdCo")
 
@@ -87,7 +87,7 @@ def test_pass21_e2e_scenarios():
         data={
             "title": "Kitchen remodel",
             "address": "10 Baker St",
-            "trade": "General",
+            "trade": "General contracting",
             "bid_deadline": future,
             "status": "open",
             "tender_type": "owner_visible",
@@ -188,7 +188,7 @@ def test_pass21_e2e_scenarios():
         data={
             "title": "Roof replacement",
             "address": "22 Cedar Ln",
-            "trade": "Roofing",
+            "trade": "Civil works",
             "bid_deadline": future,
             "status": "open",
             "tender_type": "sealed",

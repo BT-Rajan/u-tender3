@@ -1,3 +1,4 @@
+import logging
 """Tender (project) lifecycle rules, shared by the web routes and the WhatsApp owner flows.
 
 Every owner action on a tender goes through this module, so the rules live in one place:
@@ -28,7 +29,10 @@ from app.services.notify import notify
 from app.services.whatsapp_notifications import fan_out_new_tender
 from app.services.tender_lifecycle import is_sealed_and_open, sync_expired_projects
 
+_log = logging.getLogger(__name__)
+
 TITLE_MAX = 255
+DESCRIPTION_MAX = 1000
 ADDRESS_MAX = 500
 LIST_LIMIT = 20
 
@@ -44,6 +48,66 @@ class TenderError(Exception):
         super().__init__(message)
         self.code = code
         self.message = message
+
+def earliest_bid_date_ms(now: datetime) -> int:
+    """The start of today in the tender timezone, in epoch milliseconds: the earliest day the calendar may pick."""
+    zone = ZoneInfo(get_settings().tender_timezone)
+    local = now.replace(tzinfo=ZoneInfo("UTC")).astimezone(zone)
+    start = datetime(local.year, local.month, local.day, tzinfo=zone)
+    return int(start.timestamp() * 1000)
+
+
+def check_tender_values(
+    *,
+    title: str | None,
+    address: str | None,
+    trade: str | None,
+    description: str | None,
+    bid_deadline: datetime | None,
+    tender_type: Any,
+    now: datetime,
+    require_future_deadline: bool = True,
+) -> dict[str, Any]:
+    """The standard every tender meets before it is saved, drafts included, on every channel.
+
+    Title, address, trade, bid end date and tender type are required. The description is optional.
+    The bid end date must be in the future. Raises TenderError for the first problem found.
+    """
+    from app.services.registration import TRADE_OPTIONS  # local: registration imports the same package
+
+    title = (title or "").strip()
+    if not title:
+        raise TenderError("invalid", "Give the tender a title.")
+    if len(title) > TITLE_MAX:
+        raise TenderError("invalid", f"The title must be {TITLE_MAX} characters or fewer.")
+    address = (address or "").strip()
+    if not address or address == "Not set":
+        raise TenderError("invalid", "Add the address.")
+    if len(address) > ADDRESS_MAX:
+        raise TenderError("invalid", f"The address must be {ADDRESS_MAX} characters or fewer.")
+    description = (description or "").strip() or None
+    if description is not None and len(description) > DESCRIPTION_MAX:
+        raise TenderError("invalid", f"The description must be {DESCRIPTION_MAX} characters or fewer.")
+    trade = (trade or "").strip()
+    if not trade:
+        raise TenderError("invalid", "Choose the trade.")
+    if trade not in TRADE_OPTIONS:
+        raise TenderError("invalid", "Choose a trade from the list.")
+    if bid_deadline is None:
+        raise TenderError("invalid", "Set the bid end date.")
+    if require_future_deadline and bid_deadline <= now:
+        raise TenderError("deadline_past", "Set a bid end date in the future.")
+    kind = tender_type.value if isinstance(tender_type, TenderType) else (tender_type or TenderType.owner_visible.value)
+    if kind not in (TenderType.sealed.value, TenderType.owner_visible.value):
+        raise TenderError("invalid", "Choose sealed or owner visible.")
+    return {
+        "title": title,
+        "address": address,
+        "description": description,
+        "trade": trade,
+        "bid_deadline": bid_deadline,
+        "tender_type": TenderType(kind),
+    }
 
 
 @dataclass
@@ -142,24 +206,14 @@ def require_verified_owner(db: Session, owner: User) -> None:
 
 
 def create_draft(db: Session, owner: User, fields: TenderFields, *, verified_required: bool = True) -> Project:
-    """Save a tender as a draft. Only the title is required, so an incomplete tender can be saved and finished later."""
+    """Save a tender as a draft. A draft meets the same standard as a published tender, so nothing incomplete is saved."""
     if verified_required:
         require_verified_owner(db, owner)
-    title = (fields.title or "").strip()
-    if not title:
-        raise TenderError("invalid", "Give the tender a title.")
-    if len(title) > TITLE_MAX:
-        raise TenderError("invalid", f"The title must be {TITLE_MAX} characters or fewer.")
-    project = Project(
-        owner_id=owner.id,
-        title=title,
-        address=(fields.address or "").strip() or "Not set",
-        description=(fields.description or "").strip() or None,
-        trade=(fields.trade or "").strip() or None,
-        bid_deadline=fields.bid_deadline,
-        tender_type=fields.tender_type or TenderType.owner_visible,
-        status=ProjectStatus.draft,
+    values = check_tender_values(
+        title=fields.title, address=fields.address, trade=fields.trade, description=fields.description,
+        bid_deadline=fields.bid_deadline, tender_type=fields.tender_type, now=datetime.utcnow(),
     )
+    project = Project(owner_id=owner.id, status=ProjectStatus.draft, **values)
     db.add(project)
     db.commit()
     db.refresh(project)
@@ -174,21 +228,21 @@ def update_draft(
         require_verified_owner(db, owner)
     if project.status != ProjectStatus.draft:
         raise TenderError("not_draft", "Only a draft can be edited this way. Use amend for a published tender.")
-    if fields.title is not None:
-        title = fields.title.strip()
-        if not title:
-            raise TenderError("invalid", "Give the tender a title.")
-        project.title = title[:TITLE_MAX]
-    if fields.address is not None:
-        project.address = fields.address.strip() or "Not set"
-    if fields.description is not None:
-        project.description = fields.description.strip() or None
-    if fields.trade is not None:
-        project.trade = fields.trade.strip() or None
-    if fields.bid_deadline is not None:
-        project.bid_deadline = fields.bid_deadline
-    if fields.tender_type is not None:
-        project.tender_type = fields.tender_type
+    current = {
+        "title": project.title,
+        "address": project.address,
+        "description": project.description,
+        "trade": project.trade,
+        "bid_deadline": project.bid_deadline,
+        "tender_type": project.tender_type,
+    }
+    for key in current:
+        value = getattr(fields, key)
+        if value is not None:
+            current[key] = value
+    values = check_tender_values(**current, now=datetime.utcnow())
+    for key, value in values.items():
+        setattr(project, key, value)
     db.commit()
     db.refresh(project)
     return project
@@ -209,16 +263,23 @@ def publish(db: Session, owner: User, project: Project, now: datetime, *, verifi
         require_verified_owner(db, owner)
     if project.status != ProjectStatus.draft:
         raise TenderError("not_draft", "Only a draft project can be published.")
-    if not project.title or not project.address or project.address == "Not set":
-        raise TenderError("incomplete", "Add the address before publishing.")
-    if project.bid_deadline is None or project.bid_deadline <= now:
-        raise TenderError("deadline_past", "Set a bid deadline in the future before publishing.")
+    check_tender_values(
+        title=project.title, address=project.address, trade=project.trade, description=project.description,
+        bid_deadline=project.bid_deadline, tender_type=project.tender_type, now=now,
+    )
     if project.reference_code is None:
         project.reference_code = _new_reference_code(db)
     project.status = ProjectStatus.open
     db.commit()
     db.refresh(project)
-    fan_out_new_tender(db, project, now=now, notify=notify)
+    try:
+        fan_out_new_tender(db, project, now=now, notify=notify)
+    except Exception:
+        # The tender is already published. A failed contractor notice must not turn that into an error
+        # for the owner, who would otherwise see "Something went wrong" for a tender that is live.
+        db.rollback()
+        _log.exception('Could not notify contractors about tender %s', project.id)
+        db.refresh(project)
     return project
 
 
@@ -244,6 +305,19 @@ def amend(
         raise TenderError("not_amendable", "This project can no longer be amended.")
     if project.status == ProjectStatus.draft:
         return update_draft(db, owner, project, fields)
+
+    # The standard applies to the tender as it will read after the change. The deadline is only
+    # re-checked when it is being changed.
+    check_tender_values(
+        title=fields.title if fields.title is not None else project.title,
+        address=project.address,
+        trade=fields.trade if fields.trade is not None else project.trade,
+        description=fields.description if fields.description is not None else project.description,
+        bid_deadline=fields.bid_deadline if fields.bid_deadline is not None else project.bid_deadline,
+        tender_type=project.tender_type,
+        now=now,
+        require_future_deadline=fields.bid_deadline is not None,
+    )
 
     changed: list[str] = []
     if fields.title is not None:

@@ -173,7 +173,7 @@ def test_a_trial_contractor_can_submit_an_offer_on_whatsapp(client, monkeypatch,
 
     form = _flow(client, pem, token, "PROJECT_DETAILS", {"project_id": project.id, "action": "submit"})
     assert form["screen"] == "SUBMIT_OFFER"
-    review = _flow(client, pem, token, "SUBMIT_OFFER", {"project_id": project.id, "amount": "12500", "timeline": "6 months", "message": "Ready"})
+    review = _flow(client, pem, token, "SUBMIT_OFFER", {"quotation": [{"file_name": "quotation.pdf", "cdn_url": "https://cdn.example/quote", "encryption_metadata": {}}], "project_id": project.id, "amount": "12500", "timeline": "6 months", "message": "Ready"})
     assert review["screen"] == "REVIEW_OFFER"
     done = _flow(client, pem, token, "REVIEW_OFFER", {"project_id": project.id, "amount": "12500", "timeline": "6 months", "message": "Ready", "decision": "submit"})
 

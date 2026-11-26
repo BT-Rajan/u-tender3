@@ -78,34 +78,73 @@ def _offer(db, project, contractor, amount, status=OfferStatus.submitted, suspen
     return offer
 
 
-# --- creating and editing drafts ---------------------------------------------
+# --- the standard: creating, editing and publishing ------------------------------
 
 
-def test_a_draft_can_be_saved_with_only_a_title(db):
+def _complete(**overrides):
+    base = dict(
+        title="Villa renovation",
+        address="Block 3, Salmiya",
+        description=None,
+        trade="Electrical",
+        bid_deadline=FUTURE,
+        tender_type=TenderType.owner_visible,
+    )
+    base.update(overrides)
+    return TenderFields(**base)
+
+
+def test_a_draft_needs_the_full_standard_before_it_is_saved(db):
     owner = _owner(db)
-    project = tender_service.create_draft(db, owner, TenderFields(title="Villa renovation"))
+    with pytest.raises(TenderError) as excinfo:
+        tender_service.create_draft(db, owner, TenderFields(title="Villa renovation"))
+    assert excinfo.value.code == "invalid"
+    assert db.query(Project).count() == 0
+
+
+def test_a_complete_draft_is_saved_with_its_trade_and_deadline(db):
+    owner = _owner(db)
+    project = tender_service.create_draft(db, owner, _complete())
     assert project.status == ProjectStatus.draft
-    assert project.bid_deadline is None
-    assert project.address == "Not set"
+    assert project.trade == "Electrical"
+    assert project.bid_deadline == FUTURE
 
 
 def test_a_draft_without_a_title_is_refused(db):
     owner = _owner(db)
     with pytest.raises(TenderError) as excinfo:
-        tender_service.create_draft(db, owner, TenderFields(title="   "))
+        tender_service.create_draft(db, owner, _complete(title="   "))
     assert excinfo.value.code == "invalid"
 
 
 def test_an_overlong_title_is_refused(db):
     owner = _owner(db)
     with pytest.raises(TenderError):
-        tender_service.create_draft(db, owner, TenderFields(title="x" * 256))
+        tender_service.create_draft(db, owner, _complete(title="x" * 256))
+
+
+def test_a_trade_is_required_and_must_be_on_the_list(db):
+    owner = _owner(db)
+    with pytest.raises(TenderError) as missing:
+        tender_service.create_draft(db, owner, _complete(trade=None))
+    assert missing.value.message == "Choose the trade."
+    with pytest.raises(TenderError) as unlisted:
+        tender_service.create_draft(db, owner, _complete(trade="Roofing"))
+    assert unlisted.value.message == "Choose a trade from the list."
+    assert db.query(Project).count() == 0
+
+
+def test_a_deadline_in_the_past_is_refused_when_saving(db):
+    owner = _owner(db)
+    with pytest.raises(TenderError) as excinfo:
+        tender_service.create_draft(db, owner, _complete(bid_deadline=NOW - timedelta(hours=1)))
+    assert excinfo.value.code == "deadline_past"
 
 
 def test_an_unverified_owner_cannot_create_a_draft(db):
     owner = _owner(db, verified=False)
     with pytest.raises(TenderError) as excinfo:
-        tender_service.create_draft(db, owner, TenderFields(title="Villa"))
+        tender_service.create_draft(db, owner, _complete())
     assert excinfo.value.code == "not_verified"
     assert db.query(Project).count() == 0
 
@@ -113,18 +152,28 @@ def test_an_unverified_owner_cannot_create_a_draft(db):
 def test_a_suspended_owner_cannot_create_a_draft(db):
     owner = _owner(db, suspended=True)
     with pytest.raises(TenderError) as excinfo:
-        tender_service.create_draft(db, owner, TenderFields(title="Villa"))
+        tender_service.create_draft(db, owner, _complete())
     assert excinfo.value.code == "not_verified"
 
 
 def test_editing_a_draft_changes_it_in_place_without_an_amendment(db):
     owner = _owner(db)
-    project = tender_service.create_draft(db, owner, TenderFields(title="Villa"))
-    tender_service.update_draft(db, owner, project, TenderFields(address="Block 4", bid_deadline=FUTURE))
+    project = tender_service.create_draft(db, owner, _complete())
+    tender_service.update_draft(db, owner, project, TenderFields(address="Block 4"))
     db.refresh(project)
     assert project.address == "Block 4"
-    assert project.bid_deadline == FUTURE
+    assert project.trade == "Electrical"
     assert db.query(ProjectAmendment).count() == 0
+
+
+def test_an_edit_cannot_clear_a_required_field(db):
+    owner = _owner(db)
+    project = tender_service.create_draft(db, owner, _complete())
+    with pytest.raises(TenderError) as excinfo:
+        tender_service.update_draft(db, owner, project, TenderFields(trade=""))
+    assert excinfo.value.message == "Choose the trade."
+    db.refresh(project)
+    assert project.trade == "Electrical"
 
 
 def test_a_published_tender_cannot_be_edited_as_a_draft(db):
@@ -138,36 +187,33 @@ def test_a_published_tender_cannot_be_edited_as_a_draft(db):
 # --- publishing ----------------------------------------------------------------
 
 
-def test_publishing_a_draft_with_a_future_deadline_opens_it(db):
+def test_publishing_a_complete_draft_with_a_future_deadline_opens_it(db):
     owner = _owner(db)
-    project = tender_service.create_draft(db, owner, TenderFields(title="Villa", address="Block 3", bid_deadline=FUTURE))
+    project = tender_service.create_draft(db, owner, _complete())
     tender_service.publish(db, owner, project, NOW)
     assert project.status == ProjectStatus.open
 
 
-def test_publishing_without_a_deadline_is_refused(db):
+def test_publishing_a_draft_whose_deadline_has_passed_is_refused(db):
     owner = _owner(db)
-    project = tender_service.create_draft(db, owner, TenderFields(title="Villa", address="Block 3"))
+    project = tender_service.create_draft(db, owner, _complete())
+    project.bid_deadline = NOW - timedelta(hours=1)
+    db.commit()
     with pytest.raises(TenderError) as excinfo:
         tender_service.publish(db, owner, project, NOW)
     assert excinfo.value.code == "deadline_past"
     assert project.status == ProjectStatus.draft
 
 
-def test_publishing_with_a_past_deadline_is_refused(db):
-    owner = _owner(db)
-    project = tender_service.create_draft(db, owner, TenderFields(title="Villa", address="Block 3", bid_deadline=NOW - timedelta(hours=1)))
-    with pytest.raises(TenderError) as excinfo:
-        tender_service.publish(db, owner, project, NOW)
-    assert excinfo.value.code == "deadline_past"
-
-
 def test_publishing_without_an_address_is_refused(db):
     owner = _owner(db)
-    project = tender_service.create_draft(db, owner, TenderFields(title="Villa", bid_deadline=FUTURE))
+    project = tender_service.create_draft(db, owner, _complete())
+    project.address = "Not set"
+    db.commit()
     with pytest.raises(TenderError) as excinfo:
         tender_service.publish(db, owner, project, NOW)
-    assert excinfo.value.code == "incomplete"
+    assert excinfo.value.code == "invalid"
+    assert project.status == ProjectStatus.draft
 
 
 def test_only_a_draft_can_be_published(db):
