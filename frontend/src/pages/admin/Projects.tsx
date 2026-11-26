@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
 import type { AdminProject } from "@/api/types";
@@ -18,6 +18,9 @@ const STATUS_BADGE: Record<string, string> = {
 
 export function AdminProjectsPage() {
   const { t } = useI18n();
+  // ?status=open (and similar) from the overview shows only tenders in that status.
+  const [searchParams] = useSearchParams();
+  const statusFilter = searchParams.get("status") ?? "";
   const {
     data: projects,
     isError,
@@ -26,19 +29,33 @@ export function AdminProjectsPage() {
     queryKey: ["admin-projects"],
     queryFn: () => apiFetch<AdminProject[]>("/admin/projects"),
   });
+  const shown = projects && statusFilter ? projects.filter((p) => p.status === statusFilter) : projects ?? [];
 
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="mb-6">
         <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("admin.projects.eyebrow")}</span>
         <h1 className="font-display text-3xl font-bold text-navy mb-1">{t("admin.projects.heading")}</h1>
-        <p className="text-[13.5px] text-steel">{projects?.length ?? 0} {t("admin.projects.total")}</p>
+        <p className="text-[13.5px] text-steel">
+          {statusFilter ? `${shown.length} of ${projects?.length ?? 0}` : `${projects?.length ?? 0}`} {t("admin.projects.total")}
+          {statusFilter && (
+            <>
+              {" · "}
+              <span className="font-mono">{statusFilter.replace(/_/g, " ")}</span>{" "}
+              <Link to="/admin/projects" className="text-navy underline">
+                show all
+              </Link>
+            </>
+          )}
+        </p>
       </div>
 
       {isError ? (
         <QueryError onRetry={() => refetch()} />
       ) : !projects?.length ? (
         <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">{t("admin.projects.empty")}</div>
+      ) : !shown.length ? (
+        <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">No tenders in this status.</div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-sm">
         <table className="w-full border-collapse">
@@ -52,7 +69,7 @@ export function AdminProjectsPage() {
             </tr>
           </thead>
           <tbody>
-            {projects.map((p) => (
+            {shown.map((p) => (
               <tr key={p.id} className="border-b border-border">
                 <td className="py-3 px-2.5">
                   <div className="font-display font-semibold text-[13.5px]">{p.title}</div>

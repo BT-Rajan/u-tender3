@@ -499,6 +499,7 @@ export interface Dictionary {
 export const en: Dictionary = {
   onboarding: {
     trialNote: "Your trial is running. You can send offers without a subscription until",
+    dashboardNoMatch: "No bids match this filter. Press the total to see all of them.",
     signupEyebrow: "Contractor sign-up",
     signupHeading: "Create your contractor account",
     signupIntro: "Enter your WhatsApp number. We send a 6-digit code to confirm it.",
@@ -1157,6 +1158,7 @@ export const en: Dictionary = {
 export const ar: Dictionary = {
   onboarding: {
     trialNote: "تجربتك مفعّلة. يمكنك تقديم العروض دون اشتراك حتى",
+    dashboardNoMatch: "لا توجد عروض تطابق هذا الفلتر. اضغط على الإجمالي لعرض الكل.",
     signupEyebrow: "تسجيل مقاول",
     signupHeading: "أنشئ حساب المقاول",
     signupIntro: "أدخل رقم واتساب الخاص بك. سنرسل رمزاً من 6 أرقام لتأكيده.",

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
@@ -92,14 +93,22 @@ export function ContractorDashboardPage() {
     queryFn: () => apiFetch<MyBid[]>("/contractor/my-bids"),
     enabled: !!profile,
   });
+  // The count pressed above decides which bids the list shows.
+  const [bidFilter, setBidFilter] = useState<"all" | "active" | "won">("all");
 
   if (!profile) return <PageLoading />;
 
   const banner = statusBanner(t)[profile.marketplace_status];
   const isActive = profile.marketplace_status === "verified_active";
-  const activeBids = bids?.filter((b) => b.offer_status === "submitted" && b.project_status === "open").length ?? 0;
+  const isActiveBid = (b: MyBid) => b.offer_status === "submitted" && b.project_status === "open";
+  const activeBids = bids?.filter(isActiveBid).length ?? 0;
   const won = bids?.filter((b) => b.offer_status === "approved").length ?? 0;
   const totalBids = bids?.length ?? 0;
+  const shownBids = (bids ?? []).filter((b) => {
+    if (bidFilter === "active") return isActiveBid(b);
+    if (bidFilter === "won") return b.offer_status === "approved";
+    return true;
+  });
 
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
@@ -128,18 +137,33 @@ export function ContractorDashboardPage() {
       {isActive && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-            <div className="border border-border bg-white rounded px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setBidFilter("active")}
+              aria-pressed={bidFilter === "active"}
+              className={`text-left border rounded px-4 py-3 hover:border-navy ${bidFilter === "active" ? "border-navy ring-2 ring-navy/20 bg-white" : "border-border bg-white"}`}
+            >
               <div className="font-display text-3xl font-bold text-navy leading-none">{activeBids}</div>
               <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{t("contractor.dashboard.kpiActiveBids")}</div>
-            </div>
-            <div className="border border-border bg-white rounded px-4 py-3">
+            </button>
+            <button
+              type="button"
+              onClick={() => setBidFilter("won")}
+              aria-pressed={bidFilter === "won"}
+              className={`text-left border rounded px-4 py-3 hover:border-navy ${bidFilter === "won" ? "border-navy ring-2 ring-navy/20 bg-white" : "border-border bg-white"}`}
+            >
               <div className="font-display text-2xl font-semibold text-green leading-none">{won}</div>
               <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{t("contractor.dashboard.kpiProjectsWon")}</div>
-            </div>
-            <div className="border border-border bg-white rounded px-4 py-3">
+            </button>
+            <button
+              type="button"
+              onClick={() => setBidFilter("all")}
+              aria-pressed={bidFilter === "all"}
+              className={`text-left border rounded px-4 py-3 hover:border-navy ${bidFilter === "all" ? "border-navy ring-2 ring-navy/20 bg-white" : "border-border bg-white"}`}
+            >
               <div className="font-display text-3xl font-bold text-navy leading-none">{totalBids}</div>
               <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{t("contractor.dashboard.kpiTotalBids")}</div>
-            </div>
+            </button>
           </div>
 
           <div className="flex items-center justify-between mb-4">
@@ -157,9 +181,13 @@ export function ContractorDashboardPage() {
               </Link>
               .
             </div>
+          ) : !shownBids.length ? (
+            <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">
+              {t("onboarding.dashboardNoMatch")}
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {bids.map((b) => (
+              {shownBids.map((b) => (
                 <Link key={b.offer_id} to={`/contractor/projects/${b.project_id}/offer`} className="tblock rounded px-5 pt-4">
                   <div className="flex justify-between items-start gap-2">
                     <div>

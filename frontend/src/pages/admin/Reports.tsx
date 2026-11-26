@@ -33,14 +33,24 @@ function Header({ eyebrow, title, intro }: { eyebrow: string; title: string; int
   );
 }
 
-function Card({ title, value, hint }: { title: string; value: ReactNode; hint?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-white px-4 py-4 shadow-sm">
+// A number card. With `to`, the whole card opens the list behind the number.
+function Card({ title, value, hint, to }: { title: string; value: ReactNode; hint?: string; to?: string }) {
+  const body = (
+    <>
       <div className="text-[11px] font-semibold uppercase tracking-wide text-steel">{title}</div>
       <div className="mt-1 font-display text-2xl font-bold text-navy">{value}</div>
       {hint && <div className="mt-1 text-[11.5px] text-steel-light">{hint}</div>}
-    </div>
+    </>
   );
+  if (to) {
+    return (
+      <Link to={to} className="block rounded-lg border border-border bg-white px-4 py-4 shadow-sm hover:border-navy hover:shadow">
+        {body}
+        <div className="mt-2 text-[11px] font-semibold text-navy underline">View list</div>
+      </Link>
+    );
+  }
+  return <div className="rounded-lg border border-border bg-white px-4 py-4 shadow-sm">{body}</div>;
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -52,7 +62,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Breakdown({ values }: { values: Record<string, number> }) {
+// A breakdown by status. With `hrefFor`, each count opens the list for that status.
+function Breakdown({ values, hrefFor }: { values: Record<string, number>; hrefFor?: (key: string) => string }) {
   const entries = Object.entries(values);
   if (!entries.length) return <p className="text-sm text-steel">None yet.</p>;
   return (
@@ -60,7 +71,13 @@ function Breakdown({ values }: { values: Record<string, number> }) {
       {entries.map(([key, count]) => (
         <li key={key} className="flex justify-between gap-4 border-b border-border pb-2 last:border-0">
           <span className="text-steel">{label(key)}</span>
-          <span className="font-mono font-semibold text-navy">{count}</span>
+          {hrefFor ? (
+            <Link to={hrefFor(key)} className="font-mono font-semibold text-navy underline hover:no-underline">
+              {count}
+            </Link>
+          ) : (
+            <span className="font-mono font-semibold text-navy">{count}</span>
+          )}
         </li>
       ))}
     </ul>
@@ -167,22 +184,32 @@ export function AdminReportsOverviewPage() {
 
       <Section title="People">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card title="Owners" value={data.users.owner ?? 0} />
-          <Card title="Contractors" value={data.users.contractor ?? 0} />
-          <Card title="Admins" value={data.users.admin ?? 0} />
-          <Card title="Active contractors" value={data.contractors.active} hint="Can send offers now" />
+          <Card title="Owners" value={data.users.owner ?? 0} to="/admin/users?role=owner" />
+          <Card title="Contractors" value={data.users.contractor ?? 0} to="/admin/users?role=contractor" />
+          <Card title="Admins" value={data.users.admin ?? 0} to="/admin/users?role=admin" />
+          <Card
+            title="Active contractors"
+            value={data.contractors.active}
+            hint="Can send offers now"
+            to="/admin/users?role=contractor&status=verified_active"
+          />
         </div>
       </Section>
 
       <Section title="Contractor billing">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card title="Paid now" value={data.contractors.paid} />
-          <Card title="On trial" value={data.contractors.on_trial} />
-          <Card title="Waiting for activation" value={data.contractors.waiting_activation} />
+          <Card title="Paid now" value={data.contractors.paid} to="/admin/users?role=contractor&billing=paid" />
+          <Card title="On trial" value={data.contractors.on_trial} to="/admin/users?role=contractor&billing=trial" />
+          <Card
+            title="Waiting for activation"
+            value={data.contractors.waiting_activation}
+            to="/admin/users?role=contractor&billing=waiting"
+          />
           <Card
             title="Activation overdue"
             value={data.contractors.activation_overdue}
             hint="Past the 48-hour target"
+            to="/admin/users?role=contractor&billing=overdue"
           />
         </div>
       </Section>
@@ -190,22 +217,25 @@ export function AdminReportsOverviewPage() {
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-white px-5 py-5 shadow-sm">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy">Contractors by status</h2>
-          <Breakdown values={data.contractors.by_status} />
+          <Breakdown values={data.contractors.by_status} hrefFor={(key) => `/admin/users?role=contractor&status=${key}`} />
         </div>
         <div className="rounded-lg border border-border bg-white px-5 py-5 shadow-sm">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy">Owners by status</h2>
-          <Breakdown values={data.owners.by_status} />
+          <Breakdown values={data.owners.by_status} hrefFor={(key) => `/admin/users?role=owner&status=${key}`} />
         </div>
         <div className="rounded-lg border border-border bg-white px-5 py-5 shadow-sm">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy">Tenders ({data.projects.total})</h2>
-          <Breakdown values={data.projects.by_status} />
+          <Breakdown values={data.projects.by_status} hrefFor={(key) => `/admin/projects?status=${key}`} />
         </div>
         <div className="rounded-lg border border-border bg-white px-5 py-5 shadow-sm">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy">Offers ({data.offers.total})</h2>
-          <Breakdown values={data.offers.by_status} />
+          <Breakdown values={data.offers.by_status} hrefFor={(key) => `/admin/offers?status=${key}`} />
           <p className="mt-4 text-sm text-steel">
-            Awarded: <span className="font-mono font-semibold text-navy">{data.awards.count}</span> worth{" "}
-            <span className="font-mono font-semibold text-navy">{data.awards.value}</span>
+            Awarded:{" "}
+            <Link to="/admin/offers?status=approved" className="font-mono font-semibold text-navy underline">
+              {data.awards.count}
+            </Link>{" "}
+            worth <span className="font-mono font-semibold text-navy">{data.awards.value}</span>
           </p>
         </div>
       </div>

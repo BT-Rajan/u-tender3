@@ -353,3 +353,30 @@ def test_the_activation_report_separates_on_time_late_and_waiting(db):
 )
 def test_bad_report_dates_are_refused(db, params):
     assert _admin(db).get("/admin/reports/billing", params=params).status_code == 400
+
+
+# --- billing filter on the user list (the overview numbers link here) ------------------------
+
+
+def test_the_billing_filter_matches_each_overview_number(db):
+    admin = _admin(db)
+    paid = _contractor(db, "bill-paid@example.com", paid_until=NOW + timedelta(days=30))
+    trial = _contractor(db, "bill-trial@example.com", trial_until=NOW + timedelta(days=7))
+    waiting = _contractor(db, "bill-waiting@example.com", approved=False)
+    overdue = _contractor(db, "bill-overdue@example.com", approved=False)
+    _contractor(db, "bill-none@example.com")
+    for user, due in ((waiting, NOW + timedelta(hours=20)), (overdue, NOW - timedelta(hours=2))):
+        profile = db.get(ContractorProfile, user.id)
+        profile.activation_due_at = due
+    db.commit()
+
+    def ids(billing):
+        response = admin.get("/admin/users", params={"billing": billing, "limit": 100})
+        assert response.status_code == 200
+        return {item["id"] for item in response.json()["items"]}
+
+    assert ids("paid") == {paid.id}
+    assert ids("trial") == {trial.id}
+    assert ids("waiting") == {waiting.id, overdue.id}
+    assert ids("overdue") == {overdue.id}
+    assert admin.get("/admin/users", params={"billing": "bogus"}).status_code == 400

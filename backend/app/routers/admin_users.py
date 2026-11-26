@@ -3,6 +3,8 @@ reactivate. Contractor and owner suspensions call the same functions as the role
 notifications are identical whichever screen the admin used.
 """
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import or_
@@ -12,7 +14,7 @@ from app.db import get_db
 from app.deps import require_admin
 from app.models.audit_log import AuditLog
 from app.models.contractor import ContractorProfile
-from app.models.enums import UserRole
+from app.models.enums import UserRole, VerificationStatus
 from app.models.owner import OwnerProfile
 from app.models.project import Project
 from app.models.user import User
@@ -54,18 +56,36 @@ def _row(user: User, contractor: ContractorProfile | None, owner: OwnerProfile |
     }
 
 
+BILLING_FILTERS = {"paid", "trial", "waiting", "overdue"}
+
+
+def _billing_match(contractor: ContractorProfile, billing: str, now: datetime) -> bool:
+    if billing == "paid":
+        return contractor.is_paid_active
+    if billing == "trial":
+        return contractor.is_trial_active
+    waiting = contractor.activation_due_at is not None and contractor.verification_status != VerificationStatus.approved
+    if billing == "waiting":
+        return waiting
+    return waiting and contractor.activation_due_at < now  # overdue
+
+
 @router.get("/users")
 def list_users(
     role: str | None = None,
     status: str | None = None,
+    billing: str | None = None,
     q: str | None = None,
     limit: int = Query(25, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
-    """Accounts, newest first. `status` is the account's marketplace status (for example suspended or verified_active)."""
+    """Accounts, newest first. `status` is the account's marketplace status (for example suspended or verified_active).
+    `billing` narrows contractors to paid, trial, waiting (paid, not yet activated) or overdue (activation past its deadline)."""
     if role and role not in ROLE_VALUES:
         raise HTTPException(status_code=400, detail="Unknown role.")
+    if billing and billing not in BILLING_FILTERS:
+        raise HTTPException(status_code=400, detail="Unknown billing filter.")
     query = (
         db.query(User, ContractorProfile, OwnerProfile)
         .outerjoin(ContractorProfile, ContractorProfile.user_id == User.id)
@@ -79,6 +99,9 @@ def list_users(
             or_(User.email.ilike(term), User.full_name.ilike(term), User.phone.ilike(term), ContractorProfile.company_name.ilike(term))
         )
     rows = query.order_by(User.created_at.desc(), User.id).all()
+    if billing:
+        now = datetime.utcnow()
+        rows = [(user, contractor, owner) for user, contractor, owner in rows if contractor is not None and _billing_match(contractor, billing, now)]
     items = [_row(user, contractor, owner) for user, contractor, owner in rows]
     if status:
         items = [item for item in items if item["status"] == status]

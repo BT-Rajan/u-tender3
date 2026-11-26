@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
 import type { AdminOffer } from "@/api/types";
@@ -52,7 +52,13 @@ export function AdminOffersPage() {
     queryFn: () => apiFetch<AdminOffer[]>("/admin/offers"),
   });
 
-  const groups = useMemo(() => (offers ? groupByProject(offers) : []), [offers]);
+  // ?status=approved (and similar) from the overview shows only offers in that status, grouped by tender.
+  const [searchParams] = useSearchParams();
+  const statusFilter = searchParams.get("status") ?? "";
+  const groups = useMemo(() => {
+    if (!offers) return [];
+    return groupByProject(statusFilter ? offers.filter((o) => o.status === statusFilter) : offers);
+  }, [offers, statusFilter]);
 
   const toggle = (projectId: string) =>
     setExpanded((prev) => {
@@ -67,13 +73,26 @@ export function AdminOffersPage() {
       <div className="mb-6">
         <span className="text-xs font-semibold uppercase tracking-widest text-amber-dark block mb-1">{t("admin.offers.eyebrow")}</span>
         <h1 className="font-display text-3xl font-bold text-navy mb-1">{t("admin.offers.heading")}</h1>
-        <p className="text-[13.5px] text-steel">{offers?.length ?? 0} {t("admin.offers.total")}</p>
+        <p className="text-[13.5px] text-steel">
+          {offers?.length ?? 0} {t("admin.offers.total")}
+          {statusFilter && (
+            <>
+              {" · "}
+              <span className="font-mono">{statusFilter}</span>{" "}
+              <Link to="/admin/offers" className="text-navy underline">
+                show all
+              </Link>
+            </>
+          )}
+        </p>
       </div>
 
       {isError ? (
         <QueryError onRetry={() => refetch()} />
       ) : !offers?.length ? (
         <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">{t("admin.offers.empty")}</div>
+      ) : !groups.length ? (
+        <div className="border border-dashed border-border rounded-lg bg-white p-10 text-center text-sm text-steel">No offers in this status.</div>
       ) : (
         <div className="grid gap-2.5">
           {groups.map((g) => {

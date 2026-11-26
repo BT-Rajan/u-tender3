@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
 import type { AdminUserDetail, AdminUserList } from "@/api/types";
@@ -53,20 +53,44 @@ function rolePage(role: string, id: string): string | null {
   return null;
 }
 
+const BILLING_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "Any billing" },
+  { value: "paid", label: "Paid" },
+  { value: "trial", label: "On trial" },
+  { value: "waiting", label: "Waiting for activation" },
+  { value: "overdue", label: "Activation overdue" },
+];
+
 export function AdminUsersPage() {
-  const [q, setQ] = useState("");
-  const [search, setSearch] = useState("");
-  const [role, setRole] = useState("");
-  const [status, setStatus] = useState("");
+  // Filters can arrive in the address (for example from the overview's numbers): ?role=contractor&status=verified_active
+  const [urlParams] = useSearchParams();
+  const fromUrl = urlParams.toString();
+  const [q, setQ] = useState(urlParams.get("q") ?? "");
+  const [search, setSearch] = useState(urlParams.get("q") ?? "");
+  const [role, setRole] = useState(urlParams.get("role") ?? "");
+  const [status, setStatus] = useState(urlParams.get("status") ?? "");
+  const [billing, setBilling] = useState(urlParams.get("billing") ?? "");
   const [offset, setOffset] = useState(0);
+
+  // Opening a link while this page is already showing must also update the filters.
+  useEffect(() => {
+    const next = new URLSearchParams(fromUrl);
+    setQ(next.get("q") ?? "");
+    setSearch(next.get("q") ?? "");
+    setRole(next.get("role") ?? "");
+    setStatus(next.get("status") ?? "");
+    setBilling(next.get("billing") ?? "");
+    setOffset(0);
+  }, [fromUrl]);
 
   const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
   if (search) params.set("q", search);
   if (role) params.set("role", role);
   if (status) params.set("status", status);
+  if (billing) params.set("billing", billing);
 
   const { data, isError, isFetching, refetch } = useQuery({
-    queryKey: ["admin-users", search, role, status, offset],
+    queryKey: ["admin-users", search, role, status, billing, offset],
     queryFn: () => apiFetch<AdminUserList>(`/admin/users?${params.toString()}`),
     placeholderData: keepPreviousData,
   });
@@ -88,7 +112,7 @@ export function AdminUsersPage() {
           setOffset(0);
           setSearch(q.trim());
         }}
-        className="mb-4 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]"
+        className="mb-4 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto_auto]"
       >
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, email, phone or company" aria-label="Search users" className={INPUT} />
         <select
@@ -115,6 +139,21 @@ export function AdminUsersPage() {
           className={INPUT}
         >
           {STATUS_FILTERS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Billing"
+          value={billing}
+          onChange={(e) => {
+            setOffset(0);
+            setBilling(e.target.value);
+          }}
+          className={INPUT}
+        >
+          {BILLING_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>

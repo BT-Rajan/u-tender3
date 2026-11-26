@@ -39,12 +39,32 @@ function statusFilters(t: (key: string) => string): { value: ProjectStatus | "al
   ];
 }
 
-function KpiCard({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+// A count that filters the tender list below it when pressed.
+function KpiCard({
+  label,
+  value,
+  highlight,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  highlight?: boolean;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
-    <div className={`border rounded px-4 py-3 ${highlight ? "border-amber bg-amber/10" : "border-border bg-white"}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`text-left border rounded px-4 py-3 hover:border-navy ${
+        active ? "border-navy ring-2 ring-navy/20 bg-white" : highlight ? "border-amber bg-amber/10" : "border-border bg-white"
+      }`}
+    >
       <div className="font-display text-3xl font-bold text-navy leading-none">{value}</div>
       <div className="text-xs font-semibold uppercase tracking-wide text-steel mt-1">{label}</div>
-    </div>
+    </button>
   );
 }
 
@@ -62,6 +82,8 @@ export function OwnerDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [tenderTypeFilter, setTenderTypeFilter] = useState<"all" | "sealed" | "owner_visible">("all");
   const [search, setSearch] = useState("");
+  // Total offers filters to tenders that have at least one offer.
+  const [withOffers, setWithOffers] = useState(false);
 
   const kpis = useMemo(() => {
     const list = projects ?? [];
@@ -74,17 +96,24 @@ export function OwnerDashboardPage() {
     };
   }, [projects]);
 
+  // A count pressed above: show that status, and no offer filter.
+  const showStatus = (status: ProjectStatus) => {
+    setStatusFilter(status);
+    setWithOffers(false);
+  };
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (projects ?? []).filter((p) => {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (withOffers && p.offer_count === 0) return false;
       if (tenderTypeFilter !== "all" && p.tender_type !== tenderTypeFilter) return false;
       if (term && !p.title.toLowerCase().includes(term) && !p.address.toLowerCase().includes(term)) return false;
       return true;
     });
-  }, [projects, statusFilter, tenderTypeFilter, search]);
+  }, [projects, statusFilter, tenderTypeFilter, search, withOffers]);
 
-  const filtersActive = statusFilter !== "all" || tenderTypeFilter !== "all" || !!search.trim();
+  const filtersActive = statusFilter !== "all" || tenderTypeFilter !== "all" || !!search.trim() || withOffers;
 
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
@@ -102,11 +131,40 @@ export function OwnerDashboardPage() {
 
       {!!projects?.length && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-          <KpiCard label={t("owner.dashboard.kpiOpen")} value={kpis.open} />
-          <KpiCard label={t("owner.dashboard.kpiAwaitingReview")} value={kpis.awaitingReview} highlight={kpis.awaitingReview > 0} />
-          <KpiCard label={t("owner.dashboard.kpiUnderEvaluation")} value={kpis.underEvaluation} />
-          <KpiCard label={t("owner.dashboard.kpiAwarded")} value={kpis.awarded} />
-          <KpiCard label={t("owner.dashboard.kpiTotalOffers")} value={kpis.totalOffers} />
+          <KpiCard
+            label={t("owner.dashboard.kpiOpen")}
+            value={kpis.open}
+            active={statusFilter === "open" && !withOffers}
+            onClick={() => showStatus("open")}
+          />
+          <KpiCard
+            label={t("owner.dashboard.kpiAwaitingReview")}
+            value={kpis.awaitingReview}
+            highlight={kpis.awaitingReview > 0}
+            active={statusFilter === "closed" && !withOffers}
+            onClick={() => showStatus("closed")}
+          />
+          <KpiCard
+            label={t("owner.dashboard.kpiUnderEvaluation")}
+            value={kpis.underEvaluation}
+            active={statusFilter === "under_evaluation" && !withOffers}
+            onClick={() => showStatus("under_evaluation")}
+          />
+          <KpiCard
+            label={t("owner.dashboard.kpiAwarded")}
+            value={kpis.awarded}
+            active={statusFilter === "awarded" && !withOffers}
+            onClick={() => showStatus("awarded")}
+          />
+          <KpiCard
+            label={t("owner.dashboard.kpiTotalOffers")}
+            value={kpis.totalOffers}
+            active={withOffers}
+            onClick={() => {
+              setStatusFilter("all");
+              setWithOffers((on) => !on);
+            }}
+          />
         </div>
       )}
 
