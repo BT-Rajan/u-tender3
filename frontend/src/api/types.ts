@@ -11,7 +11,6 @@ export type TenderType = "sealed" | "owner_visible";
 export type OfferStatus = "submitted" | "approved" | "rejected" | "withdrawn";
 export type VerificationStatus = "incomplete" | "pending_review" | "changes_requested" | "approved";
 export type DocumentStatus = "not_submitted" | "pending" | "approved" | "rejected";
-export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";
 
 export interface Project {
   id: string;
@@ -82,15 +81,15 @@ export interface ContractorProfile {
   is_suspended: boolean;
   avg_rating: string;
   review_count: number;
-  subscription_status: SubscriptionStatus | null;
-  subscription_current_period_end: string | null;
+  paid_until: string | null;
+  trial_until: string | null;
+  payment_active: boolean;
   payment_override_active: boolean;
   marketplace_status:
     | "documents_incomplete"
     | "submitted_for_review"
     | "changes_requested"
     | "payment_required"
-    | "payment_restricted"
     | "verified_active"
     | "suspended";
   created_at: string;
@@ -222,6 +221,96 @@ export interface PaymentOverrideRecord {
   created_at: string;
   revoked_by: string | null;
   revoked_at: string | null;
+}
+
+export interface ContractorStatus {
+  next_step: "details" | "subscribe" | "awaiting_activation" | "active" | "suspended";
+  onboarding_complete: boolean;
+  verification_status: VerificationStatus;
+  is_suspended: boolean;
+  paid_until: string | null;
+  trial_until: string | null;
+  trial_active: boolean;
+  payment_active: boolean;
+  activation_due_at: string | null;
+  activation_overdue: boolean;
+  active: boolean;
+  can_bid: boolean;
+  grace_days: number;
+}
+
+export interface BusinessDetails {
+  business_name: string;
+  business_address: string | null;
+  website: string | null;
+  business_email: string | null;
+  business_registration_id: string | null;
+  trades: string[];
+  complete: boolean;
+}
+
+export interface SubscriptionPlanItem {
+  id: string;
+  name: string;
+  description: string | null;
+  activation_fee: string;
+  monthly_fee: string;
+  currency: string;
+}
+
+export interface PaymentInvoiceItem {
+  id: string;
+  kind: "activation" | "monthly";
+  status: "pending" | "paid" | "canceled" | "expired";
+  amount: string;
+  currency: string;
+  payment_url: string | null;
+  covers_from: string | null;
+  covers_until: string | null;
+  paid_at: string | null;
+  created_at: string;
+}
+
+export interface AdminPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  activation_fee: string;
+  monthly_fee: string;
+  currency: string;
+  is_active: boolean;
+}
+
+export interface SecretSetting {
+  configured: boolean;
+  hint: string | null;
+  source: "admin" | "env" | "none";
+}
+
+export interface PlainSetting {
+  value: string | null;
+  source: "admin" | "env" | "none";
+}
+
+export interface BillingSettings {
+  myfatoorah_api_key: SecretSetting;
+  myfatoorah_webhook_secret: SecretSetting;
+  myfatoorah_base_url: PlainSetting;
+  whatsapp_otp_template: PlainSetting;
+  payments_ready: boolean;
+}
+
+export interface ActivationRow {
+  contractor_id: string;
+  company_name: string;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  verification_status: VerificationStatus;
+  payment_active: boolean;
+  activation_due_at: string;
+  hours_left: number;
+  overdue: boolean;
 }
 
 export interface AuditLogEntry {

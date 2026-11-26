@@ -23,7 +23,6 @@ const MARKETPLACE_BADGE: Record<string, string> = {
   submitted_for_review: "bg-amber/15 text-amber-dark",
   changes_requested: "bg-red-tint text-red",
   payment_required: "bg-amber/15 text-amber-dark",
-  payment_restricted: "bg-red-tint text-red",
   verified_active: "bg-green-tint text-green",
   suspended: "bg-red-tint text-red",
 };

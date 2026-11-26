@@ -6,6 +6,7 @@ from app.config import get_settings, validate_runtime_settings
 from app.error_handlers import register_error_handlers
 from app.middleware import MaxBodySizeMiddleware
 from app.routers.admin import router as admin_router
+from app.routers.admin_billing import router as admin_billing_router
 from app.routers.billing import router as billing_router
 from app.routers.clarifications import router as clarifications_router
 from app.routers.contractor import router as contractor_router
@@ -19,6 +20,8 @@ from app.routers.projects import router as projects_router
 from app.routers.public import router as public_router
 from app.routers.relay import router as relay_router
 from app.routers.whatsapp import router as whatsapp_router
+from app.routers.onboarding import router as onboarding_router
+from app.auth.code_auth import router as code_auth_router
 from app.services.whatsapp_routing import install_whatsapp_handlers
 
 settings = get_settings()
@@ -47,7 +50,10 @@ app.include_router(offers_router)
 app.include_router(owner_router)
 app.include_router(contractor_router)
 app.include_router(admin_router)
+app.include_router(admin_billing_router)
 app.include_router(billing_router)
+app.include_router(onboarding_router)
+app.include_router(code_auth_router)
 app.include_router(cron_router)
 app.include_router(files_router)
 app.include_router(notifications_router)

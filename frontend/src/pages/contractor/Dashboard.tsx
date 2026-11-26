@@ -47,12 +47,6 @@ function statusBanner(
       body: t(`${b}.paymentRequiredBody`),
       cta: { label: t(`${b}.paymentRequiredCta`), href: "/contractor/subscribe" },
     },
-    payment_restricted: {
-      tone: "red",
-      title: t(`${b}.paymentRestrictedTitle`),
-      body: t(`${b}.paymentRestrictedBody`),
-      cta: { label: t(`${b}.paymentRestrictedCta`), href: "/contractor/subscribe" },
-    },
     suspended: {
       tone: "red",
       title: t(`${b}.suspendedTitle`),

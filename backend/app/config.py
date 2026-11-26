@@ -38,10 +38,19 @@ class Settings(BaseSettings):
     # deadline if post-close access is intentionally permitted" note).
     signed_url_default_expiry_seconds: int = 60 * 60 * 24  # 24h
 
-    stripe_secret_key: str | None = None
-    stripe_webhook_secret: str | None = None
-    stripe_price_id_monthly: str | None = None
-    stripe_price_id_annual: str | None = None
+    # MyFatoorah (hosted payments). An admin can set these in the app (Admin > Payment setup), which overrides
+    # the values here. The API token comes from the MyFatoorah portal (Integration Settings > API Key).
+    myfatoorah_api_key: str | None = None
+    myfatoorah_base_url: str = "https://apitest.myfatoorah.com"
+    myfatoorah_webhook_secret: str | None = None
+    # Contractor onboarding and payment rules.
+    activation_sla_hours: int = 48
+    payment_grace_days: int = 0
+    otp_ttl_minutes: int = 5
+    otp_max_attempts: int = 3
+    invite_ttl_hours: int = 24
+    # An approved WhatsApp template (one body parameter: the code). Needed to send codes outside the 24-hour window.
+    whatsapp_otp_template: str | None = None
 
     resend_api_key: str | None = None
     email_from: str = "U-Tender <notifications@u-tender.example>"

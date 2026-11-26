@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -17,6 +17,7 @@ from app.models.enums import DocumentStatus, Language, NotificationType, UserRol
 from app.models.offer import Offer, OfferRevision
 from app.models.owner import OwnerProfile
 from app.models.payment_override import PaymentOverride
+from app.models.onboarding import SubscriptionPlan
 from app.models.project import Project, ProjectDrawing
 from app.models.review import Review
 from app.models.user import User
@@ -600,6 +601,134 @@ def user_history(user_id: str, db: Session = Depends(get_db)):
         }
         for r in rows
     ]
+
+
+# ---------- subscription plans and activation (contractor onboarding) ----------
+
+
+class PlanIn(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    description: str | None = Field(default=None, max_length=2000)
+    activation_fee: Decimal = Field(ge=0)
+    monthly_fee: Decimal = Field(gt=0)
+    currency: str = Field(default="KWD", min_length=3, max_length=3)
+    is_active: bool = True
+
+
+class PlanPatch(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    description: str | None = Field(default=None, max_length=2000)
+    activation_fee: Decimal | None = Field(default=None, ge=0)
+    monthly_fee: Decimal | None = Field(default=None, gt=0)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    is_active: bool | None = None
+
+
+def _plan_out(plan: SubscriptionPlan) -> dict:
+    return {
+        "id": plan.id,
+        "name": plan.name,
+        "description": plan.description,
+        "activation_fee": str(plan.activation_fee),
+        "monthly_fee": str(plan.monthly_fee),
+        "currency": plan.currency,
+        "is_active": plan.is_active,
+    }
+
+
+@router.get("/plans")
+def list_plans(db: Session = Depends(get_db)):
+    rows = db.query(SubscriptionPlan).order_by(SubscriptionPlan.monthly_fee).all()
+    return [_plan_out(row) for row in rows]
+
+
+@router.post("/plans", status_code=201)
+def create_plan(body: PlanIn, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    plan = SubscriptionPlan(
+        name=body.name.strip(),
+        description=(body.description or "").strip() or None,
+        activation_fee=body.activation_fee,
+        monthly_fee=body.monthly_fee,
+        currency=body.currency.upper(),
+        is_active=body.is_active,
+    )
+    db.add(plan)
+    db.commit()
+    db.refresh(plan)
+    log_action(db, actor_id=admin.id, action="plan.create", target_type="subscription_plan", target_id=plan.id, new_value=str(body.monthly_fee))
+    return _plan_out(plan)
+
+
+@router.patch("/plans/{plan_id}")
+def update_plan(plan_id: str, body: PlanPatch, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    plan = db.get(SubscriptionPlan, plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Plan not found.")
+    previous = str(plan.monthly_fee)
+    for field in ("name", "activation_fee", "monthly_fee", "is_active"):
+        value = getattr(body, field)
+        if value is not None:
+            setattr(plan, field, value.strip() if isinstance(value, str) else value)
+    # A description can be cleared: an explicit null or blank value removes it.
+    if "description" in body.model_fields_set:
+        plan.description = (body.description or "").strip() or None
+    if body.currency is not None:
+        plan.currency = body.currency.upper()
+    db.commit()
+    db.refresh(plan)
+    log_action(db, actor_id=admin.id, action="plan.update", target_type="subscription_plan", target_id=plan.id, previous_value=previous, new_value=str(plan.monthly_fee))
+    return _plan_out(plan)
+
+
+@router.get("/activations")
+def activation_queue(status: str = "pending", db: Session = Depends(get_db)):
+    """Contractors who have paid and wait for the admin to activate them. Each shows its deadline."""
+    now = datetime.utcnow()
+    query = db.query(ContractorProfile, User).join(User, User.id == ContractorProfile.user_id).filter(ContractorProfile.activation_due_at.isnot(None))
+    if status == "pending":
+        query = query.filter(ContractorProfile.verification_status != VerificationStatus.approved)
+    rows = query.order_by(ContractorProfile.activation_due_at).all()
+    out = []
+    for profile, user in rows:
+        due = profile.activation_due_at
+        out.append(
+            {
+                "contractor_id": profile.user_id,
+                "company_name": profile.company_name,
+                "contact_name": user.full_name,
+                "email": user.email,
+                "phone": user.phone,
+                "verification_status": profile.verification_status.value,
+                "payment_active": profile.is_payment_active,
+                "activation_due_at": due,
+                "hours_left": round((due - now).total_seconds() / 3600, 1),
+                "overdue": due < now and profile.verification_status != VerificationStatus.approved,
+            }
+        )
+    return out
+
+
+@router.post("/contractors/{contractor_id}/activate")
+def activate_contractor(contractor_id: str, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Make a paid contractor active so they can bid. The admin has checked their details first."""
+    profile = db.get(ContractorProfile, contractor_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Contractor not found.")
+    if not (profile.is_payment_active or profile.payment_override_active):
+        raise HTTPException(status_code=400, detail="This contractor has not paid yet. Activate after the payment is confirmed.")
+    previous = profile.verification_status.value
+    profile.verification_status = VerificationStatus.approved
+    db.commit()
+    log_action(
+        db,
+        actor_id=admin.id,
+        action="contractor.activate",
+        target_type="contractor_profile",
+        target_id=contractor_id,
+        previous_value=previous,
+        new_value=VerificationStatus.approved.value,
+    )
+    return {"contractor_id": contractor_id, "verification_status": VerificationStatus.approved.value, "active": profile.is_verified_active}
 
 
 # ---------- public-site CMS (spec §14, §2.9) ----------
@@ -1365,8 +1494,9 @@ def _profile_fields(cp: ContractorProfile) -> dict:
         is_suspended=cp.is_suspended,
         avg_rating=cp.avg_rating,
         review_count=cp.review_count,
-        subscription_status=cp.subscription_status,
-        subscription_current_period_end=cp.subscription_current_period_end,
+        paid_until=cp.paid_until,
+        trial_until=cp.trial_until,
+        payment_active=cp.is_payment_active,
         payment_override_active=cp.payment_override_active,
         marketplace_status=cp.marketplace_status,
         created_at=cp.created_at,

@@ -18,6 +18,7 @@ from app.services.registration import (
     register_owner,
 )
 from app.services.upload_links import issue_upload_link
+from app.services.onboarding import create_invite, queue_portal_message
 from app.services.whatsapp_contractor_flows import contractor_menu_choice, handle_contractor_screen
 from app.services.whatsapp_owner_flows import handle_owner_screen, owner_menu_choice
 from app.services.whatsapp_identity import find_active_flow_session
@@ -58,7 +59,6 @@ STATUS_TEXT: dict[str, str] = {
     "verified_active": "Your account is verified and active.",
     "suspended": "Your account is suspended. Contact support.",
     "payment_required": "Activate a subscription to bid on projects.",
-    "payment_restricted": "Your subscription needs attention.",
 }
 
 
@@ -184,6 +184,10 @@ def _complete_contractor(
     except RegistrationError as error:
         return _registration_failure("CONTRACTOR_DETAILS", error)
     _queue_account_created(db, identity, _language_of(session), now=now)
+    # The web portal finishes the rest of the sign-up: business details, then a subscription.
+    invite_link = create_invite(db, identity.user_id, now=now)
+    queue_portal_message(db, identity.wa_id, invite_link, now=now, dedupe_suffix=identity.user_id)
+    db.commit()
     return {"screen": "SUCCESS", "data": {"message": "Your account is ready. Send any message to open your dashboard."}}
 
 

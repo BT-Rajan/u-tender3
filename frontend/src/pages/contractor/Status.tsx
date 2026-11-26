@@ -1,6 +1,7 @@
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
-import type { ContractorDocument, ContractorProfile } from "@/api/types";
+import type { ContractorDocument, ContractorProfile, ContractorStatus } from "@/api/types";
 import { PageLoading } from "@/components/PageLoading";
 import { useI18n } from "@/i18n/I18nContext";
 import { formatDate } from "@/lib/format";
@@ -18,7 +19,68 @@ function statusBadge(status: string) {
   }
 }
 
+// The next step in sign-up (details, plan, waiting for activation, or active), from GET /contractor/status.
+function OnboardingPanel() {
+  const { t, language } = useI18n();
+  const { data: s } = useQuery({
+    queryKey: ["contractor-status"],
+    queryFn: () => apiFetch<ContractorStatus>("/contractor/status"),
+  });
+  if (!s || s.is_suspended || s.next_step === "suspended") return null;
+
+  let title: string;
+  let body: string;
+  let tone = "border-amber";
+  let action: { label: string; href: string } | null = null;
+  let extra: string | null = null;
+
+  if (s.next_step === "active") {
+    title = t("onboarding.panelActiveTitle");
+    body = t("onboarding.panelActiveBody");
+    tone = "border-green";
+  } else if (s.next_step === "details") {
+    title = t("onboarding.panelDetailsTitle");
+    body = t("onboarding.panelDetailsBody");
+    action = { label: t("onboarding.panelDetailsCta"), href: "/contractor/onboarding" };
+  } else if (s.next_step === "subscribe") {
+    title = t("onboarding.panelSubscribeTitle");
+    body = t("onboarding.panelSubscribeBody");
+    action = { label: t("onboarding.panelSubscribeCta"), href: "/contractor/subscribe" };
+  } else {
+    title = t("onboarding.panelAwaitingTitle");
+    body = t("onboarding.panelAwaitingBody");
+    if (s.activation_due_at) extra = `${t("onboarding.panelDueBy")} ${formatDate(s.activation_due_at, language)}`;
+  }
+
+  return (
+    <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded border border-l-4 bg-white px-5 py-4 ${tone}`}>
+      <div>
+        <div className="font-display text-sm font-semibold text-navy">{title}</div>
+        <p className="mt-1.5 text-sm text-steel">{body}</p>
+        {extra && <div className="mt-1.5 font-mono text-[11px] text-steel">{extra}</div>}
+        {s.activation_overdue && <p className="mt-1.5 text-sm text-red">{t("onboarding.panelOverdue")}</p>}
+      </div>
+      {action && (
+        <Link to={action.href} className="rounded bg-amber px-4 py-2 text-sm font-semibold text-white hover:bg-amber-dark">
+          {action.label}
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export function ContractorStatusPage() {
+  return (
+    <>
+      <div className="mx-auto max-w-3xl px-5 pt-8">
+        <OnboardingPanel />
+      </div>
+      <DocumentStatus />
+    </>
+  );
+}
+
+function DocumentStatus() {
   const { t, language } = useI18n();
   const { data: profile } = useQuery({
     queryKey: ["contractor-profile"],

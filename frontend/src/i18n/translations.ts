@@ -1,4 +1,5 @@
 export interface Dictionary {
+  onboarding: Record<string, string>;
   common: { loading: string; save: string; cancel: string; back: string };
   whatsapp: { title: string; body: string; cta: string };
   errors: { notFoundTitle: string; notFoundBody: string; goHome: string; crashTitle: string; crashBody: string; reload: string };
@@ -108,9 +109,6 @@ export interface Dictionary {
         paymentRequiredTitle: string;
         paymentRequiredBody: string;
         paymentRequiredCta: string;
-        paymentRestrictedTitle: string;
-        paymentRestrictedBody: string;
-        paymentRestrictedCta: string;
         suspendedTitle: string;
         suspendedBody: string;
       };
@@ -170,29 +168,6 @@ export interface Dictionary {
       submit: string;
       uploadError: string;
       submitError: string;
-    };
-    subscribe: {
-      feature1: string;
-      feature2: string;
-      feature3: string;
-      feature4: string;
-      monthly: string;
-      annual: string;
-      priceMonthlyNote: string;
-      priceAnnualNote: string;
-      start: string;
-      eyebrow: string;
-      headingActive: string;
-      headingInactive: string;
-      subheadingActive: string;
-      subheadingInactive: string;
-      overrideBadge: string;
-      overrideMessage: string;
-      renews: string;
-      manageBilling: string;
-      checkoutNote: string;
-      checkoutError: string;
-      portalError: string;
     };
     offer: {
       deadlineLabel: string;
@@ -522,6 +497,96 @@ export interface Dictionary {
 }
 
 export const en: Dictionary = {
+  onboarding: {
+    trialNote: "Your trial is running. You can send offers without a subscription until",
+    signupEyebrow: "Contractor sign-up",
+    signupHeading: "Create your contractor account",
+    signupIntro: "Enter your WhatsApp number. We send a 6-digit code to confirm it.",
+    phone: "WhatsApp number",
+    phoneHint: "Include the country code, for example 96599444463.",
+    sendCode: "Send code",
+    sending: "Sending...",
+    codeSent: "We sent a code to your WhatsApp. It expires in 5 minutes.",
+    changeNumber: "Use a different number",
+    code: "Code from WhatsApp",
+    fullName: "Your name",
+    company: "Company name",
+    email: "Email",
+    password: "Password",
+    passwordHint: "At least 8 characters.",
+    createAccount: "Create account",
+    creating: "Creating account...",
+    haveAccount: "Already have an account?",
+    logIn: "Log in",
+    signupError: "We could not create your account. Check the code and try again.",
+    joinHeading: "Finish your sign-up",
+    joinIntro: "Add your email and a password to finish your account. This link works for 24 hours.",
+    joinSubmit: "Save and continue",
+    joinSaving: "Saving...",
+    joinMissing: "This link is incomplete. Open the link from WhatsApp again.",
+    joinError: "This link has expired or was already used. Ask for a new link on WhatsApp.",
+    wizardEyebrow: "Onboarding",
+    wizardHeading: "Tell us about your business",
+    wizardIntro: "We check these details before we activate your account.",
+    step1: "Business details",
+    step2: "Trades you offer",
+    businessName: "Business name",
+    address: "Business address",
+    website: "Website (optional)",
+    websiteHint: "For example www.example.com",
+    businessEmail: "Business email",
+    registrationId: "Business registration ID",
+    tradesHeading: "Choose the trades you offer",
+    tradesHint: "Pick at least one.",
+    tradesRequired: "Choose at least one trade.",
+    next: "Next",
+    back: "Back",
+    save: "Save and continue",
+    saving: "Saving...",
+    wizardError: "We could not save your details. Check the form and try again.",
+    subEyebrow: "Subscription",
+    subHeading: "Choose a plan",
+    subIntro: "Your first payment covers the activation fee and the first month. Each later payment covers one more month.",
+    activationFee: "Activation fee",
+    monthlyFee: "Monthly fee",
+    firstPayment: "First payment",
+    monthlyPayment: "Monthly payment",
+    payWithMyFatoorah: "Pay with MyFatoorah",
+    opening: "Opening payment...",
+    paidNotice: "Payment received. We are checking your details and aim to activate you within 48 hours.",
+    failedNotice: "The payment was not completed. You can try again below.",
+    checkingPayment: "Checking your payment...",
+    paidUntil: "Paid until",
+    invoices: "Payments",
+    noInvoices: "No payments yet.",
+    statusPending: "Waiting for payment",
+    statusPaid: "Paid",
+    statusCanceled: "Canceled",
+    statusExpired: "Expired",
+    continuePayment: "Continue to payment",
+    paymentError: "We could not start the payment. Try again.",
+    noPlans: "No plans are available yet. Check back soon.",
+    panelDetailsTitle: "Next: add your business details",
+    panelDetailsBody: "Enter your business details and the trades you offer.",
+    panelDetailsCta: "Add details",
+    panelSubscribeTitle: "Next: choose a plan",
+    panelSubscribeBody: "Pay the activation fee and the first month to continue.",
+    panelSubscribeCta: "Choose a plan",
+    panelAwaitingTitle: "Payment received",
+    panelAwaitingBody: "Our team checks your details and activates your account within 48 hours.",
+    panelDueBy: "Activation due by",
+    panelOverdue: "Activation is past the 48-hour target. Thank you for your patience.",
+    panelActiveTitle: "Your account is active",
+    panelActiveBody: "You can send offers on open tenders.",
+    forgotCodeSent: "If an account uses this email, we sent a code to its WhatsApp number.",
+    forgotCode: "Code from WhatsApp",
+    forgotNewPassword: "New password",
+    forgotConfirm: "Set new password",
+    forgotSaving: "Saving...",
+    forgotDone: "Your password is changed. You can log in now.",
+    forgotError: "That code is not right or has expired. Ask for a new code.",
+    useAnotherEmail: "Use a different email",
+  },
   whatsapp: {
     title: "Use U-Tender on WhatsApp",
     body: "Open a chat and send the word utender. We'll reply with your account options.",
@@ -694,9 +759,6 @@ export const en: Dictionary = {
         paymentRequiredTitle: "Subscribe to unlock bidding",
         paymentRequiredBody: "You're verified — subscribe to view drawings and submit offers.",
         paymentRequiredCta: "View plans",
-        paymentRestrictedTitle: "Payment issue on your account",
-        paymentRestrictedBody: "Your subscription payment failed or is past due. Update billing to keep bidding.",
-        paymentRestrictedCta: "Manage billing",
         suspendedTitle: "Account suspended",
         suspendedBody: "Your account has been suspended by a site admin. Contact support if you believe this is a mistake.",
       },
@@ -758,29 +820,6 @@ export const en: Dictionary = {
       submit: "Submit for review",
       uploadError: "Could not upload document.",
       submitError: "Could not submit for review.",
-    },
-    subscribe: {
-      feature1: "Unlimited open projects in your service area",
-      feature2: "Full drawings and scope details on every listing",
-      feature3: "Unlimited offers and revisions before deadline",
-      feature4: "Public rating and review profile",
-      monthly: "Monthly",
-      annual: "Annual — save 15%",
-      priceMonthlyNote: "Billed monthly. No lead fees, no commission on top.",
-      priceAnnualNote: "Billed annually at $804. No lead fees, no commission on top.",
-      start: "Start subscription",
-      eyebrow: "Contractor access",
-      headingActive: "Your subscription",
-      headingInactive: "Subscribe to bid on projects",
-      subheadingActive: "Manage your plan and billing details.",
-      subheadingInactive: "One plan, full access. Cancel any time.",
-      overrideBadge: "admin override",
-      overrideMessage: "An administrator has granted your account full marketplace access without a paid subscription.",
-      renews: "Renews",
-      manageBilling: "Manage billing",
-      checkoutNote: "You'll be redirected to Stripe's secure checkout to complete your subscription.",
-      checkoutError: "Could not start checkout. Try again.",
-      portalError: "Could not open billing portal. Try again.",
     },
     offer: {
       deadlineLabel: "Deadline",
@@ -1116,6 +1155,96 @@ export const en: Dictionary = {
 };
 
 export const ar: Dictionary = {
+  onboarding: {
+    trialNote: "تجربتك مفعّلة. يمكنك تقديم العروض دون اشتراك حتى",
+    signupEyebrow: "تسجيل مقاول",
+    signupHeading: "أنشئ حساب المقاول",
+    signupIntro: "أدخل رقم واتساب الخاص بك. سنرسل رمزاً من 6 أرقام لتأكيده.",
+    phone: "رقم واتساب",
+    phoneHint: "أدخل رمز الدولة، مثال 96599444463.",
+    sendCode: "أرسل الرمز",
+    sending: "جارٍ الإرسال...",
+    codeSent: "أرسلنا رمزاً إلى واتساب الخاص بك. ينتهي خلال 5 دقائق.",
+    changeNumber: "استخدم رقماً آخر",
+    code: "الرمز المرسل على واتساب",
+    fullName: "اسمك",
+    company: "اسم الشركة",
+    email: "البريد الإلكتروني",
+    password: "كلمة المرور",
+    passwordHint: "8 أحرف على الأقل.",
+    createAccount: "إنشاء الحساب",
+    creating: "جارٍ إنشاء الحساب...",
+    haveAccount: "لديك حساب بالفعل؟",
+    logIn: "تسجيل الدخول",
+    signupError: "تعذر إنشاء الحساب. تحقق من الرمز وحاول مرة أخرى.",
+    joinHeading: "أكمل التسجيل",
+    joinIntro: "أضف بريدك الإلكتروني وكلمة مرور لإكمال حسابك. هذا الرابط صالح لمدة 24 ساعة.",
+    joinSubmit: "حفظ والمتابعة",
+    joinSaving: "جارٍ الحفظ...",
+    joinMissing: "الرابط غير مكتمل. افتح الرابط من واتساب مرة أخرى.",
+    joinError: "انتهت صلاحية هذا الرابط أو تم استخدامه. اطلب رابطاً جديداً عبر واتساب.",
+    wizardEyebrow: "التسجيل",
+    wizardHeading: "أخبرنا عن شركتك",
+    wizardIntro: "نتحقق من هذه البيانات قبل تفعيل حسابك.",
+    step1: "بيانات الشركة",
+    step2: "التخصصات التي تقدمها",
+    businessName: "اسم الشركة",
+    address: "عنوان الشركة",
+    website: "الموقع الإلكتروني (اختياري)",
+    websiteHint: "مثال www.example.com",
+    businessEmail: "البريد الإلكتروني للشركة",
+    registrationId: "رقم السجل التجاري",
+    tradesHeading: "اختر التخصصات التي تقدمها",
+    tradesHint: "اختر تخصصاً واحداً على الأقل.",
+    tradesRequired: "اختر تخصصاً واحداً على الأقل.",
+    next: "التالي",
+    back: "رجوع",
+    save: "حفظ والمتابعة",
+    saving: "جارٍ الحفظ...",
+    wizardError: "تعذر حفظ البيانات. تحقق من النموذج وحاول مرة أخرى.",
+    subEyebrow: "الاشتراك",
+    subHeading: "اختر خطة",
+    subIntro: "تغطي دفعتك الأولى رسوم التفعيل والشهر الأول. كل دفعة لاحقة تغطي شهراً إضافياً.",
+    activationFee: "رسوم التفعيل",
+    monthlyFee: "الرسوم الشهرية",
+    firstPayment: "الدفعة الأولى",
+    monthlyPayment: "الدفعة الشهرية",
+    payWithMyFatoorah: "الدفع عبر MyFatoorah",
+    opening: "جارٍ فتح صفحة الدفع...",
+    paidNotice: "تم استلام الدفع. نتحقق من بياناتك ونهدف إلى تفعيل حسابك خلال 48 ساعة.",
+    failedNotice: "لم يكتمل الدفع. يمكنك المحاولة مرة أخرى.",
+    checkingPayment: "جارٍ التحقق من الدفع...",
+    paidUntil: "مدفوع حتى",
+    invoices: "المدفوعات",
+    noInvoices: "لا توجد مدفوعات بعد.",
+    statusPending: "بانتظار الدفع",
+    statusPaid: "مدفوع",
+    statusCanceled: "ملغى",
+    statusExpired: "منتهي",
+    continuePayment: "المتابعة للدفع",
+    paymentError: "تعذر بدء الدفع. حاول مرة أخرى.",
+    noPlans: "لا توجد خطط متاحة حالياً. تحقق لاحقاً.",
+    panelDetailsTitle: "الخطوة التالية: أضف بيانات شركتك",
+    panelDetailsBody: "أدخل بيانات شركتك والتخصصات التي تقدمها.",
+    panelDetailsCta: "أضف البيانات",
+    panelSubscribeTitle: "الخطوة التالية: اختر خطة",
+    panelSubscribeBody: "ادفع رسوم التفعيل والشهر الأول للمتابعة.",
+    panelSubscribeCta: "اختر خطة",
+    panelAwaitingTitle: "تم استلام الدفع",
+    panelAwaitingBody: "يتحقق فريقنا من بياناتك ويفعل حسابك خلال 48 ساعة.",
+    panelDueBy: "موعد التفعيل",
+    panelOverdue: "تجاوز التفعيل الموعد المستهدف وهو 48 ساعة. نشكرك على صبرك.",
+    panelActiveTitle: "حسابك مفعّل",
+    panelActiveBody: "يمكنك تقديم العروض على المناقصات المفتوحة.",
+    forgotCodeSent: "إذا كان هناك حساب يستخدم هذا البريد، أرسلنا رمزاً إلى رقم واتساب المرتبط به.",
+    forgotCode: "الرمز المرسل على واتساب",
+    forgotNewPassword: "كلمة المرور الجديدة",
+    forgotConfirm: "تعيين كلمة المرور الجديدة",
+    forgotSaving: "جارٍ الحفظ...",
+    forgotDone: "تم تغيير كلمة المرور. يمكنك تسجيل الدخول الآن.",
+    forgotError: "الرمز غير صحيح أو انتهت صلاحيته. اطلب رمزاً جديداً.",
+    useAnotherEmail: "استخدم بريداً آخر",
+  },
   whatsapp: {
     title: "استخدم يو-تندر عبر واتساب",
     body: "افتح محادثة وأرسل كلمة utender. سنرد عليك بخيارات حسابك.",
@@ -1288,9 +1417,6 @@ export const ar: Dictionary = {
         paymentRequiredTitle: "اشترك لفتح إمكانية تقديم العروض",
         paymentRequiredBody: "تم التحقق من حسابك — اشترك لعرض المخططات وتقديم العروض.",
         paymentRequiredCta: "عرض الباقات",
-        paymentRestrictedTitle: "مشكلة في الدفع على حسابك",
-        paymentRestrictedBody: "فشلت عملية دفع اشتراكك أو أنها متأخرة. حدّث بيانات الفوترة لمواصلة تقديم العروض.",
-        paymentRestrictedCta: "إدارة الفوترة",
         suspendedTitle: "الحساب موقوف",
         suspendedBody: "تم إيقاف حسابك من قبل مسؤول الموقع. تواصل مع الدعم إذا كنت تعتقد أن هذا خطأ.",
       },
@@ -1352,29 +1478,6 @@ export const ar: Dictionary = {
       submit: "إرسال للمراجعة",
       uploadError: "تعذر رفع المستند.",
       submitError: "تعذر الإرسال للمراجعة.",
-    },
-    subscribe: {
-      feature1: "مشاريع مفتوحة غير محدودة في منطقة خدمتك",
-      feature2: "مخططات كاملة وتفاصيل نطاق العمل لكل إعلان",
-      feature3: "عروض ومراجعات غير محدودة قبل الموعد النهائي",
-      feature4: "ملف تقييمات ومراجعات عام",
-      monthly: "شهري",
-      annual: "سنوي — وفّر 15٪",
-      priceMonthlyNote: "تُفوتَر شهريًا. بلا رسوم عمولات إضافية.",
-      priceAnnualNote: "تُفوتَر سنويًا بمبلغ 804 دولارات. بلا رسوم عمولات إضافية.",
-      start: "بدء الاشتراك",
-      eyebrow: "وصول المقاول",
-      headingActive: "اشتراكك",
-      headingInactive: "اشترك لتقديم العروض على المشاريع",
-      subheadingActive: "أدر باقتك وتفاصيل الفوترة.",
-      subheadingInactive: "باقة واحدة، وصول كامل. يمكن الإلغاء في أي وقت.",
-      overrideBadge: "استثناء إداري",
-      overrideMessage: "منحك أحد المسؤولين وصولاً كاملاً للسوق دون اشتراك مدفوع.",
-      renews: "يتجدد في",
-      manageBilling: "إدارة الفوترة",
-      checkoutNote: "سيتم تحويلك إلى صفحة الدفع الآمنة الخاصة بـ Stripe لإتمام اشتراكك.",
-      checkoutError: "تعذر بدء عملية الدفع. حاول مرة أخرى.",
-      portalError: "تعذر فتح بوابة الفوترة. حاول مرة أخرى.",
     },
     offer: {
       deadlineLabel: "الموعد النهائي",

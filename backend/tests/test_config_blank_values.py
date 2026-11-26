@@ -9,10 +9,10 @@ from app.config import Settings
 
 def test_blank_optional_string_is_none(monkeypatch):
     monkeypatch.setenv("S3_ENDPOINT_URL", "")
-    monkeypatch.setenv("STRIPE_SECRET_KEY", "   ")
+    monkeypatch.setenv("WHATSAPP_OTP_TEMPLATE", "   ")
     settings = Settings(_env_file=None)
     assert settings.s3_endpoint_url is None
-    assert settings.stripe_secret_key is None
+    assert settings.whatsapp_otp_template is None
 
 
 def test_blank_required_string_keeps_its_value(monkeypatch):

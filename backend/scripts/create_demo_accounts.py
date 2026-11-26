@@ -3,7 +3,7 @@
 Creates 3 owners and 3 contractors, runs each through the app's own
 verification flow (documents uploaded, admin approves every document,
 admin approves the profile, contractors get a payment override so bidding
-works without Stripe), and opens one project per owner so contractors can
+works without a subscription), and opens one project per owner so contractors can
 bid straight away.
 
 Run by install.sh after the API is up. Can also be run by hand:

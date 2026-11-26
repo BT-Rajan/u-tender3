@@ -1,3 +1,4 @@
+from app.models.app_setting import AppSetting
 from app.models.audit_log import AuditLog
 from app.models.auth_token import AuthToken
 from app.models.award_record import AwardRecord
@@ -6,6 +7,7 @@ from app.models.cms_content import CmsContent
 from app.models.contractor import ContractorProfile
 from app.models.document import ContractorDocument, DocumentRequirement, OwnerDocument
 from app.models.notification import Notification
+from app.models.onboarding import OtpCode, PaymentInvoice, PortalInvite, SubscriptionPlan
 from app.models.offer import Offer, OfferRevision
 from app.models.owner import OwnerProfile
 from app.models.payment_override import PaymentOverride

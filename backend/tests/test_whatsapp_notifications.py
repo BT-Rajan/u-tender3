@@ -18,7 +18,6 @@ from app.models.enums import (
     NotificationType,
     OfferStatus,
     ProjectStatus,
-    SubscriptionStatus,
     TenderType,
     UserRole,
     VerificationStatus,
@@ -73,7 +72,7 @@ def _user(db, *, role=UserRole.owner, wa_id=None, language=None, name="Layla Al-
     else:
         db.add(ContractorProfile(user_id=user.id, company_name="Haddad Builders", primary_trade="Electrical",
                                  verification_status=VerificationStatus.approved,
-                                 subscription_status=SubscriptionStatus.active))
+                                 paid_until=datetime.utcnow() + timedelta(days=30)))
     if wa_id:
         identity = get_or_create_identity(db, wa_id, now=NOW)
         identity.user_id = user.id
@@ -263,44 +262,6 @@ def test_a_rejected_verification_writes_a_notice_for_the_contractor_through_the_
     assert _outbox(db)[0].template_name == "verification_status"
 
 
-# --- payment transitions ------------------------------------------------------------
-
-
-def test_a_real_subscription_activation_notifies_once(db):
-    from app.routers.billing import _notify_payment_change
-
-    contractor = _user(db, role=UserRole.contractor, wa_id="96511110015")
-    cp = db.get(ContractorProfile, contractor.id)
-    cp.subscription_status = SubscriptionStatus.active
-    _notify_payment_change(db, cp, SubscriptionStatus.not_started)
-    _notify_payment_change(db, cp, SubscriptionStatus.active)  # a repeat of the same state
-
-    types = [n.type for n in db.scalars(select(Notification)).all()]
-    assert types == [NotificationType.payment_activated]
-    assert _outbox(db)[0].template_name == "payment_status"
-
-
-def test_a_failing_payment_notifies_but_a_repeat_does_not(db):
-    from app.routers.billing import _notify_payment_change
-
-    contractor = _user(db, role=UserRole.contractor, wa_id="96511110016")
-    cp = db.get(ContractorProfile, contractor.id)
-    cp.subscription_status = SubscriptionStatus.past_due
-    _notify_payment_change(db, cp, SubscriptionStatus.active)
-    _notify_payment_change(db, cp, SubscriptionStatus.past_due)
-
-    assert db.query(Notification).filter(Notification.type == NotificationType.payment_failed).count() == 1
-
-
-def test_an_unchanged_status_never_notifies(db):
-    from app.routers.billing import _notify_payment_change
-
-    contractor = _user(db, role=UserRole.contractor, wa_id="96511110017")
-    cp = db.get(ContractorProfile, contractor.id)
-    _notify_payment_change(db, cp, cp.subscription_status)
-    assert db.query(Notification).count() == 0
-
-
 # --- new tender fan-out -------------------------------------------------------------
 
 
@@ -315,7 +276,7 @@ def test_a_new_tender_reaches_only_contractors_who_can_bid_in_its_trade(db):
     db.get(ContractorProfile, wrong_trade.id).primary_trade = "Plumbing"
 
     unpaid = _user(db, role=UserRole.contractor, wa_id="96511110021", name="Unpaid")
-    db.get(ContractorProfile, unpaid.id).subscription_status = SubscriptionStatus.not_started
+    db.get(ContractorProfile, unpaid.id).paid_until = None
     db.commit()
 
     no_identity = _user(db, role=UserRole.contractor, name="Web only")

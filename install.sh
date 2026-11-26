@@ -130,7 +130,7 @@ else
     } >> "$env_file"
     chmod 600 "$env_file"
     ok "Created backend/.env with generated secrets."
-    warn "Stripe and email keys are blank: billing checkout and emails are skipped until you add them."
+    warn "Email keys are blank: emails are skipped until you add them. Payments are set up by an admin in the app (Payment setup)."
 fi
 http_port="$(grep -m1 '^PUBLIC_HTTP_PORT=' "$env_file" | cut -d= -f2)"
 api_port="$(grep -m1 '^PUBLIC_API_PORT=' "$env_file" | cut -d= -f2)"

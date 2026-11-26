@@ -72,11 +72,10 @@ def require_approved_contractor(user: User = Depends(require_contractor), db: Se
 # decision D-002/D-003): full marketplace participation — viewing a
 # project's drawings, downloading them, and submitting or revising a bid —
 # requires BOTH an approved verification AND active payment, where "active
-# payment" is a real Stripe subscription OR an admin-granted, audited
-# PaymentOverride. ContractorProfile.is_verified_active is the single
-# source of truth for this; never re-derive the check inline at a call
-# site (that's exactly how the pre-PASS-5 code drifted: submit_offer used
-# to check is_subscribed alone, which silently ignored payment_override_active).
+# payment" is a paid MyFatoorah subscription, an admin-set trial, or an
+# admin-granted, audited PaymentOverride. ContractorProfile.is_verified_active
+# is the single source of truth for this; never re-derive the check inline at
+# a call site.
 def require_marketplace_active_contractor(user: User = Depends(require_contractor), db: Session = Depends(get_db)) -> User:
     profile = db.get(ContractorProfile, user.id)
     if not profile or not profile.is_verified_active:

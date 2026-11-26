@@ -19,7 +19,7 @@ def test_pass5_payment_gate():
     from app.auth.security import hash_password
     from app.models.audit_log import AuditLog
     from app.models.contractor import ContractorProfile
-    from app.models.enums import DocumentStatus, SubscriptionStatus, UserRole, VerificationStatus
+    from app.models.enums import DocumentStatus, UserRole, VerificationStatus
     from app.models.payment_override import PaymentOverride
     from app.models.user import User
     from app.services.documents import ensure_document_rows
@@ -172,7 +172,7 @@ def test_pass5_payment_gate():
 
 
     # ---------- stage 5: admin revokes the override ----------
-    r = admin_client.post(f"/admin/contractors/{contractor_id}/payment-override/revoke", json={"reason": "Migrated to real Stripe subscription."})
+    r = admin_client.post(f"/admin/contractors/{contractor_id}/payment-override/revoke", json={"reason": "Contractor has paid."})
     check("stage5: override revoked", r.status_code == 200 and r.json()["payment_override_active"] is False)
     check("stage5: marketplace_status back to payment_required", r.json()["marketplace_status"] == "payment_required")
 
@@ -198,16 +198,16 @@ def test_pass5_payment_gate():
     check("stage5: withdraw still allowed without payment (verification-only gate)", r.status_code == 200 and r.json()["status"] == "withdrawn")
 
 
-    # ---------- stage 6: a real Stripe-driven subscription also satisfies the gate ----------
+    # ---------- stage 6: a paid subscription also satisfies the gate ----------
     cp = db.get(ContractorProfile, contractor_id)
-    cp.subscription_status = SubscriptionStatus.active
+    cp.paid_until = datetime.utcnow() + timedelta(days=30)
     db.commit()
 
     status, _ = contractor_marketplace_status()
-    check("stage6: marketplace_status verified_active via real subscription", status == "verified_active")
+    check("stage6: marketplace_status verified_active via paid subscription", status == "verified_active")
 
     r = contractor_client.post(f"/projects/{project_id}/offers", json={"amount": "4400.00"})
-    check("stage6: offer resubmission succeeds via real subscription (no override needed)", r.status_code == 200)
+    check("stage6: offer resubmission succeeds via paid subscription (no override needed)", r.status_code == 200)
 
 
     # ---------- stage 7: suspension overrides everything ----------

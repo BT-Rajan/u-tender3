@@ -26,6 +26,7 @@ KIND_CTA_URL = "cta_url"
 KIND_BUTTONS = "buttons"
 # Queued messages whose dedupe key starts with this prefix are sent at once from the Flow endpoint.
 TENDER_NUMBER_PREFIX = "tender-number:"
+PORTAL_LINK_PREFIX = "portal-link:"
 KINDS = (KIND_TEMPLATE, KIND_TEXT, KIND_FLOW, KIND_CTA_URL, KIND_BUTTONS)
 
 # Params that are bearer credentials (a Flow session token or an upload link). They're removed once the row is finished.

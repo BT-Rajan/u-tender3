@@ -23,6 +23,9 @@ import { ContractorVerifyPage } from "@/pages/contractor/Verify";
 import { ContractorStatusPage } from "@/pages/contractor/Status";
 import { ContractorOfferPage } from "@/pages/contractor/Offer";
 import { ContractorSubscribePage } from "@/pages/contractor/Subscribe";
+import { ContractorSignupPage } from "@/pages/contractor/SignupWithCode";
+import { ContractorJoinPage } from "@/pages/contractor/Join";
+import { ContractorOnboardingPage } from "@/pages/contractor/Onboarding";
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { AdminRequirementsPage } from "@/pages/admin/Requirements";
 import { AdminReviewPage } from "@/pages/admin/Review";
@@ -35,6 +38,9 @@ import { AdminProjectsPage } from "@/pages/admin/Projects";
 import { AdminProjectDetailPage } from "@/pages/admin/ProjectDetail";
 import { AdminCmsPage } from "@/pages/admin/Cms";
 import { AdminUserHistoryPage } from "@/pages/admin/UserHistory";
+import { AdminPlansPage } from "@/pages/admin/Plans";
+import { AdminPaymentSetupPage } from "@/pages/admin/PaymentSetup";
+import { AdminActivationsPage } from "@/pages/admin/Activations";
 
 function AppRoutes() {
   const { pathname } = useLocation();
@@ -119,6 +125,29 @@ function AppRoutes() {
         >
           <Route index element={<ContractorStatusPage />} />
         </Route>
+        <Route path="/contractor/signup" element={<ContractorSignupPage />} />
+        <Route path="/contractor/join" element={<ContractorJoinPage />} />
+        <Route
+          path="/contractor/onboarding"
+          element={
+            <ProtectedRoute role="contractor">
+              <ContractorLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<ContractorOnboardingPage />} />
+        </Route>
+        {/* Subscribing is open to any signed-up contractor: it is not behind the approval gate. */}
+        <Route
+          path="/contractor/subscribe"
+          element={
+            <ProtectedRoute role="contractor">
+              <ContractorLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<ContractorSubscribePage />} />
+        </Route>
         <Route
           path="/contractor"
           element={
@@ -128,7 +157,6 @@ function AppRoutes() {
           }
         >
           <Route path="feed" element={<ContractorFeedPage />} />
-          <Route path="subscribe" element={<ContractorSubscribePage />} />
           <Route path="projects/:id/offer" element={<ContractorOfferPage />} />
         </Route>
 
@@ -149,6 +177,9 @@ function AppRoutes() {
           <Route path="offers" element={<AdminOffersPage />} />
           <Route path="projects" element={<AdminProjectsPage />} />
           <Route path="projects/:id" element={<AdminProjectDetailPage />} />
+          <Route path="activations" element={<AdminActivationsPage />} />
+          <Route path="plans" element={<AdminPlansPage />} />
+          <Route path="payment-setup" element={<AdminPaymentSetupPage />} />
           <Route path="cms" element={<AdminCmsPage />} />
           <Route path="users/:userId/history" element={<AdminUserHistoryPage />} />
         </Route>

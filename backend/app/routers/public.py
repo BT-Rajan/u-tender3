@@ -1,12 +1,15 @@
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.db import get_db
 from app.models.award_record import AwardRecord
 from app.models.cms_content import CmsContent
 from app.models.contractor import ContractorProfile
-from app.models.enums import Language, ProjectStatus, SubscriptionStatus, VerificationStatus
+from app.models.enums import Language, ProjectStatus, VerificationStatus
 from app.models.project import Project
 from app.schemas.cms import PublicStatsOut
 
@@ -46,13 +49,16 @@ def public_stats(db: Session = Depends(get_db)) -> PublicStatsOut:
     # source of truth for marketplace activation (spec P0 rule) — so this
     # count can never drift from what "verified_active" actually means
     # elsewhere in the app.
+    now = datetime.utcnow()
+    grace = timedelta(days=get_settings().payment_grace_days)
     verified_contractors = (
         db.query(ContractorProfile)
         .filter(
             ContractorProfile.is_suspended.is_(False),
             ContractorProfile.verification_status == VerificationStatus.approved,
             or_(
-                ContractorProfile.subscription_status.in_([SubscriptionStatus.active, SubscriptionStatus.trialing]),
+                ContractorProfile.paid_until > now - grace,
+                ContractorProfile.trial_until > now,
                 ContractorProfile.payment_override_active.is_(True),
             ),
         )

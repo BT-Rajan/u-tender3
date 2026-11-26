@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError } from "@/api/client";
 import type { AuditLogEntry, ContractorProfile, PaymentOverrideRecord } from "@/api/types";
 import { formatDate, formatDateTime, stars } from "@/lib/format";
+import { errorText } from "@/lib/errors";
 import { DeleteContractorForm } from "@/components/DeleteContractorForm";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { PageLoading } from "@/components/PageLoading";
@@ -16,7 +17,6 @@ const MARKETPLACE_STATUS_LABEL: Record<string, string> = {
   submitted_for_review: "Submitted for review",
   changes_requested: "Changes requested",
   payment_required: "Payment required",
-  payment_restricted: "Payment restricted",
   verified_active: "Verified & active",
   suspended: "Suspended",
 };
@@ -26,7 +26,6 @@ const MARKETPLACE_STATUS_BADGE: Record<string, string> = {
   submitted_for_review: "bg-amber/15 text-amber-dark",
   changes_requested: "bg-red-tint text-red",
   payment_required: "bg-amber/15 text-amber-dark",
-  payment_restricted: "bg-red-tint text-red",
   verified_active: "bg-green-tint text-green",
   suspended: "bg-red-tint text-red",
 };
@@ -81,9 +80,9 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
         )}
       </div>
       <p className="text-[11.5px] text-steel-light mb-3">
-        Subscription: {contractor.subscription_status || "none"}
-        {contractor.subscription_current_period_end &&
-          ` · renews ${formatDate(contractor.subscription_current_period_end, language)}`}
+        Paid until: {contractor.paid_until ? formatDate(contractor.paid_until, language) : "not paid"}
+        {" · "}
+        Trial until: {contractor.trial_until ? formatDate(contractor.trial_until, language) : "none"}
       </p>
 
       <ErrorBanner message={error} />
@@ -133,6 +132,83 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+// The date an ISO UTC timestamp falls on in Kuwait, as YYYY-MM-DD for a date input. Empty when there is none.
+function kuwaitDate(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(`${iso}Z`).toLocaleDateString("en-CA", { timeZone: "Asia/Kuwait" });
+}
+
+// Paid-until and trial-until, set by hand. Only the dates that change are sent, each with the reason.
+function BillingDatesPanel({ contractorId, contractor }: { contractorId: string; contractor: ContractorProfile }) {
+  const queryClient = useQueryClient();
+  const initialPaid = kuwaitDate(contractor.paid_until);
+  const initialTrial = kuwaitDate(contractor.trial_until);
+  const [paid, setPaid] = useState(initialPaid);
+  const [trial, setTrial] = useState(initialTrial);
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPaid(initialPaid);
+    setTrial(initialTrial);
+  }, [initialPaid, initialTrial]);
+
+  const save = useMutation({
+    mutationFn: () => {
+      const body: Record<string, string | null> = { reason: reason.trim() };
+      if (paid !== initialPaid) body.paid_until = paid || null;
+      if (trial !== initialTrial) body.trial_until = trial || null;
+      return apiFetch(`/admin/contractors/${contractorId}/billing`, { method: "PATCH", body });
+    },
+    onSuccess: () => {
+      setReason("");
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-contractor", contractorId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-audit-log", contractorId] });
+    },
+    onError: (err) => setError(errorText(err, "Could not save the billing dates.")),
+  });
+
+  const unchanged = paid === initialPaid && trial === initialTrial;
+  const INPUT_CLASS = "w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20";
+
+  return (
+    <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">Billing dates</h3>
+      <p className="text-[11.5px] text-steel-light mb-3">
+        A trial lets this contractor send offers without a paid subscription, until the trial date. Approval is still required. Dates end at 23:59 Kuwait time. Clear a date to remove it.
+      </p>
+      <ErrorBanner message={error} />
+      <div className="grid gap-3">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">Paid until</label>
+          <input type="date" value={paid} onChange={(e) => setPaid(e.target.value)} className={INPUT_CLASS} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">Trial until</label>
+          <input type="date" value={trial} onChange={(e) => setTrial(e.target.value)} className={INPUT_CLASS} />
+        </div>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-steel">Reason (required)</label>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={2}
+          placeholder="Why is this changed? This is recorded permanently."
+          className={`${INPUT_CLASS} resize-y`}
+        />
+        <button
+          type="button"
+          onClick={() => save.mutate()}
+          disabled={save.isPending || unchanged || reason.trim().length < 3}
+          className="bg-navy hover:bg-navy-deep text-white font-semibold text-sm rounded px-4 py-2 w-fit disabled:opacity-40"
+        >
+          Save billing dates
+        </button>
+      </div>
     </div>
   );
 }
@@ -303,6 +379,8 @@ export function AdminContractorDetailPage() {
           </div>
 
           <MarketplaceAccessPanel contractorId={contractor.user_id} contractor={contractor} />
+
+          <BillingDatesPanel contractorId={contractor.user_id} contractor={contractor} />
 
           <div className="bg-white border border-border rounded-lg shadow-sm px-5 py-4.5">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-navy mb-3">Account access</h3>

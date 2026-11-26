@@ -13,7 +13,7 @@ from sqlalchemy import select
 
 from app.models.award_record import AwardRecord
 from app.models.contractor import ContractorProfile
-from app.models.enums import OfferStatus, ProjectStatus, SubscriptionStatus, TenderType, UserRole, VerificationStatus
+from app.models.enums import OfferStatus, ProjectStatus, TenderType, UserRole, VerificationStatus
 from app.models.offer import Offer, OfferRevision
 from app.models.owner import OwnerProfile
 from app.models.project import Project, ProjectDrawing
@@ -48,7 +48,7 @@ def _contractor(db, wa_id, *, name="Haddad Builders", verified=True, paid=True, 
             primary_trade="Electrical",
             verification_status=VerificationStatus.approved if verified else VerificationStatus.incomplete,
             is_suspended=suspended,
-            subscription_status=SubscriptionStatus.active if paid else SubscriptionStatus.not_started,
+            paid_until=(datetime.utcnow() + timedelta(days=30)) if paid else None,
         )
     )
     identity = get_or_create_identity(db, wa_id, now=NOW)

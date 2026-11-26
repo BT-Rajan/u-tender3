@@ -55,23 +55,6 @@ class DocumentStatus(str, enum.Enum):
     rejected = "rejected"
 
 
-# Payment/subscription state (spec §2.11: "Not Started, Pending, Active,
-# Past Due, Failed, Cancelled, Expired, Waived/Overridden"). trialing is
-# kept for Stripe trial periods even though the spec doesn't name it
-# separately; waived is set/cleared alongside a PaymentOverride row, never
-# set directly by the Stripe webhook.
-class SubscriptionStatus(str, enum.Enum):
-    not_started = "not_started"
-    pending = "pending"
-    trialing = "trialing"
-    active = "active"
-    past_due = "past_due"
-    failed = "failed"
-    canceled = "canceled"
-    expired = "expired"
-    waived = "waived"
-
-
 class AuthTokenType(str, enum.Enum):
     email_verify = "email_verify"
     password_reset = "password_reset"

@@ -40,10 +40,8 @@ export function ContractorFeedPage() {
   });
 
   // marketplace_status is the backend's single derived source of truth for
-  // full access (verification approved AND — real subscription OR admin
-  // override), never the raw subscription_status alone: a contractor with
-  // an admin-granted payment override has no Stripe subscription at all,
-  // but is fully active.
+  // full access (verification approved AND — paid subscription, admin trial,
+  // OR admin override). Never re-derive it from the payment dates here.
   const isSubscribed = profile?.marketplace_status === "verified_active";
   const filtersActive = !!search.trim() || !!trade;
 

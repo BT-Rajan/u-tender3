@@ -151,16 +151,14 @@ Drawing links stay valid for as long as the owner said bidding is open:
 expiry is tied to the project's `bid_deadline` (floored at 1 hour, capped at
 90 days), the same rule under either storage backend.
 
-## Stripe and email
+## Payments and email
 
-- **Stripe**: create one product with monthly/annual recurring prices, put
-  the price IDs in `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_ANNUAL`. For
-  local testing, run `stripe listen --forward-to localhost:8000/billing/webhook`
-  and put the printed signing secret in `STRIPE_WEBHOOK_SECRET`. In
-  production, point a Stripe webhook at
-  `https://yourdomain.com/billing/webhook` for
-  `checkout.session.completed`, `customer.subscription.updated`, and
-  `customer.subscription.deleted`.
+- **Payments (MyFatoorah)**: an admin enters the API token, the webhook
+  secret and the API address in the app (Admin > Payment setup). Those values
+  override `MYFATOORAH_*` in `.env`. Plans are created and priced in
+  Admin > Plans. Point the MyFatoorah webhook at
+  `https://yourdomain.com/billing/webhook/myfatoorah`. Every payment is still
+  confirmed with MyFatoorah's GetPaymentStatus before access changes.
 - **Email**: set `RESEND_API_KEY` and a verified `EMAIL_FROM` address.
   Without a key, emails are logged and skipped rather than failing the
   request that triggered them.
@@ -218,8 +216,8 @@ signed-URL expiry tied to the bid deadline. Two things changed on purpose:
   own cost factor. Worth adding (e.g. a per-IP/per-email limiter) before
   a public launch.
 - **Error responses** never echo exception internals: unhandled exceptions
-  are logged server-side and return a generic 500; the Stripe webhook
-  handler logs its own failures rather than reflecting them back to Stripe.
+  are logged server-side and return a generic 500; the payment webhook
+  handler logs its own failures rather than reflecting them back to MyFatoorah.
 
 ## Notes for whoever picks this up next
 

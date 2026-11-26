@@ -40,7 +40,7 @@ def require_approved(db: Session, user: User) -> None:
 
 
 def require_marketplace(db: Session, user: User) -> None:
-    """Payment gate: verified and paid (subscription or admin override). Needed for drawings and for bidding."""
+    """Payment gate: verified and paid, in a trial, or under an admin override. Needed for drawings and for offers, on the web and on WhatsApp."""
     profile = _profile(db, user)
     if profile is None or not profile.is_verified_active:
         raise TenderError("payment_required", "Activate a subscription to bid on projects and see drawings.")

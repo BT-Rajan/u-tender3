@@ -99,7 +99,7 @@ export function SignupPage() {
       {error && <p className="text-xs bg-red-tint text-red border border-red rounded px-3 py-2.5 mb-4">{error}</p>}
 
       <form onSubmit={handleSubmit} className="grid gap-4">
-        <RoleFields role={role} setRole={setRole} />
+        <RoleFields role={role} setRole={(r) => (r === "contractor" ? navigate("/contractor/signup") : setRole(r))} />
 
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1">

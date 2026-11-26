@@ -16,7 +16,7 @@ from app.auth.security import create_access_token, hash_password
 from app.config import get_settings
 from app.models.contractor import ContractorProfile
 from app.models.document import ContractorDocument, DocumentRequirement, OwnerDocument
-from app.models.enums import DocumentStatus, Language, SubscriptionStatus, UserRole
+from app.models.enums import DocumentStatus, Language, UserRole
 from app.models.owner import OwnerProfile
 from app.models.notification import Notification
 from app.models.project import Project
@@ -121,7 +121,7 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
         "contractor_id": contractor.id, "requirement_id": contractor_req.id, "decision": "approved"}).status_code == 200
     assert client.post(f"/admin/review/contractors/{contractor.id}/approve").status_code == 200
     db.expire_all()
-    db.get(ContractorProfile, contractor.id).subscription_status = SubscriptionStatus.active
+    db.get(ContractorProfile, contractor.id).paid_until = datetime.utcnow() + timedelta(days=30)
     db.commit()
 
     # 6. Owner creates a sealed tender over WhatsApp and publishes it. The paid contractor in Electrical is told.

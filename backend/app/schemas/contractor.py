@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import OfferStatus, ProjectStatus, SubscriptionStatus, VerificationStatus
+from app.models.enums import OfferStatus, ProjectStatus, VerificationStatus
 from app.services.money import MoneyAmount
 
 
@@ -19,12 +19,13 @@ class ContractorProfileOut(BaseModel):
     is_suspended: bool
     avg_rating: Decimal
     review_count: int
-    subscription_status: SubscriptionStatus | None
-    subscription_current_period_end: datetime | None
+    paid_until: datetime | None
+    trial_until: datetime | None
+    payment_active: bool
     payment_override_active: bool
     # Derived, never stored — spec §2.13's human-facing lifecycle status,
     # one of: documents_incomplete, submitted_for_review, changes_requested,
-    # payment_required, payment_restricted, verified_active, suspended.
+    # payment_required, verified_active, suspended.
     marketplace_status: str
     created_at: datetime
     email: str | None = None
