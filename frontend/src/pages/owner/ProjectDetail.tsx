@@ -362,6 +362,22 @@ export function OwnerProjectDetailPage() {
                 {offers.length} {t("owner.projectDetail.sealedBidsReceived")}
               </p>
               <p className="text-[12.5px] text-steel max-w-sm mx-auto">{t("owner.projectDetail.sealedExplanation")}</p>
+              {offers.some((o) => o.quotation) && (
+                <ul className="mt-4 text-left text-sm max-w-sm mx-auto space-y-2">
+                  {offers
+                    .filter((o) => o.quotation)
+                    .map((o, i) => (
+                      <li key={o.id}>
+                        <a
+                          href={`${API_URL}/owner/projects/${id}/quotations/${o.quotation?.id}`}
+                          className="font-semibold text-navy underline"
+                        >
+                          Quotation {i + 1}: {o.quotation?.file_name}
+                        </a>
+                      </li>
+                    ))}
+                </ul>
+              )}
             </div>
           ) : (
             <>
@@ -396,6 +412,17 @@ export function OwnerProjectDetailPage() {
                         )}
                       </div>
                       {o.message && <div className="text-xs text-steel-light mt-0.5 max-w-xs">{o.message}</div>}
+                      {o.quotation ? (
+                        <a
+                          href={`${API_URL}/owner/projects/${id}/quotations/${o.quotation.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-1 inline-block text-xs font-semibold text-navy underline"
+                        >
+                          Download quotation: {o.quotation.file_name}
+                        </a>
+                      ) : (
+                        <div className="mt-1 text-xs text-steel-light">No quotation attached</div>
+                      )}
                     </td>
                     <td className="py-3 px-2.5">
                       <span className="text-amber text-[11px] tracking-tight">{stars(Number(o.contractor_avg_rating ?? 0))}</span>{" "}

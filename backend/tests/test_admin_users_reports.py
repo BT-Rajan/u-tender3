@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 """Admin user management and reports: the unified user list, its filters and suspend guards, and the platform
 summary and period reports with CSV export. Only admins may use any of it."""
 
@@ -212,7 +213,7 @@ def test_the_summary_counts_the_platform_as_it_stands(db):
 def test_the_tender_report_counts_only_projects_created_in_the_period(db):
     admin = _admin(db)
     owner = _owner(db, "owner-tenders@example.com")
-    today = date.today()
+    today = datetime.now(ZoneInfo("Asia/Kuwait")).date()
     _project(db, owner, "In period", reference="A00001")
     _project(db, owner, "Long ago", created_at=NOW - timedelta(days=60))
 
@@ -227,7 +228,7 @@ def test_the_tender_csv_has_a_header_and_neutralises_formulas(db):
     admin = _admin(db)
     owner = _owner(db, "owner-csv@example.com")
     _project(db, owner, title="=HYPERLINK(\"http://evil\")")
-    today = date.today()
+    today = datetime.now(ZoneInfo("Asia/Kuwait")).date()
 
     response = admin.get("/admin/reports/tenders", params={"from": today.isoformat(), "to": today.isoformat(), "format": "csv"})
 
@@ -270,7 +271,7 @@ def test_the_billing_report_totals_paid_invoices_per_currency(db):
     _invoice(db, contractor, plan, amount="20", kind=KIND_MONTHLY, reference="UT-B2")
     _invoice(db, contractor, plan, amount="99", status=INVOICE_PENDING, reference="UT-B3")
     _invoice(db, contractor, plan, amount="5", currency="USD", reference="UT-B4")
-    today = date.today()
+    today = datetime.now(ZoneInfo("Asia/Kuwait")).date()
 
     body = admin.get("/admin/reports/billing", params={"from": (today - timedelta(days=3)).isoformat(), "to": today.isoformat()}).json()
 
@@ -287,7 +288,7 @@ def test_the_billing_csv_lists_each_paid_invoice(db):
     plan = _plan(db, name="Gold")
     contractor = _contractor(db, "billing-csv@example.com", company="Beta Co")
     _invoice(db, contractor, plan, amount="20", reference="UT-CSV-1")
-    today = date.today()
+    today = datetime.now(ZoneInfo("Asia/Kuwait")).date()
 
     response = admin.get("/admin/reports/billing", params={"from": today.isoformat(), "to": today.isoformat(), "format": "csv"})
 
@@ -301,7 +302,7 @@ def test_a_billing_report_outside_the_period_is_empty(db):
     plan = _plan(db)
     contractor = _contractor(db, "billing-old@example.com")
     _invoice(db, contractor, plan, amount="20", paid_at=NOW - timedelta(days=90), reference="UT-OLD")
-    today = date.today()
+    today = datetime.now(ZoneInfo("Asia/Kuwait")).date()
 
     body = admin.get("/admin/reports/billing", params={"from": (today - timedelta(days=3)).isoformat(), "to": today.isoformat()}).json()
 
@@ -328,7 +329,7 @@ def test_the_activation_report_separates_on_time_late_and_waiting(db):
     db.add(AuditLog(actor_id=None, action="contractor.activate", target_type="contractor_profile", target_id=quick.id, created_at=NOW - timedelta(hours=4)))
     db.add(AuditLog(actor_id=None, action="contractor.activate", target_type="contractor_profile", target_id=late_one.id, created_at=NOW))
     db.commit()
-    today = date.today()
+    today = datetime.now(ZoneInfo("Asia/Kuwait")).date()
 
     body = admin.get("/admin/reports/activations", params={"from": (today - timedelta(days=3)).isoformat(), "to": today.isoformat()}).json()
 

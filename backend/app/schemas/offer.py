@@ -13,8 +13,16 @@ class OfferCreate(BaseModel):
     message: str | None = None
 
 
+class OfferQuotationRef(BaseModel):
+    id: str
+    file_name: str
+
+
 class OfferOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
+    # The quotation the contractor attached, if any. Downloadable by the owner at any time.
+    quotation: OfferQuotationRef | None = None
 
     id: str
     project_id: str

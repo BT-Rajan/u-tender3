@@ -386,11 +386,11 @@ def test_cancel_moves_a_draft_to_canceled(db):
     "status, expected",
     [
         (ProjectStatus.draft, {"details", "edit", "publish", "cancel"}),
-        (ProjectStatus.open, {"details", "edit", "close", "cancel", "offers"}),
-        (ProjectStatus.closed, {"details", "edit", "start_evaluation", "no_award", "cancel", "offers"}),
-        (ProjectStatus.under_evaluation, {"details", "edit", "no_award", "cancel", "offers"}),
-        (ProjectStatus.awarded, {"details", "offers"}),
-        (ProjectStatus.canceled, {"details", "offers"}),
+        (ProjectStatus.open, {"details", "edit", "close", "cancel", "offers", "quotations"}),
+        (ProjectStatus.closed, {"details", "edit", "start_evaluation", "no_award", "cancel", "offers", "quotations"}),
+        (ProjectStatus.under_evaluation, {"details", "edit", "no_award", "cancel", "offers", "quotations"}),
+        (ProjectStatus.awarded, {"details", "offers", "quotations"}),
+        (ProjectStatus.canceled, {"details", "offers", "quotations"}),
     ],
 )
 def test_allowed_actions_follow_the_state(db, status, expected):

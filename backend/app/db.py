@@ -23,3 +23,17 @@ def get_db() -> Generator:
         yield db
     finally:
         db.close()
+
+
+# Every MySQL session runs in UTC, the same zone the app stores times in. Server-side timestamps
+# (created_at defaults) were otherwise written in the database server's local zone and read back as UTC.
+from sqlalchemy import event as _event  # noqa: E402
+from sqlalchemy.engine import Engine as _Engine  # noqa: E402
+
+
+@_event.listens_for(_Engine, "connect")
+def _use_utc_session(dbapi_connection, _record) -> None:
+    if type(dbapi_connection).__module__.startswith("pymysql"):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("SET time_zone = '+00:00'")
+        cursor.close()
