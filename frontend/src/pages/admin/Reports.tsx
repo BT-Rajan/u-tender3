@@ -7,16 +7,14 @@ import { ErrorBanner } from "@/components/ErrorBanner";
 import { PageLoading } from "@/components/PageLoading";
 import { QueryError } from "@/components/QueryError";
 import { errorText } from "@/lib/errors";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, kuwaitDay } from "@/lib/format";
 
 const INPUT =
   "rounded border border-border bg-white px-3 py-2 text-sm text-ink focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20";
 
 // Dates in the browser's own calendar, as YYYY-MM-DD.
 function localDate(daysAgo = 0): string {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return d.toLocaleDateString("en-CA");
+  return kuwaitDay(daysAgo);
 }
 
 function label(value: string) {

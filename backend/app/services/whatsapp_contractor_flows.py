@@ -20,7 +20,7 @@ from app.models.user import User
 from app.models.whatsapp import WhatsAppIdentity
 from app.services import contractor_service, offer_service, whatsapp_outbox
 from app.services.contractor_service import require_approved, require_marketplace
-from app.services.tender_service import TenderError
+from app.services.tender_service import TenderError, format_local_deadline
 
 STATUS_LABEL: dict[ProjectStatus, str] = {
     ProjectStatus.open: "Open",
@@ -65,7 +65,7 @@ def _money(value: Decimal | float | None) -> str:
 
 
 def _project_line(project: Project, offer_count: int) -> str:
-    deadline = project.bid_deadline.strftime("%d %b %H:%M UTC") if project.bid_deadline else "no deadline"
+    deadline = format_local_deadline(project.bid_deadline) if project.bid_deadline else "no deadline"
     return f"{project.title} | {STATUS_LABEL.get(project.status, project.status.value)} | closes {deadline} | {offer_count} offer(s)"
 
 

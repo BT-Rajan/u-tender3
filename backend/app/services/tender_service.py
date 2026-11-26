@@ -90,6 +90,16 @@ def format_local_deadline(deadline: datetime | None) -> str:
     return local.strftime(DEADLINE_DATE_TIME_FORMAT)
 
 
+def to_utc_naive(value: datetime | str) -> datetime:
+    """A deadline sent from the web, stored as naive UTC. A value with no zone is Kuwait wall time
+    (the form has no zone); a value with a zone is converted. Kuwait has no daylight saving."""
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=ZoneInfo(get_settings().tender_timezone))
+    return value.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+
+
 def _local(deadline: datetime) -> datetime:
     """A stored (UTC, naive) deadline in the tender timezone."""
     return deadline.replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo(get_settings().tender_timezone))

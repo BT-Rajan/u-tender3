@@ -293,7 +293,13 @@ def _tender_error_reply(db: Session, owner: User, screen: str, data: dict[str, A
             echoed["tender_type"] = TenderType.owner_visible.value
         return _error("CREATE_TENDER", error.message, echoed)
     if screen == "REVIEW":
-        return _error("REVIEW", error.message, {"tender_id": _form(data, "tender_id"), "summary": "", "actions": _review_actions()})
+        # Keep the summary on the screen. An empty summary sends the Flow a blank text block with nothing to show.
+        project = db.get(Project, _form(data, "tender_id"))
+        if project is not None and project.owner_id == owner.id:
+            review = _review_screen(db, project)
+            review["data"]["error_message"] = error.message
+            return review
+        return _error("REVIEW", error.message, {"tender_id": _form(data, "tender_id"), "summary": "This tender is no longer available.", "actions": _review_actions()})
     if screen == "TENDER_DETAILS":
         project = db.get(Project, _form(data, "tender_id"))
         if project is not None and project.owner_id == owner.id:
@@ -372,7 +378,7 @@ def _submit_review(db: Session, owner: User, data: dict[str, Any], *, now: datet
     if action == "edit":
         return {"screen": "CREATE_TENDER", "data": _fields_for_draft(project)}
     _log.warning("Owner review had no usable action. Fields: %s, action: %r", sorted(data), data.get("action"))
-    raise TenderError("invalid", "Choose an option.")
+    raise TenderError("invalid", "Choose Publish now, Keep as draft or Edit, then tap Continue.")
 
 
 def _pick_tender(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:

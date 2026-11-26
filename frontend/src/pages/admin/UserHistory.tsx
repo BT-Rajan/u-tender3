@@ -21,6 +21,7 @@ function formatWhen(value: string, language: string): string {
   return new Intl.DateTimeFormat(language === "ar" ? "ar" : "en", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Asia/Kuwait",
   }).format(date);
 }
 

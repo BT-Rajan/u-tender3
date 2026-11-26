@@ -38,6 +38,7 @@ from app.services.document_service import enqueue_review_decision
 from app.services.money import format_amount
 from app.services.notify import notify
 from app.services.storage import get_storage
+from app.services.tender_service import to_utc_naive
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
@@ -1267,9 +1268,10 @@ def admin_edit_project(
     if payload.trade is not None and payload.trade != project.trade:
         changed.append("trade")
         project.trade = payload.trade or None
-    if payload.bid_deadline is not None and payload.bid_deadline != project.bid_deadline:
+    new_deadline = to_utc_naive(payload.bid_deadline) if payload.bid_deadline is not None else None
+    if new_deadline is not None and new_deadline != project.bid_deadline:
         changed.append("bid_deadline")
-        project.bid_deadline = payload.bid_deadline
+        project.bid_deadline = new_deadline
 
     if not changed:
         raise HTTPException(status_code=400, detail="No changes were provided.")

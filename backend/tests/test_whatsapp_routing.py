@@ -87,7 +87,7 @@ def test_an_owner_gets_the_owner_dashboard(monkeypatch, db):
     row = _outbox(db)[0]
     assert row.kind == "flow"
     assert row.params_json["flow_id"] == "flow-owner"
-    assert row.params_json["screen"] == "MENU"
+    assert row.params_json["screen"] == "SPLASH"
     assert _sessions(db)[0].flow_name == "owner_dashboard"
 
 

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError, API_URL } from "@/api/client";
 import type { Offer, ProjectDetail } from "@/api/types";
-import { formatDeadline, timeRemaining } from "@/lib/format";
+import { formatDeadline, parseIso, timeRemaining } from "@/lib/format";
 import { PageLoading } from "@/components/PageLoading";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { ClarificationsPanel } from "@/components/ClarificationsPanel";
@@ -112,7 +112,7 @@ export function ContractorOfferPage() {
 
   if (!project) return <PageLoading />;
 
-  const biddingClosed = project.status !== "open" || new Date(project.bid_deadline) < new Date();
+  const biddingClosed = project.status !== "open" || parseIso(project.bid_deadline) < new Date();
 
   return (
     <main className="max-w-4xl mx-auto px-5 py-8">

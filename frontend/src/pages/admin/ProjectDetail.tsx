@@ -6,12 +6,11 @@ import type { AdminOffer, AdminProjectDetail } from "@/api/types";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { PageLoading } from "@/components/PageLoading";
 import { useI18n } from "@/i18n/I18nContext";
+import { isoToKuwaitInput, kuwaitInputToIso } from "@/lib/format";
 
-// datetime-local inputs want "YYYY-MM-DDTHH:mm" with no timezone suffix.
+// datetime-local inputs want "YYYY-MM-DDTHH:mm" with no timezone suffix, in Kuwait time.
 function toLocalInputValue(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return isoToKuwaitInput(iso);
 }
 
 const OFFER_STATUS_BADGE: Record<string, string> = {
@@ -201,7 +200,7 @@ export function AdminProjectDetailPage() {
           address,
           description: description || null,
           trade: trade || null,
-          bid_deadline: new Date(bidDeadline).toISOString(),
+          bid_deadline: kuwaitInputToIso(bidDeadline),
         },
       }),
     onSuccess: invalidate,

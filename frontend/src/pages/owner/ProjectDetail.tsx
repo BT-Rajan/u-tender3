@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError, API_URL } from "@/api/client";
 import type { Drawing, Offer, OfferRevision, ProjectDetail } from "@/api/types";
-import { formatDate, formatDateTime, stars, timeRemaining } from "@/lib/format";
+import { formatDate, formatDateTime, parseIso, stars, timeRemaining } from "@/lib/format";
 import { RatingInput } from "@/components/RatingInput";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { PageLoading } from "@/components/PageLoading";
@@ -200,7 +200,7 @@ export function OwnerProjectDetailPage() {
 
   if (!project) return <PageLoading />;
 
-  const deadlinePassed = new Date(project.bid_deadline) < new Date();
+  const deadlinePassed = parseIso(project.bid_deadline) < new Date();
 
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">

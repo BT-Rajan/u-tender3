@@ -144,7 +144,7 @@ def _open_dashboard(
         session,
         raw_token,
         flow_setting="whatsapp_flow_id_owner_dashboard" if is_owner else "whatsapp_flow_id_contractor_dashboard",
-        screen="MENU",
+        screen="SPLASH",
         body=DASHBOARD_BODY,
         cta="Open",
         now=now,

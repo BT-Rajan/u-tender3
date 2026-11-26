@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "@/api/client";
 import type { ProjectDetail, TenderType } from "@/api/types";
 import { useI18n } from "@/i18n/I18nContext";
+import { isoToKuwaitInput } from "@/lib/format";
 
 export function OwnerProjectNewPage() {
   const { t } = useI18n();
@@ -12,10 +13,8 @@ export function OwnerProjectNewPage() {
   const [pending, setPending] = useState(false);
   const [tenderType, setTenderType] = useState<TenderType>("owner_visible");
 
-  const defaultDeadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const defaultDeadlineValue = new Date(defaultDeadline.getTime() - defaultDeadline.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
+  // A week from now, in Kuwait time, as the form's datetime-local default.
+  const defaultDeadlineValue = isoToKuwaitInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString());
 
   async function submitProject(status: "draft" | "open") {
     setError(null);

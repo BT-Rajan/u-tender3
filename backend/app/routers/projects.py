@@ -23,7 +23,7 @@ from app.services.notify import notify
 from app.services.whatsapp_notifications import fan_out_new_tender
 from app.services.storage import drawing_url_expiry_seconds, get_storage
 from app.services.tender_lifecycle import sync_expired_projects
-from app.services.tender_service import TenderError, TenderFields
+from app.services.tender_service import TenderError, TenderFields, to_utc_naive
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -68,7 +68,7 @@ async def create_project(
         raise HTTPException(status_code=400, detail="A new project must start as draft or open.")
     status_value = ProjectStatus(status)
 
-    deadline = datetime.fromisoformat(bid_deadline)
+    deadline = to_utc_naive(bid_deadline)
     if status_value == ProjectStatus.open and deadline <= datetime.utcnow():
         raise HTTPException(status_code=400, detail="Bid deadline must be in the future.")
 
@@ -124,7 +124,7 @@ def amend_project(
                 title=payload.title,
                 description=payload.description,
                 trade=payload.trade,
-                bid_deadline=payload.bid_deadline,
+                bid_deadline=to_utc_naive(payload.bid_deadline) if payload.bid_deadline is not None else None,
             ),
             reason=payload.reason,
             now=datetime.utcnow(),

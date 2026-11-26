@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError } from "@/api/client";
 import type { AuditLogEntry, ContractorProfile, PaymentOverrideRecord } from "@/api/types";
-import { formatDate, formatDateTime, stars } from "@/lib/format";
+import { formatDate, formatDateTime, isoToKuwaitInput, stars } from "@/lib/format";
 import { errorText } from "@/lib/errors";
 import { DeleteContractorForm } from "@/components/DeleteContractorForm";
 import { ErrorBanner } from "@/components/ErrorBanner";
@@ -139,7 +139,7 @@ function MarketplaceAccessPanel({ contractorId, contractor }: { contractorId: st
 // The date an ISO UTC timestamp falls on in Kuwait, as YYYY-MM-DD for a date input. Empty when there is none.
 function kuwaitDate(iso: string | null): string {
   if (!iso) return "";
-  return new Date(`${iso}Z`).toLocaleDateString("en-CA", { timeZone: "Asia/Kuwait" });
+  return isoToKuwaitInput(iso).slice(0, 10);
 }
 
 // Paid-until and trial-until, set by hand. Only the dates that change are sent, each with the reason.

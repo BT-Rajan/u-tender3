@@ -59,7 +59,10 @@ def _period(from_: str | None, to: str | None):
 
 
 def _iso(value: datetime | None) -> str | None:
-    return value.isoformat() if value else None
+    """A stored (UTC, naive) time as Kuwait time with its offset, so the report reads correctly anywhere."""
+    if value is None:
+        return None
+    return value.replace(tzinfo=timezone.utc).astimezone(_tz()).isoformat()
 
 
 def _cell(value) -> str:

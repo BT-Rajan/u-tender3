@@ -214,6 +214,11 @@ def _dashboard_reply(db: Session, session: WhatsAppFlowSession, payload: dict[st
     screen = payload.get("screen")
     data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
 
+    # The Flow opens on its splash screen. Its first request shows the splash; Continue shows the menu.
+    if action == "INIT" and screen == "SPLASH":
+        return {"screen": "SPLASH", "data": {}}
+    if action == "data_exchange" and screen == "SPLASH":
+        return {"screen": "MENU", "data": _menu_data(db, user, is_owner)}
     if action in ("INIT", "BACK") and screen != "DOCUMENTS":
         return {"screen": "MENU", "data": _menu_data(db, user, is_owner)}
     if action != "data_exchange":
