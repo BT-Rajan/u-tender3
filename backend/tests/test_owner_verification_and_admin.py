@@ -110,7 +110,7 @@ def test_owner_blocked_from_posting_until_approved_then_unblocked():
     future = (datetime.utcnow() + timedelta(days=7)).isoformat()
 
     # Not yet verified -> blocked from posting.
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"})
     assert r.status_code == 403
     assert r.json()["detail"] == "not_approved"
 
@@ -130,7 +130,7 @@ def test_owner_blocked_from_posting_until_approved_then_unblocked():
     assert r.json()["verification_status"] == "pending_review"
 
     # Still blocked -- pending review isn't approved yet.
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"})
     assert r.status_code == 403
 
     # Admin sees the owner and their pending documents.
@@ -171,7 +171,7 @@ def test_owner_blocked_from_posting_until_approved_then_unblocked():
     assert any(n["type"] == "owner_verification_activated" for n in r.json())
 
     # Owner can now post a project.
-    r = owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"})
     assert r.status_code == 201
 
 
@@ -225,7 +225,7 @@ def test_admin_suspend_reactivate_and_delete_guard_for_owners():
     db.commit()
 
     future = (datetime.utcnow() + timedelta(days=7)).isoformat()
-    owner_client.post("/projects", data={"title": "Deck", "address": "1 Main St", "bid_deadline": future, "status": "open"})
+    owner_client.post("/projects", data={"title": "Deck", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"})
 
     r = admin_client.delete(f"/admin/owners/{owner_id}")
     assert r.status_code == 400
@@ -237,7 +237,7 @@ def test_admin_suspend_reactivate_and_delete_guard_for_owners():
     assert r.json()["marketplace_status"] == "suspended"
 
     # A suspended owner is blocked from posting even though verification_status is still "approved".
-    r = owner_client.post("/projects", data={"title": "Fence", "address": "2 Oak Ave", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Fence", "trade": "Electrical", "address": "2 Oak Ave", "bid_deadline": future, "status": "open"})
     assert r.status_code == 403
 
     r = admin_client.post(f"/admin/owners/{owner_id}/suspend", json={"suspended": False})
@@ -412,7 +412,7 @@ def test_admin_sees_all_offers_across_every_project_unredacted():
     future = (datetime.utcnow() + timedelta(days=7)).isoformat()
     r = owner_client.post(
         "/projects",
-        data={"title": "Sealed job", "address": "1 Main St", "bid_deadline": future, "status": "open", "tender_type": "sealed"},
+        data={"title": "Sealed job", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open", "tender_type": "sealed"},
     )
     project_id = r.json()["id"]
     c1.post(f"/projects/{project_id}/offers", json={"amount": "5000.00"})

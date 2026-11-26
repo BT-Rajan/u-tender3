@@ -21,7 +21,7 @@ class Project(Base):
     trade: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # Nullable since Phase 4: a draft can be saved before its deadline is known.
     # Publishing still requires a future deadline (see tender_service.publish).
-    bid_deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    bid_deadline: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     status: Mapped[ProjectStatus] = mapped_column(
         Enum(ProjectStatus, native_enum=True), nullable=False, default=ProjectStatus.open, index=True
     )

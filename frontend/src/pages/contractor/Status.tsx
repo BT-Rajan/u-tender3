@@ -1,3 +1,4 @@
+import { withBase } from "@/lib/base";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
@@ -168,7 +169,7 @@ function DocumentStatus() {
               </td>
               <td className="py-3.5">
                 {(d.status === "not_submitted" || d.status === "rejected") && (
-                  <a href="/contractor/verify" className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-3 py-1.5">
+                  <a href={withBase("/contractor/verify")} className="border border-navy text-navy hover:bg-navy hover:text-white text-xs font-semibold rounded-md px-3 py-1.5">
                     {d.status === "rejected" ? t("contractor.status.reupload") : t("contractor.status.upload")}
                   </a>
                 )}

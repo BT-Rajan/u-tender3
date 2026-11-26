@@ -107,7 +107,7 @@ def test_pass15_public_cms():
     c1, c1_id = make_active_contractor("c1@example.com", "Acme")
     future = (datetime.utcnow() + timedelta(days=7)).isoformat()
 
-    r = owner_client.post("/projects", data={"title": "Roof job", "address": "1 Main St", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Roof job", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"})
     project_id = r.json()["id"]
 
     r = anon.get("/public/stats")

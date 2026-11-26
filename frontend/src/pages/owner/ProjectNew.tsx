@@ -4,6 +4,7 @@ import { apiFetch, ApiError } from "@/api/client";
 import type { ProjectDetail, TenderType } from "@/api/types";
 import { useI18n } from "@/i18n/I18nContext";
 import { isoToKuwaitInput } from "@/lib/format";
+import { TRADE_OPTIONS, todayKuwaitStart } from "@/lib/trades";
 
 export function OwnerProjectNewPage() {
   const { t } = useI18n();
@@ -23,7 +24,7 @@ export function OwnerProjectNewPage() {
     if (!formEl.reportValidity()) return;
 
     const form = new FormData(formEl);
-    if (!form.get("title") || !form.get("address") || !form.get("bid_deadline")) {
+    if (!form.get("title") || !form.get("address") || !form.get("trade") || !form.get("bid_deadline")) {
       setError(t("owner.projectNew.validationError"));
       return;
     }
@@ -85,22 +86,29 @@ export function OwnerProjectNewPage() {
             <input
               name="title"
               required
+              maxLength={255}
               placeholder={t("owner.projectNew.titlePlaceholder")}
               className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
             />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.address")}</label>
-            <input name="address" required placeholder={t("owner.projectNew.addressPlaceholder")} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
+            <input name="address" required maxLength={500} placeholder={t("owner.projectNew.addressPlaceholder")} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.trade")}</label>
-            <input name="trade" placeholder={t("owner.projectNew.tradePlaceholder")} className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20" />
+            <select name="trade" required defaultValue="" className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20">
+              <option value="" disabled>{t("owner.projectNew.tradePlaceholder")}</option>
+              {TRADE_OPTIONS.map((trade) => (
+                <option key={trade} value={trade}>{trade}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5">{t("owner.projectNew.scope")}</label>
             <textarea
               name="description"
+              maxLength={1000}
               rows={4}
               placeholder={t("owner.projectNew.scopePlaceholder")}
               className="w-full rounded border border-border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-steel/60 focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 resize-y"
@@ -120,6 +128,7 @@ export function OwnerProjectNewPage() {
               type="datetime-local"
               name="bid_deadline"
               required
+              min={todayKuwaitStart()}
               defaultValue={defaultDeadlineValue}
               className="border border-border rounded px-3 py-2.5 text-sm"
             />

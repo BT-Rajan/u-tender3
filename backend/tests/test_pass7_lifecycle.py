@@ -56,19 +56,19 @@ def test_pass7_lifecycle():
 
 
     # ---------- create_project validation ----------
-    r = owner_client.post("/projects", data={"title": "T", "address": "A", "bid_deadline": future, "tender_type": "bogus"})
+    r = owner_client.post("/projects", data={"title": "T", "trade": "Electrical", "address": "A", "bid_deadline": future, "tender_type": "bogus"})
     check("invalid tender_type rejected", r.status_code == 400)
 
-    r = owner_client.post("/projects", data={"title": "T", "address": "A", "bid_deadline": future, "status": "awarded"})
+    r = owner_client.post("/projects", data={"title": "T", "trade": "Electrical", "address": "A", "bid_deadline": future, "status": "awarded"})
     check("invalid creation status rejected", r.status_code == 400)
 
-    r = owner_client.post("/projects", data={"title": "T", "address": "A", "bid_deadline": past, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "T", "trade": "Electrical", "address": "A", "bid_deadline": past, "status": "open"})
     check("open project with past deadline rejected", r.status_code == 400)
 
 
     # ---------- draft lifecycle ----------
     r = owner_client.post(
-        "/projects", data={"title": "Kitchen remodel", "address": "123 Main St", "bid_deadline": future, "status": "draft", "tender_type": "sealed"}
+        "/projects", data={"title": "Kitchen remodel", "trade": "Electrical", "address": "123 Main St", "bid_deadline": future, "status": "draft", "tender_type": "sealed"}
     )
     check("draft project created", r.status_code == 201 and r.json()["status"] == "draft")
     check("tender_type persisted as sealed", r.json()["tender_type"] == "sealed")
@@ -128,7 +128,7 @@ def test_pass7_lifecycle():
 
     # ---------- no-award path ----------
     r = owner_client.post(
-        "/projects", data={"title": "Fence repair", "address": "456 Oak Ave", "bid_deadline": future, "status": "open"}
+        "/projects", data={"title": "Fence repair", "trade": "Electrical", "address": "456 Oak Ave", "bid_deadline": future, "status": "open"}
     )
     project2_id = r.json()["id"]
     owner_client.post(f"/owner/projects/{project2_id}/close")
@@ -142,7 +142,7 @@ def test_pass7_lifecycle():
 
     # ---------- cancel path ----------
     r = owner_client.post(
-        "/projects", data={"title": "Deck build", "address": "789 Pine Rd", "bid_deadline": future, "status": "open"}
+        "/projects", data={"title": "Deck build", "trade": "Electrical", "address": "789 Pine Rd", "bid_deadline": future, "status": "open"}
     )
     project3_id = r.json()["id"]
     r = owner_client.post(f"/owner/projects/{project3_id}/cancel")
@@ -155,7 +155,7 @@ def test_pass7_lifecycle():
     # ---------- auto-expire / auto-close on deadline (sync_expired_projects) ----------
     # Project with a live bid, deadline forced into the past directly in the DB.
     r = owner_client.post(
-        "/projects", data={"title": "Bathroom reno", "address": "1 Elm St", "bid_deadline": future, "status": "open"}
+        "/projects", data={"title": "Bathroom reno", "trade": "Electrical", "address": "1 Elm St", "bid_deadline": future, "status": "open"}
     )
     project4_id = r.json()["id"]
     contractor_client.post(f"/projects/{project4_id}/offers", json={"amount": "500.00"})
@@ -170,7 +170,7 @@ def test_pass7_lifecycle():
 
     # Project with zero bids, deadline forced into the past -> expired.
     r = owner_client.post(
-        "/projects", data={"title": "Gutter cleaning", "address": "2 Elm St", "bid_deadline": future, "status": "open"}
+        "/projects", data={"title": "Gutter cleaning", "trade": "Electrical", "address": "2 Elm St", "bid_deadline": future, "status": "open"}
     )
     project5_id = r.json()["id"]
     p5 = db.get(Project, project5_id)
@@ -183,7 +183,7 @@ def test_pass7_lifecycle():
 
     # Same sync path is reachable via the contractor feed and via GET /projects/{id}
     r = owner_client.post(
-        "/projects", data={"title": "Siding repair", "address": "3 Elm St", "bid_deadline": future, "status": "open"}
+        "/projects", data={"title": "Siding repair", "trade": "Electrical", "address": "3 Elm St", "bid_deadline": future, "status": "open"}
     )
     project6_id = r.json()["id"]
     p6 = db.get(Project, project6_id)

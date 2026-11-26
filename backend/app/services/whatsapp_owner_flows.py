@@ -56,6 +56,15 @@ CONFIRM_REQUIRED = {"no_award", "cancel"}
 RECENT_AMENDMENTS = 3
 
 
+from sqlalchemy import select  # noqa: E402
+from app.models.contractor import ContractorProfile  # noqa: E402
+from app.models.offer import Offer  # noqa: E402
+from app.models.offer_quotation import OfferQuotation  # noqa: E402
+from app.models.whatsapp import WhatsAppIdentity  # noqa: E402
+from app.services import offer_quotations  # noqa: E402
+from app.services.storage import get_storage  # noqa: E402
+
+
 def _text(value: object, limit: int) -> str:
     return " ".join(str(value or "").split())[:limit]
 
@@ -261,6 +270,51 @@ def _details_screen(db: Session, owner: User, project: Project, message: str = "
     }
 
 
+QUOTATION_LINK_SECONDS = 24 * 60 * 60
+
+
+def _offers_with_note(db: Session, owner: User, project: Project, note: str) -> dict[str, Any]:
+    screen = _offers_screen(db, owner, project)
+    screen["data"]["offers"] = f"{note}\n\n{screen['data']['offers']}"[:3500]
+    return screen
+
+
+def _send_quotation_links(db: Session, owner: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
+    """Send each offer's quotation to the owner as a link in this chat. The link works for 24 hours."""
+    project = _with_owned(db, owner, _form(data, "tender_id"))
+    if tender_service.received_offers(db, owner, project)["sealed"]:
+        return _offers_with_note(db, owner, project, "Quotations can be opened once the tender closes.")
+    rows = db.execute(
+        select(OfferQuotation, Offer, ContractorProfile)
+        .join(Offer, OfferQuotation.offer_id == Offer.id)
+        .join(ContractorProfile, ContractorProfile.user_id == Offer.contractor_id)
+        .where(OfferQuotation.project_id == project.id)
+        .order_by(Offer.amount)
+    ).all()
+    if not rows:
+        return _offers_with_note(db, owner, project, "No quotations have been uploaded for this tender yet.")
+    identity = db.scalar(select(WhatsAppIdentity).where(WhatsAppIdentity.user_id == owner.id))
+    if identity is None:
+        return _offers_with_note(db, owner, project, "Your WhatsApp number is not linked to this account.")
+    storage = get_storage()
+    for quotation, offer, profile in rows:
+        url = storage.signed_url(offer_quotations.BUCKET, quotation.storage_key, expires_in=QUOTATION_LINK_SECONDS)
+        whatsapp_outbox.enqueue(
+            db,
+            dedupe_key=f"quotation:{quotation.id}:{owner.id}:{now:%Y%m%d%H}",
+            recipient_wa_id=identity.wa_id,
+            kind=whatsapp_outbox.KIND_CTA_URL,
+            now=now,
+            params={
+                "body": f"Quotation from {profile.company_name}: {offer.amount:,.2f}. The link works for 24 hours.",
+                "display_text": "Open quotation",
+                "url": url,
+            },
+        )
+    db.commit()
+    return _offers_with_note(db, owner, project, f"Sent {len(rows)} quotation link(s) to this chat.")
+
+
 def handle_owner_screen(db: Session, owner: User, screen: str, data: dict[str, Any], *, now: datetime) -> dict[str, Any] | None:
     """Route a data_exchange from one of the owner screens. Returns None for a screen this module does not own."""
     handlers = {
@@ -269,6 +323,7 @@ def handle_owner_screen(db: Session, owner: User, screen: str, data: dict[str, A
         "MY_TENDERS": _pick_tender,
         "TENDER_DETAILS": _submit_details,
         "AMEND": _submit_amend,
+        "OFFERS": _send_quotation_links,
     }
     handler = handlers.get(screen)
     if handler is None:
@@ -472,7 +527,7 @@ def _offers_screen(db: Session, owner: User, project: Project) -> dict[str, Any]
             timeline = f", {row['timeline']}" if row["timeline"] else ""
             lines.append(f"{row['company']}: {row['amount']:,.2f}{timeline}, {row['status']}")
         body = "\n".join(lines)
-    return {"screen": "OFFERS", "data": {"tender_title": _text(project.title, 80), "offers": body[:3500]}}
+    return {"screen": "OFFERS", "data": {"tender_title": _text(project.title, 80), "offers": body[:3500], "tender_id": project.id}}
 
 
 def owner_menu_choice(db: Session, owner: User, choice: str, *, now: datetime) -> dict[str, Any] | None:

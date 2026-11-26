@@ -54,11 +54,11 @@ def test_pass14_contractor_dashboard():
     admin_client.post(f"/admin/review/contractors/{cid}/approve")
     admin_client.post(f"/admin/contractors/{cid}/payment-override", json={"reason": "test activation"})
 
-    r = owner_client.post("/projects", data={"title": "Roof job", "address": "1 Main St", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Roof job", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"})
     project1_id = r.json()["id"]
-    r = owner_client.post("/projects", data={"title": "Fence job", "address": "2 Oak Ave", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Fence job", "trade": "Electrical", "address": "2 Oak Ave", "bid_deadline": future, "status": "open"})
     project2_id = r.json()["id"]
-    r = owner_client.post("/projects", data={"title": "Deck job", "address": "3 Pine Rd", "bid_deadline": future, "status": "open"})
+    r = owner_client.post("/projects", data={"title": "Deck job", "trade": "Electrical", "address": "3 Pine Rd", "bid_deadline": future, "status": "open"})
     project3_id = r.json()["id"]
 
     contractor_client.post(f"/projects/{project1_id}/offers", json={"amount": "1000.00"})

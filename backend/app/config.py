@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     cron_secret: str
     app_url: str = "http://localhost:5173"  # frontend origin, used in email links
     api_url: str = "http://localhost:8000"  # this backend's own public origin
+    cookie_path: str = "/"  # path the sign-in cookies are scoped to, for example /utender behind a proxy
 
     cors_origins: str = "http://localhost:5173"
 

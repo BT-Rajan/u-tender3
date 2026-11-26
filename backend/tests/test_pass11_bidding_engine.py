@@ -57,7 +57,7 @@ def test_pass11_bidding_engine():
 
 
     # ---------- bid revision history ----------
-    r = owner_client.post("/projects", data={"title": "Open bid job", "address": "1 Main St", "bid_deadline": future, "status": "open", "tender_type": "owner_visible"})
+    r = owner_client.post("/projects", data={"title": "Open bid job", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open", "tender_type": "owner_visible"})
     open_project_id = r.json()["id"]
 
     r = c1.post(f"/projects/{open_project_id}/offers", json={"amount": "1000.00", "message": "first pass"})
@@ -107,7 +107,7 @@ def test_pass11_bidding_engine():
 
 
     # ---------- sealed-bid privacy ----------
-    r = owner_client.post("/projects", data={"title": "Sealed job", "address": "2 Oak Ave", "bid_deadline": future, "status": "open", "tender_type": "sealed"})
+    r = owner_client.post("/projects", data={"title": "Sealed job", "trade": "Electrical", "address": "2 Oak Ave", "bid_deadline": future, "status": "open", "tender_type": "sealed"})
     sealed_project_id = r.json()["id"]
 
     c1.post(f"/projects/{sealed_project_id}/offers", json={"amount": "5000.00", "message": "secret bid A"})

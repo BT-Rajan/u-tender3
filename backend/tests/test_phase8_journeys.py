@@ -145,12 +145,14 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
     assert [p["id"] for p in listing["data"]["projects"]] == [tender_id]
     _flow(client, public_pem, con_menu, "PROJECT_LIST", {"project_id": tender_id})
     _flow(client, public_pem, con_menu, "PROJECT_DETAILS", {"project_id": tender_id, "action": "submit"})
+    _flow(client, public_pem, con_menu, "SUBMIT_OFFER", {"quotation": [{"file_name": "quotation.pdf", "cdn_url": "https://cdn.example/quote", "encryption_metadata": {}}], "project_id": tender_id, "amount": "12500", "timeline": "6 months", "message": "Ready"})
     _flow(client, public_pem, con_menu, "REVIEW_OFFER", {"project_id": tender_id, "amount": "12500", "timeline": "6 months", "message": "Ready", "decision": "submit"})
     dispatch_due(db, sender, now=datetime.utcnow() + timedelta(seconds=1), max_attempts=3)
     assert [m.get("template") for m in sender.sent if m["to"] == OWNER_WA] == ["offer_received"]
 
     # A revision while the owner's bid notice is still unread queues nothing new (the dedupe rule).
     _flow(client, public_pem, con_menu, "PROJECT_DETAILS", {"project_id": tender_id, "action": "revise"})
+    _flow(client, public_pem, con_menu, "SUBMIT_OFFER", {"quotation": [{"file_name": "quotation.pdf", "cdn_url": "https://cdn.example/quote", "encryption_metadata": {}}], "project_id": tender_id, "amount": "11900", "timeline": "5 months", "message": "Better"})
     _flow(client, public_pem, con_menu, "REVIEW_OFFER", {"project_id": tender_id, "amount": "11900", "timeline": "5 months", "message": "Better", "decision": "submit"})
     dispatch_due(db, sender, now=datetime.utcnow() + timedelta(seconds=1), max_attempts=3)
     assert [m.get("template") for m in sender.sent if m["to"] == OWNER_WA] == ["offer_received"]
@@ -160,6 +162,7 @@ def test_the_full_journey_from_registration_to_award_and_suspension(client, monk
         notice.is_read = True
     db.commit()
     _flow(client, public_pem, con_menu, "PROJECT_DETAILS", {"project_id": tender_id, "action": "revise"})
+    _flow(client, public_pem, con_menu, "SUBMIT_OFFER", {"quotation": [{"file_name": "quotation.pdf", "cdn_url": "https://cdn.example/quote", "encryption_metadata": {}}], "project_id": tender_id, "amount": "11500", "timeline": "5 months", "message": "Final"})
     _flow(client, public_pem, con_menu, "REVIEW_OFFER", {"project_id": tender_id, "amount": "11500", "timeline": "5 months", "message": "Final", "decision": "submit"})
     dispatch_due(db, sender, now=datetime.utcnow() + timedelta(seconds=1), max_attempts=3)
     assert "offer_revised" in [m.get("template") for m in sender.sent if m["to"] == OWNER_WA]

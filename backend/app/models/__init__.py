@@ -9,6 +9,7 @@ from app.models.document import ContractorDocument, DocumentRequirement, OwnerDo
 from app.models.notification import Notification
 from app.models.onboarding import OtpCode, PaymentInvoice, PortalInvite, SubscriptionPlan
 from app.models.offer import Offer, OfferRevision
+from app.models.offer_quotation import OfferQuotation  # noqa: F401
 from app.models.owner import OwnerProfile
 from app.models.payment_override import PaymentOverride
 from app.models.project import Project, ProjectDrawing

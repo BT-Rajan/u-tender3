@@ -18,7 +18,8 @@ from app.models.offer import Offer
 from app.models.project import Project
 from app.models.user import User
 from app.models.whatsapp import WhatsAppIdentity
-from app.services import contractor_service, offer_service, whatsapp_outbox
+from app.services import contractor_service, offer_quotations, offer_service, whatsapp_outbox
+from app.services.flow_media import FlowMediaError
 from app.services.contractor_service import require_approved, require_marketplace
 from app.services.tender_service import TenderError, format_local_deadline
 
@@ -183,11 +184,14 @@ def _parse_amount(text: str) -> Decimal:
     return amount.quantize(Decimal("0.01"))
 
 
-def _review_offer(project_id: str, title: str, amount: Decimal, timeline: str, message: str) -> dict[str, Any]:
+def _review_offer(
+    project_id: str, title: str, amount: Decimal, timeline: str, message: str, quotation_name: str = ""
+) -> dict[str, Any]:
     summary = "\n".join(
         [
             f"Project: {title}",
             f"Your amount: {amount:,.2f}",
+            f"Quotation: {quotation_name or 'not attached'}",
             f"Timeline: {timeline or 'not stated'}",
             f"Message: {message or 'none'}",
             "Once submitted, the owner sees it. You can revise it until the deadline.",
@@ -213,7 +217,18 @@ def _submit_offer_form(db: Session, user: User, data: dict[str, Any], *, now: da
     amount = _parse_amount(_text(data.get("amount"), 40))
     timeline = _text(data.get("timeline"), 200)
     message = _text(data.get("message"), 1000)
-    return _review_offer(project.id, project.title, amount, timeline, message)
+    try:
+        if data.get("quotation"):
+            quotation = offer_quotations.store_pending_quotation(db, user, project, data.get("quotation"))
+        else:
+            quotation = offer_quotations.pending_quotation(db, user, project)
+            if quotation is None:
+                raise FlowMediaError("Upload your quotation to continue.")
+    except FlowMediaError as error:
+        form = _offer_form(project.id, project.title, None)
+        form.update({"amount": _text(data.get("amount"), 40), "timeline": timeline, "message": message, "error_message": str(error)})
+        return {"screen": "SUBMIT_OFFER", "data": form}
+    return _review_offer(project.id, project.title, amount, timeline, message, quotation.file_name)
 
 
 def _submit_review(db: Session, user: User, data: dict[str, Any], *, now: datetime) -> dict[str, Any]:
@@ -235,8 +250,11 @@ def _submit_review(db: Session, user: User, data: dict[str, Any], *, now: dateti
     view = contractor_service.project_view(db, user, project_id, now=now)
     if not view["can_bid"]:
         raise TenderError("closed", "Bidding on this project is closed.")
+    project = view["project"]
+    if offer_quotations.pending_quotation(db, user, project) is None:
+        raise TenderError("invalid", "Upload your quotation on the offer form, then submit again.")
     was_revision = view["my_offer"] is not None
-    offer_service.submit_offer(
+    offer = offer_service.submit_offer(
         db,
         user,
         project_id,
@@ -245,6 +263,7 @@ def _submit_review(db: Session, user: User, data: dict[str, Any], *, now: dateti
         message=message or None,
         now=now,
     )
+    offer_quotations.link_pending_quotation(db, offer, user, project)
     if was_revision:
         return _done("Your offer is revised. Your earlier version is kept in your revision history.")
     return _done("Your offer is submitted. You can revise it until the deadline.")

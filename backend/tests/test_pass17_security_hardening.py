@@ -65,7 +65,7 @@ def test_pass17_security_hardening():
     # contractor who wasn't actually awarded the project.
     # =================================================================
 
-    r = owner1.post("/projects", data={"title": "Roof job", "address": "1 Main St", "bid_deadline": future, "status": "open"})
+    r = owner1.post("/projects", data={"title": "Roof job", "trade": "Electrical", "address": "1 Main St", "bid_deadline": future, "status": "open"})
     project_id = r.json()["id"]
     r = c1.post(f"/projects/{project_id}/offers", json={"amount": "5000.00"})
     offer1_id = r.json()["id"]
@@ -89,7 +89,7 @@ def test_pass17_security_hardening():
     check("the persisted Review row's contractor_id is the real winner, not the forged one", review_row.contractor_id == c1_id)
 
     # A project with no award record at all cannot be reviewed regardless of payload.
-    r2 = owner2.post("/projects", data={"title": "Unawarded job", "address": "9 Nowhere Ave", "bid_deadline": future, "status": "open"})
+    r2 = owner2.post("/projects", data={"title": "Unawarded job", "trade": "Electrical", "address": "9 Nowhere Ave", "bid_deadline": future, "status": "open"})
     unawarded_id = r2.json()["id"]
     r = owner2.post("/owner/reviews", json={"project_id": unawarded_id, "contractor_id": c1_id, "rating": 5})
     check("reviewing a project with no AwardRecord is rejected", r.status_code == 400)
@@ -99,7 +99,7 @@ def test_pass17_security_hardening():
     # FIX 2: clarifications leak bidder identity on a sealed, open tender
     # =================================================================
 
-    r = owner1.post("/projects", data={"title": "Sealed job", "address": "2 Oak Ave", "bid_deadline": future, "status": "open", "tender_type": "sealed"})
+    r = owner1.post("/projects", data={"title": "Sealed job", "trade": "Electrical", "address": "2 Oak Ave", "bid_deadline": future, "status": "open", "tender_type": "sealed"})
     sealed_id = r.json()["id"]
     c1.post(f"/projects/{sealed_id}/offers", json={"amount": "9000.00"})
     c1.post(f"/projects/{sealed_id}/clarifications", json={"question": "What's the material spec?", "shared_with_all": True})
@@ -144,7 +144,7 @@ def test_pass17_security_hardening():
     check("owner2 cannot approve an offer on owner1's project (404)", r.status_code == 404)
 
     # A contractor cannot withdraw or read another contractor's offer.
-    r = owner1.post("/projects", data={"title": "IDOR test job", "address": "3 Pine Rd", "bid_deadline": future, "status": "open"})
+    r = owner1.post("/projects", data={"title": "IDOR test job", "trade": "Electrical", "address": "3 Pine Rd", "bid_deadline": future, "status": "open"})
     idor_project_id = r.json()["id"]
     c1.post(f"/projects/{idor_project_id}/offers", json={"amount": "100.00"})
     r = c2.get(f"/projects/{idor_project_id}/offers/mine")

@@ -303,6 +303,10 @@
         "error_message": {
           "type": "string",
           "__example__": "Give the tender a title."
+        },
+        "min_date": {
+          "type": "string",
+          "__example__": "0"
         }
       },
       "layout": {
@@ -343,7 +347,7 @@
             "type": "Dropdown",
             "label": "Trade",
             "name": "trade",
-            "required": false,
+            "required": true,
             "init-value": "${data.trade}",
             "data-source": [
               {
@@ -388,7 +392,8 @@
             "type": "DatePicker",
             "label": "Bid end date (Kuwait time)",
             "name": "bid_deadline",
-            "required": false
+            "required": true,
+            "min-date": "${data.min_date}"
           },
           {
             "type": "RadioButtonsGroup",
@@ -713,6 +718,10 @@
         "error_message": {
           "type": "string",
           "__example__": ""
+        },
+        "min_date": {
+          "type": "string",
+          "__example__": "0"
         }
       },
       "layout": {
@@ -747,7 +756,7 @@
             "type": "Dropdown",
             "label": "Trade",
             "name": "trade",
-            "required": false,
+            "required": true,
             "init-value": "${data.trade}",
             "data-source": [
               {
@@ -792,7 +801,8 @@
             "type": "DatePicker",
             "label": "Bid end date (Kuwait time)",
             "name": "bid_deadline",
-            "required": false
+            "required": true,
+            "min-date": "${data.min_date}"
           },
           {
             "type": "TextInput",
@@ -824,8 +834,7 @@
     {
       "id": "OFFERS",
       "title": "Received offers",
-      "terminal": true,
-      "success": true,
+      "terminal": false,
       "data": {
         "tender_title": {
           "type": "string",
@@ -834,6 +843,10 @@
         "offers": {
           "type": "string",
           "__example__": "2 offers, lowest first."
+        },
+        "tender_id": {
+          "type": "string",
+          "__example__": ""
         }
       },
       "layout": {
@@ -849,11 +862,11 @@
           },
           {
             "type": "Footer",
-            "label": "Close",
+            "label": "Send quotations",
             "on-click-action": {
-              "name": "complete",
+              "name": "data_exchange",
               "payload": {
-                "status": "done"
+                "tender_id": "${data.tender_id}"
               }
             }
           }
