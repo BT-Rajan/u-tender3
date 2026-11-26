@@ -1,53 +1,119 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { AppHeader } from "@/components/AppHeader";
-import { useI18n } from "@/i18n/I18nContext";
 
-const tabClass = ({ isActive }: { isActive: boolean }) =>
-  `whitespace-nowrap border-b-2 px-1 pb-3 pt-2 text-sm font-semibold transition-colors ${
-    isActive ? "border-navy text-navy" : "border-transparent text-steel hover:text-navy"
+interface NavItem {
+  to: string;
+  label: string;
+  end?: boolean;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+// The admin menu, grouped by what the admin is doing. Routes are unchanged; only the menu moved.
+export const ADMIN_NAV: NavGroup[] = [
+  {
+    label: "Reports",
+    items: [
+      { to: "/admin/reports", label: "Overview", end: true },
+      { to: "/admin/reports/tenders", label: "Tenders" },
+      { to: "/admin/reports/billing", label: "Billing" },
+      { to: "/admin/reports/activations", label: "Activations" },
+    ],
+  },
+  {
+    label: "Users",
+    items: [
+      { to: "/admin/users", label: "All users" },
+      { to: "/admin/contractors", label: "Contractors" },
+      { to: "/admin/owners", label: "Owners" },
+    ],
+  },
+  {
+    label: "Billing",
+    items: [
+      { to: "/admin/activations", label: "Activation queue" },
+      { to: "/admin/plans", label: "Plans" },
+      { to: "/admin/payment-setup", label: "Payment setup" },
+    ],
+  },
+  {
+    label: "Verification",
+    items: [
+      { to: "/admin/review", label: "Review queue" },
+      { to: "/admin/requirements", label: "Requirements" },
+    ],
+  },
+  {
+    label: "Tenders",
+    items: [
+      { to: "/admin/projects", label: "Projects" },
+      { to: "/admin/offers", label: "Offers" },
+    ],
+  },
+  {
+    label: "Content",
+    items: [{ to: "/admin/cms", label: "Website content" }],
+  },
+];
+
+const linkClass = ({ isActive }: { isActive: boolean }) =>
+  `block rounded px-3 py-2 text-sm font-medium transition-colors ${
+    isActive ? "bg-navy text-white" : "text-steel hover:bg-paper hover:text-navy"
   }`;
 
 export function AdminLayout() {
-  const { t } = useI18n();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { pathname } = useLocation();
+
+  // On a phone the menu is a panel over the page; close it once the admin has picked a screen.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   return (
     <div className="min-h-screen bg-paper text-ink">
-      <AppHeader roleLabel="Site Admin" homeHref="/admin/requirements" />
-      <nav className="border-b border-border bg-white">
-        <div className="mx-auto flex max-w-6xl gap-6 overflow-x-auto px-5">
-          <NavLink to="/admin/requirements" className={tabClass}>
-            {t("admin.nav.requirements")}
-          </NavLink>
-          <NavLink to="/admin/review" className={tabClass}>
-            {t("admin.nav.review")}
-          </NavLink>
-          <NavLink to="/admin/contractors" className={tabClass}>
-            {t("admin.nav.contractors")}
-          </NavLink>
-          <NavLink to="/admin/owners" className={tabClass}>
-            {t("admin.nav.owners")}
-          </NavLink>
-          <NavLink to="/admin/projects" className={tabClass}>
-            {t("admin.nav.projects")}
-          </NavLink>
-          <NavLink to="/admin/offers" className={tabClass}>
-            {t("admin.nav.offers")}
-          </NavLink>
-          <NavLink to="/admin/activations" className={tabClass}>
-            Activations
-          </NavLink>
-          <NavLink to="/admin/plans" className={tabClass}>
-            Plans
-          </NavLink>
-          <NavLink to="/admin/payment-setup" className={tabClass}>
-            Payment setup
-          </NavLink>
-          <NavLink to="/admin/cms" className={tabClass}>
-            {t("admin.nav.cms")}
-          </NavLink>
+      <AppHeader roleLabel="Site Admin" homeHref="/admin/reports" />
+
+      <div className="flex flex-col lg:flex-row">
+        <div className="border-b border-border bg-white px-5 py-3 lg:hidden">
+          <button
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="admin-menu"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="rounded border border-navy px-4 py-2 text-sm font-semibold text-navy"
+          >
+            {menuOpen ? "Close menu" : "Menu"}
+          </button>
         </div>
-      </nav>
-      <div className="mx-auto max-w-6xl px-5 py-8">
-        <Outlet />
+
+        <aside
+          id="admin-menu"
+          className={`${menuOpen ? "block" : "hidden"} border-b border-border bg-white px-4 py-5 lg:sticky lg:top-0 lg:block lg:h-screen lg:w-60 lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r`}
+        >
+          <nav aria-label="Admin" className="grid gap-6">
+            {ADMIN_NAV.map((group) => (
+              <div key={group.label}>
+                <div className="mb-2 px-3 font-mono text-[10px] uppercase tracking-widest text-steel-light">{group.label}</div>
+                <div className="grid gap-1">
+                  {group.items.map((item) => (
+                    <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 flex-1 px-5 py-8">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

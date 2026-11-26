@@ -313,6 +313,142 @@ export interface ActivationRow {
   overdue: boolean;
 }
 
+export interface AdminUserRow {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  role: "owner" | "contractor" | "admin";
+  company_name: string | null;
+  created_at: string | null;
+  status: string;
+  is_suspended: boolean;
+}
+
+export interface AdminUserList {
+  items: AdminUserRow[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminUserDetail extends AdminUserRow {
+  language: string;
+  email_verified: boolean;
+  can_log_in_with_password: boolean;
+  contractor?: {
+    verification_status: string;
+    marketplace_status: string;
+    payment_active: boolean;
+    paid_until: string | null;
+    trial_until: string | null;
+    activation_due_at: string | null;
+    payment_override_active: boolean;
+  };
+  owner?: { verification_status: string; marketplace_status: string; project_count: number };
+  recent_activity: { action: string; previous_value: string | null; new_value: string | null; reason: string | null; created_at: string | null }[];
+}
+
+export interface ReportRows<T> {
+  rows: T[];
+  rows_total: number;
+}
+
+export interface ReportPeriod {
+  period: { from: string; to: string };
+}
+
+export interface SummaryReport {
+  generated_at: string;
+  users: Record<string, number>;
+  contractors: {
+    total: number;
+    by_status: Record<string, number>;
+    active: number;
+    paid: number;
+    on_trial: number;
+    waiting_activation: number;
+    activation_overdue: number;
+  };
+  owners: { total: number; by_status: Record<string, number> };
+  projects: { total: number; by_status: Record<string, number> };
+  offers: { total: number; by_status: Record<string, number> };
+  awards: { count: number; value: string };
+}
+
+export interface TenderRow {
+  reference: string;
+  title: string;
+  trade: string;
+  owner: string;
+  status: string;
+  tender_type: string;
+  bid_deadline: string | null;
+  offers: number;
+  awarded_amount: string;
+  created_at: string | null;
+}
+
+export interface TenderReport extends ReportPeriod, ReportRows<TenderRow> {
+  summary: {
+    projects_created: number;
+    by_status: Record<string, number>;
+    offers_received: number;
+    awards: number;
+    awarded_value: string;
+  };
+}
+
+export interface BillingRow {
+  paid_at: string | null;
+  company: string;
+  email: string;
+  plan: string;
+  kind: string;
+  amount: string;
+  currency: string;
+  reference: string;
+  myfatoorah_invoice_id: string | number;
+}
+
+export interface BillingReport extends ReportPeriod, ReportRows<BillingRow> {
+  summary: {
+    paid_count: number;
+    totals: Record<string, string>;
+    by_plan: { plan: string; count: number; totals: Record<string, string> }[];
+    by_kind: { activation: number; monthly: number };
+    invoices_created: number;
+    still_pending: number;
+    canceled_or_expired: number;
+    paid_contractors_now: number;
+    trials_now: number;
+  };
+}
+
+export interface ActivationReportRow {
+  company: string;
+  contact: string;
+  email: string;
+  paid_at: string | null;
+  activation_due_at: string | null;
+  activated_at: string | null;
+  hours_to_activate: number | "";
+  status: "activated" | "waiting";
+}
+
+export interface ActivationReport extends ReportPeriod, ReportRows<ActivationReportRow> {
+  summary: {
+    first_payments: number;
+    activated_within_sla: number;
+    activated_late: number;
+    still_waiting: number;
+    average_hours_to_activate: number | null;
+    queue_now: number;
+    queue_overdue_now: number;
+    activation_target_hours: number;
+  };
+}
+
 export interface AuditLogEntry {
   id: string;
   actor_id: string | null;

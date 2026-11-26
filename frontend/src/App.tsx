@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NotFoundPage } from "@/pages/NotFound";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
@@ -40,6 +40,13 @@ import { AdminCmsPage } from "@/pages/admin/Cms";
 import { AdminUserHistoryPage } from "@/pages/admin/UserHistory";
 import { AdminPlansPage } from "@/pages/admin/Plans";
 import { AdminPaymentSetupPage } from "@/pages/admin/PaymentSetup";
+import { AdminUsersPage, AdminUserDetailPage } from "@/pages/admin/Users";
+import {
+  AdminActivationReportPage,
+  AdminBillingReportPage,
+  AdminReportsOverviewPage,
+  AdminTenderReportPage,
+} from "@/pages/admin/Reports";
 import { AdminActivationsPage } from "@/pages/admin/Activations";
 
 function AppRoutes() {
@@ -168,6 +175,13 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         >
+          <Route index element={<Navigate to="/admin/reports" replace />} />
+          <Route path="reports" element={<AdminReportsOverviewPage />} />
+          <Route path="reports/tenders" element={<AdminTenderReportPage />} />
+          <Route path="reports/billing" element={<AdminBillingReportPage />} />
+          <Route path="reports/activations" element={<AdminActivationReportPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:id" element={<AdminUserDetailPage />} />
           <Route path="requirements" element={<AdminRequirementsPage />} />
           <Route path="review" element={<AdminReviewPage />} />
           <Route path="contractors" element={<AdminContractorsPage />} />

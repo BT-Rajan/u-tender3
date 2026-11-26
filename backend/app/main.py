@@ -7,6 +7,8 @@ from app.error_handlers import register_error_handlers
 from app.middleware import MaxBodySizeMiddleware
 from app.routers.admin import router as admin_router
 from app.routers.admin_billing import router as admin_billing_router
+from app.routers.admin_reports import router as admin_reports_router
+from app.routers.admin_users import router as admin_users_router
 from app.routers.billing import router as billing_router
 from app.routers.clarifications import router as clarifications_router
 from app.routers.contractor import router as contractor_router
@@ -51,6 +53,8 @@ app.include_router(owner_router)
 app.include_router(contractor_router)
 app.include_router(admin_router)
 app.include_router(admin_billing_router)
+app.include_router(admin_users_router)
+app.include_router(admin_reports_router)
 app.include_router(billing_router)
 app.include_router(onboarding_router)
 app.include_router(code_auth_router)
